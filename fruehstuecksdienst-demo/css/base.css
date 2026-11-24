@@ -520,6 +520,11 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
 .bo-region { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 200px; max-width: 320px; }
 .bo-region select { width: 100%; min-width: 0; min-height: 38px; }
 .bo-top-in > * { min-width: 0; }
+@media (max-width: 899px) {
+  .bo-top-in .ui-pill { display: none; }
+  .bo-region { flex: 1 1 100%; max-width: none; order: 5; }
+  .bo-region select { flex: 1; }
+}
 .bo-side { display: none; }
 .bo-tabs { background: var(--surface); border-bottom: 1px solid var(--line); }
 .bo-tabs .ui-tabs { border-bottom: 0; }

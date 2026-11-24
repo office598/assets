@@ -80,7 +80,6 @@
   }
 
   // Formatierung -------------------------------------------------------------
-  function toDate(x) { return typeof x === 'string' ? fromKey(x) : x; }
   const fmt = {
     day(k) {
       const d = fromKey(k);
