@@ -111,7 +111,8 @@
           <div><span>Deadline</span><b class="ui-mono">${hm(plan.deadlineMin)}</b></div>
           <div><span>Start</span><b class="ui-mono">${hm(tour.startMin)}</b></div>
         </div>
-        ${html`<div class="fa-earn"><span>Ihr Verdienst heute</span><b class="ui-mono">${App.fmt.eur(piecesDone * rate)}</b><span class="ui-muted">von ca. ${App.fmt.eur(piecesAll * rate)} · ${piecesDone} von ${piecesAll} Stück</span></div>`}
+        ${html`<div class="fa-earn"><span>Ihr Verdienst heute</span><b class="ui-mono">${App.fmt.eur(piecesDone * rate)}</b><span class="ui-muted">von ca. ${App.fmt.eur(piecesAll * rate)} · ${piecesDone} von ${piecesAll} Stück</span>
+          <span class="ui-muted fa-earn-km">nach Fahrzeugkosten (Annahme ${App.fmt.eur(App.config.economics.kmCost)}/km): ${App.fmt.eur(piecesAll * rate - tour.km * App.config.economics.kmCost)} für die ganze Tour</span></div>`}
         ${lateMin > 0 ? html`<div class="fa-late"><${Icon} name="alert" size=${16} /> ${lateMin} Min nach der Deadline – die Disposition ist informiert.</div>` : null}
       </section>
 

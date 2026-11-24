@@ -86,9 +86,11 @@
       const stops = mid.reduce((a, u) => a + u.abo, 0), max = mid.reduce((a, u) => a + u.max, 0);
       const freeSlots = mid.reduce((a, u) => a + Math.max(0, u.freeAbo), 0);
       const avg = Math.round(stops / max * 100);
+      const eco = App.sel.weekdayEconomics(s, rid).filter(e => mid.some(u => u.wd === e.wd) && e.hours > 0).sort((a, b) => a.perHour - b.perHour)[0];
+      const ecoText = eco ? ' Am schwächsten Tag (' + T.WD_LONG[eco.wd] + ', ' + eco.stops + ' Stopps, ' + Math.round(eco.km) + ' km) bleiben dem Fahrer nach Fahrzeugkosten ' + F.eur(eco.afterKm) + ', rund ' + F.eur(eco.perHour) + ' je Stunde.' : '';
       out.push(html`<${Reco} key="mid" tone="warn" icon="megaphone" title=${T.WD[mid[0].wd] + '–' + T.WD[mid[mid.length - 1].wd] + ' sind nur zu ' + avg + ' % ausgelastet'}
         actions=${[html`<${Btn} key="m" size="sm" variant="sun" icon="megaphone" onClick=${() => B.go('marketing')}>Aktion vorbereiten<//>`]}>
-        ${freeSlots} Abo-Plätze sind frei (${stops} von ${max} belegt). Eine Aktion „Zustellung ${App.config.promo.weakDayFreeWeeks} Wochen gratis“ füllt diese Tage, ohne die vollen Tage weiter zu belasten.
+        ${freeSlots} Abo-Plätze sind frei (${stops} von ${max} belegt). Eine Aktion „Zustellung ${App.config.promo.weakDayFreeWeeks} Wochen gratis“ füllt diese Tage, ohne die vollen Tage weiter zu belasten.${ecoText}
       <//>`);
     }
     util.filter(u => u.effective === 'few').forEach(u => {
@@ -184,6 +186,26 @@
       <p class="ui-muted bo-sec-sub">Die Zustellgebühr ist die wichtigste Ertragsquelle; die Gebäckpreise liegen nur knapp über dem Ladenpreis. ${B.estimateNote()}.</p></section>`;
   }
 
+  /* ---------- Was die Tour je Wochentag bringt ---------- */
+  function TourEco({ s, region, util }) {
+    if (region.planned || !App.sel.weekdayEconomics) return null;
+    const rows = App.sel.weekdayEconomics(s, region.id);
+    const m = App.sel.marginalStop(s, region.id);
+    const e = App.config.economics || {};
+    const weak = wd => { const u = util[wd]; return u.effective === 'free' && u.pct <= App.config.promo.weakBelowPct; };
+    const neg = n => B.minus(F.eur(n));
+    return html`<section class="ui-card bo-sec" aria-labelledby="bo-h-eco"><h2 id="bo-h-eco">Was die Tour je Wochentag bringt</h2>
+      <p class="ui-muted bo-sec-sub">Nächster Liefertag je Wochentag mit der hinterlegten Fahrerzahl, Fahrerwerte je Fahrer im Mittel.</p>
+      <div class="ui-tablewrap"><table class="ui-table bo-eco"><thead><tr><th>Tag</th><th class="num">Stopps</th><th class="num">km</th><th class="num">Deckungsbeitrag Unternehmen</th>
+        <th class="num">Fahrer: Vergütung</th><th class="num">nach Fahrzeugkosten</th><th class="num">je Stunde</th><th>Einschätzung</th></tr></thead>
+        <tbody>${rows.map(r => html`<tr key=${r.wd} class=${weak(r.wd) ? 'bo-eco-weak' : ''}><td><strong>${T.WD[r.wd]}</strong><span class="ui-muted"> ${T.fmt.day(r.dateKey).split(' ')[1] || ''}</span></td>
+          <td class="num">${r.stops}</td><td class="num">${Math.round(r.km)}</td><td class="num">${neg(r.businessMargin)}</td><td class="num">${F.eur(r.driverPay)}</td>
+          <td class=${'num' + (r.afterKm < 0 ? ' bo-neg' : '')}>${neg(r.afterKm)}</td><td class=${'num' + (r.perHour < 0 ? ' bo-neg' : '')}><strong>${neg(r.perHour)}</strong></td>
+          <td>${weak(r.wd) ? html`<${Pill} tone="warn" icon="alert">schwacher Tag<//>` : util[r.wd].effective === 'full' ? html`<${Pill} tone="full">ausgebucht<//>` : html`<${Pill} tone="ok" icon="check">gut gefüllt<//>`}</td></tr>`)}</tbody></table></div>
+      <p class="bo-eco-sentence">Jeder zusätzliche Stopp bringt dem Unternehmen rund <strong>${F.eur(m.business)}</strong> und dem Fahrer rund <strong>${F.eur(m.driver)}</strong>.</p>
+      <p class="ui-muted bo-sec-sub">Annahmen: Fahrer ${F.eur(e.driverPerPiece || 0)} je Stück, Fahrzeugkosten ${F.eur(e.kmCost || 0)} je km, alle Beträge netto, Einkaufspreise geschätzt. Größere und dichtere Touren machen schwache Tage für den Fahrer lohnender.</p></section>`;
+  }
+
   /* ---------- Seite ---------- */
   function Uebersicht() {
     const s = App.useStore();
@@ -214,6 +236,7 @@
         <section class="ui-card bo-sec" aria-labelledby="bo-h-reco"><h2 id="bo-h-reco">Empfehlungen</h2>
           <div class="ui-stack bo-recos"><${Recommendations} s=${s} region=${region} util=${util} /></div></section>
       </div>
+      <${TourEco} s=${s} region=${region} util=${util} />
       <div class="bo-grid2">
         <section class="ui-card bo-sec" aria-labelledby="bo-h-todo"><h2 id="bo-h-todo">Heute zu tun</h2><${Todo} s=${s} region=${region} /></section>
         <section class="ui-card bo-sec" aria-labelledby="bo-h-ord"><h2 id="bo-h-ord">Letzte Bestellungen</h2><${Orders} s=${s} region=${region} /></section>

@@ -181,7 +181,8 @@
           <g fill=${TONES[ti % 4]} stroke="var(--surface)" stroke-width="1.5">${shape(ti, 17, 8, 4.6)}</g></svg>
         <div class="ui-grow"><strong>${t.driver.name}</strong>
           <div class="ui-muted bo-small">${t.stops.length} Stopps · ${Math.round(t.km * 10) / 10} km · ${hm(t.startMin)} bis ${hm(t.endMin)}</div>
-          ${eco ? html`<div class="bo-small bo-tour-pay"><span>${eco.pieces} Stück</span>${eco.pay != null ? html`<span>Vergütung <strong>${App.fmt.eur(eco.pay)}</strong></span>` : null}</div>` : null}</div>
+          ${eco ? html`<div class="bo-small bo-tour-pay"><span>${eco.pieces} Stück</span><span>Vergütung <strong>${App.fmt.eur(eco.pay)}</strong></span></div>
+          <div class="bo-small bo-tour-pay"><span>nach Fahrzeugkosten <strong>${App.fmt.eur(eco.afterKm)}</strong></span><span>rund ${App.fmt.eur(eco.perHour)} je Stunde</span></div>` : null}</div>
         ${t.endMin > dl ? html`<${Pill} tone="full" icon="alert">${mm(t.endMin - dl)} zu spät<//>` : html`<${Pill} tone="ok" icon="check">pünktlich<//>`}
       </header>
       <ol class="bo-stops">
@@ -282,8 +283,10 @@
           ${compare.map((c) => html`<li key=${c.n} class=${c.n === drivers ? 'is-on' : ''}><button type="button" onClick=${() => setDrivers(c.n)}>
             <span>${c.n} ${c.n === 1 ? 'Fahrer' : 'Fahrer'}</span><b class=${'ui-mono ' + (c.p.late ? 'is-late' : 'is-ok')}>${hm(c.p.endMin)}</b>
             <small>${c.p.late ? mm(c.p.endMin - c.p.deadlineMin) + ' zu spät' : 'pünktlich'}</small>
-            ${(() => { const e = perDriver(s, regionId, date, c.n); const mx = e.length ? e[0] : null; return mx && mx.pay != null ? html`<small>je Fahrer ca. ${App.fmt.eur(e.reduce((n, x) => n + x.pay, 0) / e.length)} · ${Math.round(e.reduce((n, x) => n + x.pieces, 0) / e.length)} Stück</small>` : null; })()}</button></li>`)}
+            ${(() => { const e = perDriver(s, regionId, date, c.n); const av = (k) => e.reduce((n, x) => n + x[k], 0) / (e.length || 1);
+              return e.length ? html`<small>je Fahrer ${Math.round(av('pieces'))} Stück · ${App.fmt.eur(av('pay'))}</small><small>nach Fahrzeugkosten ${App.fmt.eur(av('afterKm'))} · rund ${App.fmt.eur(av('perHour'))}/Std.</small>` : null; })()}</button></li>`)}
         </ul>
+        <p class="ui-muted bo-small" style="margin:0">Annahme: ${App.fmt.eur(App.config.economics.kmCost)} Fahrzeugkosten je km, Vergütung ${App.fmt.eur(App.config.economics.driverPerPiece)} je Stück.</p>
         <div class="bo-whatif-act">
           <${Btn} variant=${changed ? 'sun' : 'ghost'} size="sm" icon="check" disabled=${!changed} onClick=${apply}>In Kapazität übernehmen<//>
           <span class="ui-muted bo-small">${changed ? 'Gespeichert sind ' + cap.drivers + (cap.drivers === 1 ? ' Fahrer' : ' Fahrer') + '.' : 'Entspricht der gespeicherten Kapazität (' + cap.drivers + (cap.drivers === 1 ? ' Fahrer' : ' Fahrer') + ').'}
