@@ -468,3 +468,24 @@ An schwachen Tagen ist die Tour für den Fahrer nach Fahrzeugkosten kaum etwas w
 
 ### 8.12 Einkaufsannahme
 Der Einkaufsrabatt gegenüber dem Ladenpreis ist auf 25 % gesetzt (`economics.purchaseDiscount = 0.25`, im Backoffice einstellbar). Der Speicher-Schlüssel ist `fd-demo-v2`, damit gespeicherte Stände den neuen Wert übernehmen.
+
+### 8.13 Hell, ruhig, strukturiert (Rückmeldung des Auftraggebers zur ersten Ansicht)
+Rückmeldung: wirkt zu dunkel, ist überladen, braucht mehr Struktur und größere Knöpfe. Vorgefertigte Sackerl treffen selten den Geschmack, sie entfallen.
+
+**Farbe (K2).** Die Seite ist bewusst nur hell. In `css/base.css` entfallen die beiden Dunkel-Blöcke; `:root` setzt `color-scheme: light`, `body` behält den hellen Hintergrund. Dunkle Flächen gibt es nicht mehr: Demo-Leiste hell (`--surface` mit unterer Linie, aktives Segment `--ink` auf `--butter`-Grund oder Ähnliches, kein Espresso-Band), Fußbereich hell (`--kraft-soft`), aktive Navigation nicht als dunkle Pille, sondern als Butter-Fläche oder Unterstreichung. Espresso bleibt Schriftfarbe. Hauptknopf ist Honiggold.
+**Größen (K2).** Kunden- und Fahrer-App: Knöpfe `md` mindestens 48 px hoch, `lg` 56 px, Schrift 17 px; Stepper mit 44-px-Tippflächen; PLZ-Feld 56 px; Tab-Leiste mit größeren Icons. Mehr Abstand zwischen Abschnitten (mindestens 56 px mobil, 88 px ab 900 px), jeder Abschnitt mit klarer Überschrift.
+
+**Startseite (V1), höchstens sieben Abschnitte in dieser Reihenfolge:**
+1. Hero hell: links Überschrift, ein Satz, großes PLZ-Feld mit Knopf, darunter die drei Demo-Chips und eine Vertrauenszeile („Keine Bindung · jederzeit pausieren · bis 06:30 an der Tür“); rechts (mobil oben, Seitenverhältnis 16:10) das Foto `hero` als abgerundete Bildfläche, ohne dunklen Verlauf, der Lieferzettel klein darauf.
+2. Ergebnis nach der PLZ: Überschrift „Ihre Liefertage in …“, die Wochenleiste, darunter genau eine Zeile Zusammenfassung (freie Tage, wenige Plätze, ausgebucht mit Warteliste), Aktion für schwache Tage als kleines Etikett an den Anhängern statt als eigener Kasten, dann der große Knopf „Lieferplan zusammenstellen“ und daneben schlicht „Nur einmal bestellen“. Warteliste wie bisher.
+3. So funktioniert’s: drei Schritte in einer Reihe, je eine Zeile.
+4. Diese Woche: zwei Karten nebeneinander, „Brot der Woche“ und die Saison-Aktion (nur wenn aktiv), plus Link „Ganzes Sortiment ansehen“.
+5. Regelmäßig oder einmal: zwei Karten mit Preisen, Abo „Empfohlen“.
+6. Häufige Fragen: höchstens fünf.
+7. Fuß hell: eine Zeile zur Partnerbäckerei, Links „Büro-Frühstück“, „Frühstück verschenken“, „Nachbarn werben“ (je ein kleines Sheet), „Bildnachweise“, Demo-Hinweis.
+Entfallen: Schnellstart-Sackerl, eigener Aktionen-Block, Sortiments-Karussell, eigene Abschnitte für Hofladen, Nachbarn werben, Büro/Geschenk und Pünktlich-Versprechen.
+
+**Lieferplan (V2):**
+- Keine Schnellstart-Sackerl mehr. Ein leerer Tag zeigt groß „Artikel hinzufügen“ und darunter vier Foto-Chips zum Schnell-Hinzufügen (Fokus- bzw. Bestseller-Artikel).
+- Je Sackerl-Karte höchstens **ein** Vorschlag, Reihenfolge: Tausch-Hinweis → Brot der Woche (am Wochenende) → Mengenaktion → „Dazu passt“. Eine kompakte Zeile mit Foto, Text und Knopf, ausblendbar. Die Liste „Dazu passt“ wandert an den Anfang des Sheets „Artikel hinzufügen“.
+- Erklärtexte kürzen (je höchstens ein Satz). Klare Schritt-Überschriften, größere Knöpfe, ruhige Abstände.
