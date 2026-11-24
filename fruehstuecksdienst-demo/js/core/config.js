@@ -21,7 +21,7 @@
       flexQuota: 6,
       fewThreshold: 8
     },
-    fees: { abo: 1.20, flex: 2.40, flexMinOrder: 6.00 },
+    fees: { abo: 1.20, flex: 2.40, flexMinOrder: 6.00, freeDeliveryFrom: 15 },
     promo: { weakBelowPct: 0.6, weakDayFreeWeeks: 4, referralCredit: 5 },
     reserveHours: 24,
     season: { id: 'nikolo', title: 'Nikolo-Sackerl', dateKey: '2026-12-06', productId: 'box-nikolo' },

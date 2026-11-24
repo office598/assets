@@ -255,6 +255,8 @@
   };
 
   sel.feeFor = (s, o) => {
+    const from = C.fees.freeDeliveryFrom;
+    if (from && o.total != null && o.total >= from - 1e-9) return 0;
     if (o.mode === 'flex') return C.fees.flex;
     const c = o.customerId ? sel.customer(s, o.customerId) : null;
     const isNew = !c || !c.registered || c.since >= T.addDays(T.today(), -C.promo.weakDayFreeWeeks * 7);
@@ -365,12 +367,18 @@
       flex.forEach(f => Object.keys(f.items).forEach(id => { items[id] = (items[id] || 0) + f.items[id]; }));
       if (flex.length) kinds.push('flex');
       const skipped = (s.skips[customerId] || []).includes(k), paused = custPaused(s, customerId, k);
-      const fee = skipped || paused ? 0 : sel.feeFor(s, { mode: sub ? 'abo' : 'flex', wd, regionId: c.regionId, customerId });
+      const fee = skipped || paused ? 0 : sel.feeFor(s, { mode: sub ? 'abo' : 'flex', wd, regionId: c.regionId, customerId, total: sel.priceBag(s, items, { wd }).total });
       out.push({ dateKey: k, wd, items, total: sel.priceBag(s, items, { wd }).total, fee, kinds, skipped, paused,
         cutoff: T.cutoffFor(k), changeable: T.isOpenFor(k), delivery: (s.deliveries[k] || {})[customerId] || null });
     }
     return out;
   };
+
+  function missingForFree(s, o, total) {
+    const from = C.fees.freeDeliveryFrom;
+    if (!from || sel.feeFor(s, o) === 0 || total >= from - 1e-9) return 0;
+    return round2(from - total);
+  }
 
   // ----- Entwurf
   function evalDraft(s) {
@@ -391,8 +399,9 @@
           if (!Object.keys(items).some(id => items[id] > 0)) plan.push('empty-day:' + wd);
           const st = sel.dayStatusFor(s, d.regionId, wd, cid);
           if (st === 'full' || st === 'closed') plan.push('day-full:' + wd);
-          const fee = sel.feeFor(s, { mode: 'abo', wd, regionId: d.regionId, customerId: cid });
-          deliveries.push({ wd, items, subtotal: bag.subtotal, total: bag.total, fee, discounts: bag.discounts, hints: bag.hints });
+          const fee = sel.feeFor(s, { mode: 'abo', wd, regionId: d.regionId, customerId: cid, total: bag.total });
+          deliveries.push({ wd, items, subtotal: bag.subtotal, total: bag.total, fee, discounts: bag.discounts, hints: bag.hints,
+            freeDeliveryMissing: missingForFree(s, { mode: 'abo', wd, regionId: d.regionId, customerId: cid }, bag.total) });
           const k = T.nextDateForWeekday(wd);
           if (!firstDelivery || k < firstDelivery) firstDelivery = k;
         });
@@ -409,7 +418,9 @@
           if (fi.state === 'cutoff') plan.push('flex-cutoff');
           firstDelivery = k;
         }
-        deliveries.push({ dateKey: k, items, subtotal: bag.subtotal, total: bag.total, fee: C.fees.flex, discounts: bag.discounts, hints: bag.hints });
+        const ffee = sel.feeFor(s, { mode: 'flex', wd, regionId: d.regionId, customerId: cid, total: bag.total });
+        deliveries.push({ dateKey: k, items, subtotal: bag.subtotal, total: bag.total, fee: ffee, discounts: bag.discounts, hints: bag.hints,
+          freeDeliveryMissing: missingForFree(s, { mode: 'flex', wd, regionId: d.regionId, customerId: cid }, bag.total) });
       }
       if (firstDelivery) cutoff = T.cutoffFor(firstDelivery);
     }
@@ -538,6 +549,37 @@
     return ideas;
   };
 
+  // ----- Verkaufsförderung
+  const STARTER = [
+    { id: 'klassiker', title: 'Klassiker', text: 'Der Frühstückstisch für zwei, schnell gepackt.', items: { kaisersemmel: 4, kornweckerl: 2 } },
+    { id: 'suesser-morgen', title: 'Süßer Morgen', text: 'Croissants, Semmeln und Marillenmarmelade.', items: { buttercroissant: 2, kaisersemmel: 2, marillenmarmelade: 1 } },
+    { id: 'familie', title: 'Familie', text: 'Reichlich Gebäck, Brot und Butter für alle.', items: { kaisersemmel: 6, salzstangerl: 2, bauernbrot: 1, teebutter: 1 } }
+  ];
+  sel.starterBags = s => STARTER.map(b => {
+    const bag = sel.priceBag(s, b.items, {});
+    return { id: b.id, title: b.title, text: b.text, items: Object.assign({}, b.items), total: bag.total, saving: round2(bag.subtotal - bag.total) };
+  });
+
+  sel.suggestions = (s, items, max) => {
+    const have = items || {}, inBag = id => have[id] > 0;
+    const cats = orderedItems(s, have).map(p => p.cat);
+    const ids = Object.keys(have).filter(inBag);
+    const order = [];
+    const spread = ['teebutter', 'marillenmarmelade', 'bluetenhonig', 'liptauer'];
+    if (ids.includes('buttercroissant') || ids.includes('topfengolatsche') || ids.includes('nussschnecke')) order.push('marillenmarmelade', 'orangensaft');
+    if (cats.includes('brot')) order.push('bergkaese', 'beinschinken');
+    if (cats.includes('gebaeck') && !spread.some(inBag)) order.push('teebutter', 'marillenmarmelade');
+    s.products.filter(p => p.bestseller).forEach(p => order.push(p.id));
+    const seen = new Set();
+    return order.filter(id => { if (seen.has(id) || inBag(id)) return false; seen.add(id); return true; })
+      .map(id => sel.product(s, id)).filter(p => p && p.active).slice(0, max || 3);
+  };
+
+  sel.regionStats = (s, regionId) => {
+    const households = s.customers.filter(c => c.regionId === regionId && c.registered).length;
+    return { households, deliveriesPerWeek: (aboCounts(s)[regionId] || []).reduce((a, b) => a + b, 0) };
+  };
+
   // ----- Navigation (Google Maps)
   const addressOf = c => c.street + ' ' + c.houseNo + ', ' + c.plz + ' ' + c.city;
   sel.mapsUrl = (s, customerId) => {
@@ -626,6 +668,11 @@
   A.draftCopyDay = (fromWd, toWd) => {
     const d = get().draft;
     setDraftPatch({ abo: Object.assign({}, d.abo, { [toWd]: Object.assign({}, d.abo[fromWd] || {}) }) });
+  };
+  A.draftApplyBag = (target, items) => {
+    const d = get().draft, copy = Object.assign({}, items);
+    if (target && target.flex) setDraftPatch({ flex: copy });
+    else setDraftPatch({ abo: Object.assign({}, d.abo, { [target.wd]: copy }) });
   };
   A.draftSetFlexDate = dateKey => setDraftPatch({ flexDate: dateKey });
 

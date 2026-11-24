@@ -100,7 +100,15 @@
       p('box-familie', 'boxen', 'Familienfrühstück für 4', 'Familienfrühstück für 4', 24.90, 'Sackerl', 'Reichlich Gebäck, Aufstriche, Milch und Eier für vier.'),
       p('box-buero', 'boxen', 'Büro-Frühstück für 10', 'Büro-Frühstück für 10', 59.00, 'Sackerl', 'Gebäck-Auswahl, Aufschnitt, Käse und Aufstriche für zehn.'),
       p('box-nikolo', 'boxen', 'Nikolo-Sackerl', 'Nikolo-Sackerl', 12.90, 'Sackerl', 'Lebkuchen, Nüsse, Mandarinen und ein Nikolo aus Germteig.', { season: C.season.id })
-    ].map(withCost);
+    ].map(withCost).map(withFlags);
+  }
+
+  const BESTSELLER = ['kaisersemmel', 'kornweckerl', 'buttercroissant', 'bauernbrot', 'teebutter', 'box-sonntag'];
+  const NEW_IDS = ['dinkelweckerl', 'liptauer', 'box-nikolo'];
+  function withFlags(pr) {
+    pr.bestseller = BESTSELLER.includes(pr.id);
+    pr.isNew = NEW_IDS.includes(pr.id);
+    return pr;
   }
 
   function withCost(pr) {

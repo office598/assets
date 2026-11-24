@@ -102,6 +102,23 @@ check('mapsUrl enthält kodierte Adresse', sel.mapsUrl(s0, 'c-huber') === 'https
 const ru = sel.mapsRouteUrl(s0, ['c-huber', 'me']);
 check('mapsRouteUrl Waypoints', ru.includes('waypoints=') && ru.includes('destination='));
 
+// --- Verkaufsförderung
+const fr = o => sel.feeFor(s0, Object.assign({ mode: 'abo', wd: 5, regionId: 'nord', customerId: 'c-huber' }, o));
+check('Gratis-Zustellung ab 15 EUR', C.fees.freeDeliveryFrom === 15 && fr({ total: 15 }) === 0 && fr({ total: 14.99 }) === 1.2 && fr({ mode: 'flex', total: 20 }) === 0 && fr({}) === 1.2);
+const big = { kaisersemmel: 5, buttercroissant: 3, bauernbrot: 3 };
+const dsFree = (() => { const st = Object.assign({}, s0, { draft: Object.assign({}, s0.draft, { regionId: 'nord', abo: { 5: big, 6: { kaisersemmel: 4 } } }) }); return sel.draftSummary(st).deliveries; })();
+check('draftSummary: freeDeliveryMissing', dsFree[0].fee === 0 && dsFree[0].freeDeliveryMissing === 0 && dsFree[1].freeDeliveryMissing > 0 && dsFree[1].fee > 0, dsFree);
+check('Produkt-Flags bestseller/isNew', ['kaisersemmel', 'kornweckerl', 'buttercroissant', 'bauernbrot', 'teebutter', 'box-sonntag'].every(i => sel.product(s0, i).bestseller) &&
+  ['dinkelweckerl', 'liptauer', 'box-nikolo'].every(i => sel.product(s0, i).isNew) && !sel.product(s0, 'laugenbreze').bestseller);
+const sb = sel.starterBags(s0);
+check('starterBags: 3 Sackerl mit Summen', sb.length === 3 && sb.every(b => b.total > 0 && b.saving >= 0 && b.title) && sb[1].total === 8.8 && sb[2].total > sb[0].total, sb.map(b => [b.title, b.total, b.saving]));
+eq('starterBags Klassiker 4 Semmeln + 2 Kornweckerl', [sb[0].items, sb[0].total], [{ kaisersemmel: 4, kornweckerl: 2 }, 4.1]);
+check('suggestions: nie bereits im Sackerl', [{ kaisersemmel: 4 }, { buttercroissant: 2, marillenmarmelade: 1 }, { bauernbrot: 1, bergkaese: 1 }, {}].every(it =>
+  { const r = sel.suggestions(s0, it, 3); return r.length > 0 && r.length <= 3 && r.every(p => !(it[p.id] > 0)); }));
+eq('suggestions Gebäck -> Teebutter zuerst', sel.suggestions(s0, { kaisersemmel: 4 }, 2).map(p => p.id), ['teebutter', 'marillenmarmelade']);
+const rs = sel.regionStats(s0, 'nord');
+check('regionStats.households > 0', rs.households > 0 && rs.deliveriesPerWeek === 345, rs);
+
 // --- Leitgeschichte
 A.draftCheckPlz('5303');
 eq('draft.regionId nord', store.getState().draft.regionId, 'nord');
@@ -117,6 +134,7 @@ eq('dayStatusFor reserved', sel.dayStatusFor(s, 'nord', 0, 'me'), 'reserved');
 check('Nachricht kind waitlist für me', sel.inbox(s, 'me').some(n => n.kind === 'waitlist' && n.action.view === 'lieferplan' && n.action.weekday === 0) && sel.unreadPush(s, 'me').length === 1);
 check('cap Mo nach Freigabe frei', sel.cap(s, 'nord', 0).effective === 'free' && sel.cap(s, 'nord', 0).freeAbo === 50);
 A.draftToggleDay(0); A.draftToggleDay(1);
+A.draftApplyBag({ wd: 0 }, { kaisersemmel: 5 });
 A.draftSetQty({ wd: 0 }, 'kaisersemmel', 6);
 check('draftSummary: leerer Tag', sel.draftSummary(store.getState()).problems.includes('empty-day:1'));
 A.draftSetQty({ wd: 1 }, 'buttercroissant', 3);
