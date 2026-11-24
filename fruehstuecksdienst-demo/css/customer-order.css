@@ -289,3 +289,8 @@
 .k-week-warn .ui-icon { margin-top: 2px; flex: none; color: var(--warn); }
 .k-week .k-errs { font-size: 14px; }
 .k-week .ui-countdown { font-family: inherit; font-weight: 650; }
+.k-feegrp { display: block; text-align: right; }
+.k-sum dd { text-align: right; }
+.k-week-promo { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; font-weight: 650; color: var(--sun-text); }
+.k-week-promo > .ui-icon { margin-top: 1px; flex: none; }
+.k-bb-l { display: block; }

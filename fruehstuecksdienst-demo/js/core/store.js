@@ -508,15 +508,20 @@
       if (!g) { g = byKey[key] = { wds: [], items: x.items, total: x.total, fee: x.fee, discounts: x.discounts }; groups.push(g); }
       g.wds.push(x.wd);
     });
-    let savePerWeek = 0;
+    // Dauerhafter Abo-Vorteil: Standard-Einmalgebühr minus Standard-Abogebühr (ohne Neukunden-Aktion).
+    let savePerWeek = 0, promoPerWeek = 0;
+    const promoWds = [], F = C.fees, from = F.freeDeliveryFrom;
     if (s.draft.mode === 'abo') {
       ev.deliveries.forEach(x => {
-        savePerWeek += sel.feeFor(s, { mode: 'flex', wd: x.wd, regionId: s.draft.regionId, customerId: s.session.customerId, total: x.total }) - x.fee;
+        const we = x.wd >= 5, stdAbo = we ? F.aboWeekend : F.abo, stdFlex = we ? F.flexWeekend : F.flex;
+        savePerWeek += stdFlex - stdAbo;
+        if (x.fee === 0 && stdAbo > 0 && !(from && x.total >= from - 1e-9)) { promoWds.push(x.wd); promoPerWeek += stdAbo; }
       });
     }
     savePerWeek = Math.max(0, round2(savePerWeek));
     return {
       groups, saving: { perWeek: savePerWeek, text: savePerWeek > 0 ? 'Mit dem Abo sparen Sie ' + App.fmt.eur(savePerWeek) + ' pro Woche gegenüber Einmalbestellungen.' : '' },
+      promo: { wds: promoWds, weeks: C.promo.weakDayFreeWeeks, perWeek: round2(promoPerWeek) },
       deliveries: ev.deliveries, count: ev.deliveries.length,
       perWeek: s.draft.mode === 'abo' ? round2(sum) : 0, total: round2(sum),
       firstDelivery: ev.firstDelivery, cutoff: ev.cutoff,

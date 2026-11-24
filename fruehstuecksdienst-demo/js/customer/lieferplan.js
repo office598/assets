@@ -197,7 +197,7 @@
     return pool.slice(0, 4);
   }
 
-  function BagCard({ s, target, del, tried, onAdd, onCopy, onRemove, status, days }) {
+  function BagCard({ s, target, del, dels, tried, onAdd, onCopy, onRemove, status, days }) {
     const flex = !!target.flex, wd = flex ? (s.draft.flexDate ? T.weekday(s.draft.flexDate) : null) : target.wd;
     const items = flex ? s.draft.flex : (s.draft.abo[target.wd] || {});
     const bag = sel().priceBag(s, items, { wd });
@@ -230,13 +230,16 @@
       else if (hint) tip = { k: key('h' + hint.offerId), icon: 'gift', text: hint.text, cta: 'Hinzufügen', run: () => addHintToBag(s, target, hint, onAdd) };
       else if (sg && !gone[key('sg')]) tip = { k: key('sg'), photo: sg.id, text: 'Dazu passt: ' + sg.name + ' · ' + eur(sg.price), cta: 'Hinzufügen', run: () => setQty(sg.id, (items[sg.id] || 0) + 1) };
     }
+    const feeGroups = [];
+    if (shared && dels) dels.forEach(x => { let g = feeGroups.find(y => y.fee === x.fee); if (!g) { g = { fee: x.fee, wds: [] }; feeGroups.push(g); } g.wds.push(x.wd); });
+    feeGroups.forEach(g => { g.names = g.wds.map(w => WD[w]).join(', ') + ':'; });
     const picks = !count ? quickPicks(s, items, wd) : [];
     if (shared) del = del || null;
 
     return html`<section class=${cx('k-sack', empty && 'has-error')} id=${'k-sack-' + (flex ? 'flex' : target.wd)} aria-label=${title}>
       <header class="k-sack-head">
         <div class="ui-grow"><h3>${title}</h3>
-          <div class="k-sack-sub">${shared ? html`<${DayChips} wds=${days} /> ` : null}${!shared && dateK ? T.fmt.dayLong(dateK).replace(/^[^,]+,\s*/, '') + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : !shared ? 'Tag wählen' : 'jeweils bis 06:30 bzw. 08:30 Uhr'}
+          <div class="k-sack-sub">${shared ? html`<${DayChips} wds=${days} /> ` : null}${!shared && dateK ? T.fmt.dayLong(dateK).replace(/^[^,]+,\s*/, '') + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : !shared ? 'Tag wählen' : ''}
             ${status === 'reserved' ? html` <${Pill} tone="info">für Sie reserviert<//>` : null}</div></div>
         ${onRemove && !shared ? html`<${Btn} variant="quiet" size="sm" icon="x" aria-label=${WDL[target.wd] + ' entfernen'} onClick=${onRemove}>Entfernen<//>` : null}
       </header>
@@ -273,8 +276,9 @@
         ${!feeFree && d.freeDeliveryMissing > 0 && from ? html`<${Progress} value=${d.total} max=${from} label=${'Noch ' + eur(d.freeDeliveryMissing) + ' bis zur Gratis-Zustellung'} />` : null}
         ${byThreshold ? html`<${Progress} value=${d.total} max=${from} label=${'Gratis-Zustellung ab ' + eur(from) + ' erreicht'} />` : null}
         <dl class="k-sum">
-          <div><dt>Zustellung</dt><dd>${feeFree ? html`<s>${eur(stdFee)}</s> <strong class="k-free">gratis</strong>` : eur(d.fee)}</dd></div>
-          <div class="is-total"><dt>${flex ? 'Summe' : 'Je Lieferung'}</dt><dd>${eur(d.total + d.fee)}</dd></div>
+          <div><dt>Zustellung</dt><dd>${shared && dels && dels.length ? feeGroups.map((g, i) => html`<span key=${i} class="k-feegrp">${g.names} ${g.fee === 0 ? 'gratis (Aktion)' : eur(g.fee)}</span>`)
+            : feeFree ? html`<s>${eur(stdFee)}</s> <strong class="k-free">gratis</strong>` : eur(d.fee)}</dd></div>
+          <div class="is-total"><dt>${shared ? 'Sackerl je Lieferung' : flex ? 'Summe' : 'Je Lieferung'}</dt><dd>${eur(shared ? d.total : d.total + d.fee)}</dd></div>
         </dl>
       </div>` : html`<div class="k-lfee"><${Icon} name="truck" size=${16} /><span>Zustellung ${eur(stdFee)}${flex ? ' · ab ' + eur(C.fees.flexMinOrder) + ' Bestellwert' : ''}</span></div>`}
     </section>`;
@@ -341,6 +345,7 @@
           <span class="k-week-n">${abo ? live.length + (live.length === 1 ? ' Lieferung' : ' Lieferungen') : 'einmalig'}</span></div>
           <strong>${eur(sum.total)}</strong></div>
         ${abo && sv ? html`<div class="k-week-save"><${Icon} name="leaf" size=${16} /> ${typeof sv.text === 'string' && sv.text ? sv.text : 'Abo-Vorteil: ' + eur(sv.perWeek) + ' pro Woche'}</div>` : null}
+        ${abo && sum.promo && sum.promo.wds && sum.promo.wds.length ? html`<div class="k-week-promo"><${Icon} name="gift" size=${16} /> Aktion: die ersten ${sum.promo.weeks} Wochen keine Zustellgebühr am ${sum.promo.wds.map(w => WD[w]).join(', ')}</div>` : null}
         ${sum.firstDelivery ? html`<ul class="k-week-when">
           <li><${Icon} name="truck" size=${18} /><span>Erste Lieferung: <strong>${T.fmt.dayLong(sum.firstDelivery)}</strong>, bis ${T.fmt.hm(T.deadlineMin(sum.firstDelivery))} Uhr</span></li>
           <li><${Icon} name="clock" size=${18} /><span>Änderbar bis ${T.fmt.rel(sum.cutoff)} (<${Countdown} to=${sum.cutoff} />)</span></li></ul>` : null}`}
@@ -472,7 +477,7 @@
             ? html`<div class="k-lnote k-lnote-warn"><${Icon} name="info" size=${20} /><div><strong>Die Sackerl unterscheiden sich.</strong> Das Sackerl von ${WDL[firstFilled != null ? firstFilled : wds[0]]} gilt dann für alle gewählten Tage.
               <div class="k-samebar-b"><${Btn} variant="sun" onClick=${makeSame}>Für alle gleich<//><${Btn} variant="ghost" onClick=${() => setAskSame(false)}>Abbrechen<//></div></div></div>`
             : html`<button type="button" class="k-link k-link-lg" onClick=${() => (differ ? setAskSame(true) : makeSame())}>Für alle Tage gleich</button>`}</div>` : null}
-          ${same && wds.length ? html`<${BagCard} key="shared" s=${s} target=${{ wd: wds[0] }} days=${wds} tried=${tried} del=${sum.deliveries.find(x => x.wd === wds[0])} status=${wds.length === 1 ? sel().dayStatusFor(s, rid, wds[0], cid) : null}
+          ${same && wds.length ? html`<${BagCard} key="shared" s=${s} target=${{ wd: wds[0] }} days=${wds} tried=${tried} del=${sum.deliveries.find(x => x.wd === wds[0])} dels=${sum.deliveries.filter(x => wds.includes(x.wd) && sumQty(x.items) > 0)} status=${wds.length === 1 ? sel().dayStatusFor(s, rid, wds[0], cid) : null}
               onAdd=${() => setPicker({ wd: wds[0] })} onCopy=${wds.length === 1 ? () => setCopyFrom(wds[0]) : null} onRemove=${() => act().draftToggleDay(wds[0])} />
             ${wds.length > 1 ? html`<button type="button" class="k-link k-link-lg" onClick=${() => act().draftSetSameForAll(false)}>Jeden Tag anders zusammenstellen</button>` : null}`
             : wds.map(wd => html`<${BagCard} key=${wd} s=${s} target=${{ wd }} days=${[wd]} tried=${tried} del=${sum.deliveries.find(x => x.wd === wd)} status=${sel().dayStatusFor(s, rid, wd, cid)}
@@ -486,7 +491,7 @@
       <aside class="k-plan-side" id="k-summary" aria-label="Zusammenfassung"><${WeekSummary} s=${s} sum=${sum} abo=${abo} tried=${tried} /></aside>
     </div>
     ${sum.deliveries.length && nItems > 0 ? html`<${BagBar} count=${nItems} total=${abo ? eur(sum.perWeek) : eur(sum.total)}
-      sub=${sum.cutoff ? html`${abo ? 'pro Woche · ' : ''}${sum.deliveries.length} ${sum.deliveries.length === 1 ? 'Lieferung' : 'Lieferungen'} · Bestellschluss <${Countdown} to=${sum.cutoff} />` : null}
+      sub=${sum.cutoff ? html`<span class="k-bb-l">${abo ? sum.deliveries.length + (sum.deliveries.length === 1 ? ' Lieferung' : ' Lieferungen') + ' pro Woche' : 'Einmalig'}</span><span class="k-bb-l">Bestellschluss <${Countdown} to=${sum.cutoff} /></span>` : null}
       cta=${registered ? 'Bestellen' : 'Weiter'} onClick=${next} />` : null}
       <${ProductSheet} open=${!!picker} onClose=${() => setPicker(null)} s=${s} items=${pickerItems} wd=${pickerWd} mode=${d.mode}
         title=${picker && !picker.flex ? 'Artikel für ' + WDL[picker.wd] : 'Artikel hinzufügen'}

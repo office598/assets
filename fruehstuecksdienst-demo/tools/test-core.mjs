@@ -214,7 +214,7 @@ A.draftSetQty({ wd: 1 }, 'kaisersemmel', 4); A.draftSetQty({ wd: 1 }, 'laugenbre
 let sm = sel.draftSummary(store.getState());
 const flexOne = sel.feeFor(store.getState(), { mode: 'flex', wd: 1, regionId: 'nord', customerId: 'me', total: sm.deliveries[0].total });
 check('Screenshot-Fall: leerer Do zählt nicht', sm.deliveries.length === 1 && T.weekday(sm.firstDelivery) === 1 && sm.problems.includes('empty-day:3') &&
-  Math.abs(sm.saving.perWeek - (flexOne - sm.deliveries[0].fee)) < 0.001 && sm.count === 1 && sm.cutoff.getTime() === T.cutoffFor(sm.firstDelivery).getTime(), sm);
+  Math.abs(sm.saving.perWeek - (C.fees.flex - C.fees.abo)) < 0.001 && sm.promo.wds.join() === '1' && sm.count === 1 && sm.cutoff.getTime() === T.cutoffFor(sm.firstDelivery).getTime(), sm);
 check('saving.text und groups', sm.saving.perWeek > 0 && sm.saving.text.includes('pro Woche') && sm.groups.length === 1 && sm.groups[0].wds.join() === '1');
 A.setDraft({ abo: {}, sameForAll: true });
 A.draftToggleDay(0); A.draftToggleDay(2); A.draftToggleDay(4);
@@ -240,6 +240,10 @@ check('sameForAll an: erster gefüllter Tag (Mo) auf alle', [0, 2, 4, 5].every(w
 A.setDraft({ abo: { 2: { kaisersemmel: 2 } } });
 const cp = A.draftCopyToDays(2, [0, 1, 3]);
 check('draftCopyToDays überspringt vollen Montag', cp.skipped.join() === '0' && cp.copied.join() === '1,3' && !store.getState().draft.abo[0] && store.getState().draft.abo[3].kaisersemmel === 2, cp);
+A.setDraft(Object.assign(App.data.draftDefaults(), { plz: '5303', regionId: 'nord' }));
+[2, 4, 5].forEach(w => { A.draftToggleDay(w); }); A.draftSetQty({ wd: 2 }, 'kaisersemmel', 5); A.draftSetQty({ wd: 2 }, 'laugenbreze', 2);
+sm = sel.draftSummary(store.getState());
+check('saving dauerhaft (Mi+Fr+Sa = 2,25), promo getrennt', Math.abs(sm.saving.perWeek - 2.25) < 1e-9 && sm.promo.wds.join() === '2,4' && sm.promo.weeks === 4 && Math.abs(sm.promo.perWeek - 3.5) < 1e-9, [sm.saving, sm.promo]);
 A.setDraft(App.data.draftDefaults());
 check('draft.sameForAll Standard true', store.getState().draft.sameForAll === true);
 
