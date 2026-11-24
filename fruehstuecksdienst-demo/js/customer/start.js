@@ -24,6 +24,7 @@
   const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || '').trim());
 
   /* ---------- Hilfen ---------- */
+  const hasPhoto = (id) => !!((App.photos && App.photos[id]) || (C.photos && C.photos[id]));
   function Section({ id, eyebrow, title, lead, tone, children, class: klass }) {
     return html`<section class=${cx('k-sec', tone && 'k-sec-' + tone, klass)} id=${id}>
       <div class="ui-wrap">
@@ -277,8 +278,8 @@
       { t: 'bis ' + hm(C.deadlineMin.weekday), h: 'Das Sackerl hängt an der Tür', p: 'Werktags bis ' + hm(C.deadlineMin.weekday) + ', am Wochenende bis ' + hm(C.deadlineMin.weekend) + '. Ablageort Ihrer Wahl, ohne Klingeln.' }
     ];
     return html`<${Section} id="k-ablauf" eyebrow="Ablauf" title="So funktioniert’s">
-      <div class="k-how">
-        <div class="k-how-photo"><${Photo} id="baecker" alt="Frisches Gebäck in der Backstube" ratio="4/3" /></div>
+      <div class=${cx('k-how', !hasPhoto('baecker') && 'k-how-solo')}>
+        ${hasPhoto('baecker') ? html`<div class="k-how-photo"><${Photo} id="baecker" alt="Frisches Gebäck in der Backstube" ratio="4/3" /></div>` : null}
         <ol class="k-steps">
           ${steps.map((st, i) => html`<li class="k-step" key=${i}>
             <span class="k-step-time">${st.t}</span>
@@ -426,12 +427,12 @@
     return html`<${Section} id="k-partner" eyebrow="Unsere Partner" title="Vom Bäcker und vom Hof">
       <div class="k-partners">
         <article class="k-partner">
-          <div class="k-partner-photo"><${Photo} id="baecker" alt="Backstube der Partnerbäckerei" ratio="3/2" /></div>
+          ${hasPhoto('baecker') ? html`<div class="k-partner-photo"><${Photo} id="baecker" alt="Backstube der Partnerbäckerei" ratio="3/2" /></div>` : null}
           <h3>Backstube Kornfeld</h3>
           <p>Familienbetrieb seit 1928 (Beispielname). Die Semmeln und Weckerl werden in der Nacht gebacken und gehen noch warm in Ihr Sackerl.</p>
         </article>
         <article class="k-partner">
-          <div class="k-partner-photo"><${Photo} id="hofladen" alt="Aufstriche und Milchprodukte aus dem Hofladen" ratio="3/2" /></div>
+          ${hasPhoto('hofladen') ? html`<div class="k-partner-photo"><${Photo} id="hofladen" alt="Aufstriche und Milchprodukte aus dem Hofladen" ratio="3/2" /></div>` : null}
           <h3>Hofladen-Extras</h3>
           <p>Butter, Marmelade, Honig, Eier, Käse und Milch aus der Region. Gekühlte Waren kommen im Kühlsackerl.</p>
           <ul class="k-extras">${extras.map(p => html`<li key=${p.id}><${Photo} id=${p.id} alt="" ratio="1/1" /><span>${p.name}</span></li>`)}</ul>
@@ -472,7 +473,7 @@
     return html`<${Section} id="k-buero" eyebrow="Für Büro und Geschenk" title="Frühstück für andere">
       <div class="k-duo">
         <article class="k-duo-card">
-          <div class="k-duo-photo"><${Photo} id="buero" alt="Gedeckter Frühstückstisch im Büro" ratio="3/2" /></div>
+          ${hasPhoto('buero') ? html`<div class="k-duo-photo"><${Photo} id="buero" alt="Gedeckter Frühstückstisch im Büro" ratio="3/2" /></div>` : null}
           <div class="k-duo-body">
             <h3>Büro-Frühstück${office ? ' für 10' : ''}</h3>
             <p>Gebäck, Aufstriche und Getränke für das Team${office ? ', ab ' + eur(office.price) : ''}. Als Einmallieferung zum Meeting oder regelmäßig am Montag.</p>
@@ -480,7 +481,7 @@
           </div>
         </article>
         <article class="k-duo-card">
-          <div class="k-duo-photo"><${Photo} id="geschenk" alt="Verpacktes Frühstücks-Sackerl als Geschenk" ratio="3/2" /></div>
+          ${hasPhoto('geschenk') ? html`<div class="k-duo-photo"><${Photo} id="geschenk" alt="Verpacktes Frühstücks-Sackerl als Geschenk" ratio="3/2" /></div>` : null}
           <div class="k-duo-body">
             <h3>Frühstück verschenken</h3>
             <p>Ein Sonntagsfrühstück${gift ? ' (' + eur(gift.price) + ')' : ''} für Eltern, Freunde oder zum Geburtstag. Wählen Sie die Einmallieferung und geben Sie bei der Bestellung die Adresse der Beschenkten an.</p>
