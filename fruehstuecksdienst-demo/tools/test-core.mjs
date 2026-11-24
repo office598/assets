@@ -161,11 +161,20 @@ check('regionStats.households > 0', rs.households > 0 && rs.deliveriesPerWeek ==
 // --- Wirtschaftlichkeit
 check('pieces', sel.pieces({ kaisersemmel: 4, bauernbrot: 1 }) === 5 && sel.pieces({}) === 0);
 const te = sel.tourEconomics(s0, 'nord', '2026-11-30', 2);
+const mixAvgStop = s0.subs.filter(x => sel.customer(s0, x.customerId).regionId === 'nord').reduce((a, x) => a + sel.pieces(x.items), 0) / 209;
 check('tourEconomics: Fahrer = Stück x 0,36', te.pieces > 100 && Math.abs(te.driverPay - te.pieces * 0.36) < 0.01 && te.stops === sel.stopsOn(s0, 'nord', '2026-11-30').length &&
   te.perDriver.length === 2 && te.perDriver[0].pieces + te.perDriver[1].pieces === te.pieces && Math.abs(te.perDriver[0].pay - te.perDriver[0].pieces * 0.36) < 0.01 &&
   Math.abs(te.margin - (te.productRevenue + te.fees - te.goodsCost - te.driverPay)) < 0.011, te);
 const teSat = sel.tourEconomics(s0, 'nord', '2026-11-28');
 check('tourEconomics: Wochenendgebühr netto 2,50', Math.abs(teSat.fees / teSat.stops - 2.75 / 1.1) < 0.25, teSat.fees / teSat.stops);
+check('perDriver: afterKm = Vergütung - km x kmCost', te.perDriver.every(d => d.km > 0 && Math.abs(d.afterKm - (d.pay - d.km * C.economics.kmCost)) < 0.011 && d.hours > 0 &&
+  Math.abs(d.perHour - d.afterKm / d.hours) < 0.06 && d.stopsPerKm > 0), te.perDriver);
+const we = sel.weekdayEconomics(s0, 'nord');
+check('weekdayEconomics: 7 Tage, Di je Stunde klar unter Mo', we.length === 7 && we.every((e, i) => e.wd === i && e.stops > 0) && we[1].perHour < we[0].perHour * 0.8 && we[1].businessMargin < we[0].businessMargin, we.map(e => [e.wd, e.stops, e.perHour]));
+const ms = sel.marginalStop(s0, 'nord');
+check('marginalStop: Fahrer = Stück je Stopp x 0,36', Math.abs(ms.driver - ms.pieces * 0.36) < 0.01 && Math.abs(ms.pieces - mixAvgStop) < 0.02 && ms.business > 0, ms);
+console.log('     weekdayEconomics nord (Tag Stopps km Marge Fahrer nachKm €/Std): ' + we.map(e => [T.WD[e.wd], e.stops, e.km, e.businessMargin, e.driverPay, e.afterKm, e.perHour].join(' ')).join(' | '));
+console.log('     marginalStop nord: ' + JSON.stringify(ms));
 const kp = sel.kpis(s0, 'nord');
 check('kpis: Deckungsbeitrag pro Woche', kp.weeklyMargin > 0 && Math.abs(kp.weeklyMargin - (kp.weeklyProductRevenue + kp.weeklyFees - kp.weeklyGoodsCost - kp.weeklyDriverPay)) < 0.02, kp);
 const avgPcs = (() => { let p = 0, n = 0; s0.subs.filter(x => sel.customer(s0, x.customerId).regionId === 'nord').forEach(x => { p += sel.pieces(x.items); n++; }); return p / n; })();

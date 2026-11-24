@@ -370,12 +370,30 @@
         fees += sel.feeFor(s, { mode: st.kinds.includes('abo') ? 'abo' : 'flex', wd, regionId, customerId: st.customerId, total });
       });
       pieces += pc;
-      return { driver: t.driver, stops: t.stops.length, pieces: pc, pay: round2(pc * pd) };
+      const pay = pc * pd, kmc = t.km * C.economics.kmCost, hours = Math.max(0, (t.endMin - t.startMin) / 60);
+      return { driver: t.driver, stops: t.stops.length, pieces: pc, pay: round2(pay), km: t.km, kmCost: round2(kmc), afterKm: round2(pay - kmc),
+        hours: Math.round(hours * 100) / 100, perHour: hours > 0 ? round2((pay - kmc) / hours) : 0, stopsPerKm: t.km > 0 ? Math.round(t.stops.length / t.km * 100) / 100 : 0 };
     });
     const driverPay = round2(pieces * pd);
     rev = net(rev); fees = net(fees);
     return { stops: plan.stops, pieces, productRevenue: round2(rev), fees: round2(fees), goodsCost: round2(goods), driverPay,
       margin: round2(rev + fees - goods - driverPay), perDriver };
+  };
+
+  sel.weekdayEconomics = (s, regionId) => [0, 1, 2, 3, 4, 5, 6].map(wd => {
+    const dateKey = T.nextDateForWeekday(wd), te = sel.tourEconomics(s, regionId, dateKey), n = te.perDriver.length || 1;
+    const avg = f => te.perDriver.reduce((a, d) => a + d[f], 0) / n;
+    const kmAvg = avg('km'), pay = avg('pay'), kmc = avg('kmCost'), hours = avg('hours');
+    return { wd, dateKey, drivers: te.perDriver.length, stops: te.stops, pieces: te.pieces, km: round2(kmAvg), businessMargin: te.margin,
+      driverPay: round2(pay), kmCost: round2(kmc), afterKm: round2(pay - kmc), hours: round2(hours), perHour: hours > 0 ? round2((pay - kmc) / hours) : 0 };
+  });
+
+  sel.marginalStop = (s, regionId) => {
+    const k = sel.kpis(s, regionId);
+    let pcs = 0;
+    s.subs.forEach(x => { const c = sel.customer(s, x.customerId); if (c && c.regionId === regionId && c.registered) pcs += sel.pieces(x.items); });
+    const n = k.weeklyStops || 1, pieces = pcs / n;
+    return { business: round2(k.weeklyMargin / n), driver: round2(pieces * C.economics.driverPerPiece), pieces: Math.round(pieces * 100) / 100 };
   };
 
   sel.forecastEnd = (s, regionId, wd, drivers) => {
