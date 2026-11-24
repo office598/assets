@@ -473,6 +473,13 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
 }
 .fd-demo-btn:hover { background: var(--surface-2); }
 .fd-demo-btn.is-shifted { border-color: var(--sun-text); background: var(--butter-soft); }
+/* kurze Beschriftungen in der Demo-Leiste auf schmalen Schirmen */
+.fd-l-short { display: none; }
+@media (max-width: 520px) {
+  .fd-l-long { display: none; } .fd-l-short { display: inline; }
+  .fd-clock-day { display: none; } .fd-demobar-in { gap: 8px; }
+  .fd-demo-roles .ui-seg button { padding: 0 10px; }
+}
 .fd-demo-reset { padding: 0; width: 36px; justify-content: center; }
 .fd-main { flex: 1 0 auto; display: flex; flex-direction: column; min-width: 0; }
 .fd-clock-list { display: flex; flex-direction: column; gap: 8px; }
