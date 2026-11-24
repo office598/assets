@@ -124,7 +124,8 @@ C.fees.freeDeliveryFrom = null;
 check('freeDeliveryMissing aus = 0', mkDraft({ 6: { kaisersemmel: 4 } })[0].freeDeliveryMissing === 0 && mkDraft({ 6: big })[0].fee === 2.75);
 check('Produkt-Flags bestseller/isNew', ['kaisersemmel', 'kornweckerl', 'buttercroissant', 'bauernbrot', 'teebutter', 'box-sonntag'].every(i => sel.product(s0, i).bestseller) &&
   ['dinkelweckerl', 'liptauer', 'box-nikolo'].every(i => sel.product(s0, i).isNew) && !sel.product(s0, 'laugenbreze').bestseller);
-check('Einkauf netto aus Konfiguration', Math.abs(sel.costOf(s0, sel.product(s0, 'kaisersemmel')) - 0.65 / 1.1 / 1.1 * 0.9) < 1e-3 && sel.product(s0, 'kaisersemmel').cost === sel.costOf(s0, sel.product(s0, 'kaisersemmel')) && Math.abs(sel.costOf(s0, sel.product(s0, 'teebutter')) - 2.9 / 1.1 * 0.7) < 1e-3);
+const ec = s0.economics, expCost = pr => (pr.cat === 'extras' ? pr.price / (1 + ec.vatRate) * ec.extrasCostShare : pr.price / (1 + ec.vatRate) / (1 + ec.shopMarkup) * (1 - ec.purchaseDiscount));
+check('Einkauf netto aus Konfiguration', ['kaisersemmel', 'teebutter', 'box-sonntag'].every(id => Math.abs(sel.costOf(s0, sel.product(s0, id)) - expCost(sel.product(s0, id))) < 1e-3 && Math.abs(sel.product(s0, id).cost - sel.costOf(s0, sel.product(s0, id))) < 1e-9) && ec.purchaseDiscount === C.economics.purchaseDiscount);
 check('Preise 8.7 und Allergene', sel.product(s0, 'kaisersemmel').price === 0.65 && sel.product(s0, 'box-familie').price === 27.9 &&
   s0.products.every(p => Array.isArray(p.allergens) && p.cost > 0 && p.cost < p.price) && sel.product(s0, 'buttercroissant').allergens.includes('G') && !!C.labels.allergens.A);
 const sb = sel.starterBags(s0);
@@ -174,11 +175,12 @@ check('setEconomics: Mindestvergütung 0 = reine Stückvergütung', sEco.economi
 A.setEconomics({ driverPerPiece: 0.5 });
 check('setEconomics: Satz je Stück wirkt in Selektoren', sel.unitMargin(store.getState(), sel.product(store.getState(), 'bauernbrot')) < sel.unitMargin(sEco, sel.product(sEco, 'bauernbrot')));
 const umBefore = sel.unitMargin(store.getState(), sel.product(store.getState(), 'kaisersemmel'));
+const costBefore = sel.costOf(store.getState(), sel.product(store.getState(), 'kaisersemmel'));
 const gmBefore = sel.offerCalc(store.getState(), store.getState().offers.find(o => o.id === 'semmel-5-1')).giftUnitMargin;
 A.updateProduct('kaisersemmel', { costOverride: 0.2 });
 const sCo = store.getState();
-check('costOverride: costOf, unitMargin, offerCalc', sel.costOf(sCo, sel.product(sCo, 'kaisersemmel')) === 0.2 && sel.unitMargin(sCo, sel.product(sCo, 'kaisersemmel')) > umBefore + 0.25 &&
-  sel.offerCalc(sCo, sCo.offers.find(o => o.id === 'semmel-5-1')).giftUnitMargin > gmBefore + 0.25, { umBefore, gmBefore });
+check('costOverride: costOf, unitMargin, offerCalc', sel.costOf(sCo, sel.product(sCo, 'kaisersemmel')) === 0.2 && Math.abs(sel.unitMargin(sCo, sel.product(sCo, 'kaisersemmel')) - (umBefore + costBefore - 0.2)) < 0.011 &&
+  sel.offerCalc(sCo, sCo.offers.find(o => o.id === 'semmel-5-1')).giftUnitMargin > gmBefore + (costBefore - 0.2) - 0.011, { umBefore, gmBefore, costBefore });
 A.resetDemo();
 check('resetDemo setzt Kalkulation zurück', store.getState().economics.driverMinPerTour === 50 && store.getState().economics.driverPerPiece === 0.36 && sel.product(store.getState(), 'kaisersemmel').costOverride === null);
 check('Mo mit 2 Fahrern: je mindestens 50', te2.perDriver.length === 2 && te2.perDriver.every(d => d.pay >= 50 && d.pay >= d.pieceBased - 0.01) && te2.perDriver[0].pieces + te2.perDriver[1].pieces === te2.pieces, te2.perDriver);

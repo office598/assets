@@ -1,0 +1,47 @@
+[
+ {
+  "id": "kaisersemmel",
+  "file": "img/p-kaisersemmel.jpg",
+  "title": "Kaisersemmel-.jpg",
+  "author": "Kobako",
+  "license": "CC BY-SA 2.5",
+  "source": "https://commons.wikimedia.org/wiki/File:Kaisersemmel-.jpg",
+  "standIn": false
+ },
+ {
+  "id": "handsemmel",
+  "file": "img/p-handsemmel.jpg",
+  "title": "Korb mit Brötchen.JPG",
+  "author": "3268zauber",
+  "license": "CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Korb_mit_Br%C3%B6tchen.JPG",
+  "standIn": true
+ },
+ {
+  "id": "kornweckerl",
+  "file": "img/p-kornweckerl.jpg",
+  "title": "Korb mit Brötchen.JPG",
+  "author": "3268zauber",
+  "license": "CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Korb_mit_Br%C3%B6tchen.JPG",
+  "standIn": true
+ },
+ {
+  "id": "salzstangerl",
+  "file": "img/p-salzstangerl.jpg",
+  "title": "Salzstangerl.jpg",
+  "author": "Anna reg",
+  "license": "CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Salzstangerl.jpg",
+  "standIn": false
+ },
+ {
+  "id": "mohnflesserl",
+  "file": "img/p-mohnflesserl.jpg",
+  "title": "Mohnflesserl.jpg",
+  "author": "MichaelAUT",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Mohnflesserl.jpg",
+  "standIn": false
+ }
+]

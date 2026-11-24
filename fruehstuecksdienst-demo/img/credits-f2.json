@@ -1,0 +1,101 @@
+[
+ {
+  "id": "bauernbrot",
+  "file": "p-bauernbrot.jpg",
+  "title": "Pain d'épeautre.jpg",
+  "author": "adactio",
+  "license": "CC BY 2.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Pain_d%27%C3%A9peautre.jpg",
+  "standIn": false
+ },
+ {
+  "id": "dinkelbrot",
+  "file": "p-dinkelbrot.jpg",
+  "title": "Dinkelbrot (4212924064).jpg",
+  "author": "Katrin Gilger",
+  "license": "CC BY-SA 2.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Dinkelbrot_(4212924064).jpg",
+  "standIn": false
+ },
+ {
+  "id": "nussbrot",
+  "file": "p-nussbrot.jpg",
+  "title": "Walnut baguette 1.jpg",
+  "author": "lazy fri13th",
+  "license": "CC BY 2.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Walnut_baguette_1.jpg",
+  "standIn": true
+ },
+ {
+  "id": "teebutter",
+  "file": "p-teebutter.jpg",
+  "title": "2023 Masło w maselniczce.jpg",
+  "author": "Jacek Halicki",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:2023_Mas%C5%82o_w_maselniczce.jpg",
+  "standIn": false
+ },
+ {
+  "id": "marillenmarmelade",
+  "file": "p-marillenmarmelade.jpg",
+  "title": "Aprikosenkonfitüre.jpg",
+  "author": "Liesbeth Lass",
+  "license": "CC BY-SA 3.0 de",
+  "source": "https://commons.wikimedia.org/wiki/File:Aprikosenkonfit%C3%BCre.jpg",
+  "standIn": false
+ },
+ {
+  "id": "beinschinken",
+  "file": "p-beinschinken.jpg",
+  "title": "Ham (4).jpg",
+  "author": "Renee Comet (Photographer)",
+  "license": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File:Ham_(4).jpg",
+  "standIn": true
+ },
+ {
+  "id": "bergkaese",
+  "file": "p-bergkaese.jpg",
+  "title": "Cheese retail portion Tiroler Bergkäse 2025-02-10 09.jpg",
+  "author": "Leonhard Lenz",
+  "license": "CC0",
+  "source": "https://commons.wikimedia.org/wiki/File:Cheese_retail_portion_Tiroler_Bergk%C3%A4se_2025-02-10_09.jpg",
+  "standIn": false
+ },
+ {
+  "id": "freilandeier",
+  "file": "p-freilandeier.jpg",
+  "title": "6-Pack-Chicken-Eggs.jpg",
+  "author": "Evan-Amos",
+  "license": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File:6-Pack-Chicken-Eggs.jpg",
+  "standIn": false
+ },
+ {
+  "id": "orangensaft",
+  "file": "p-orangensaft.jpg",
+  "title": "Orange juice without any fruits.jpg",
+  "author": "Flunse",
+  "license": "CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Orange_juice_without_any_fruits.jpg",
+  "standIn": false
+ },
+ {
+  "id": "liptauer",
+  "file": "p-liptauer.jpg",
+  "title": "Liptauer on bread in Austria.jpg",
+  "author": "FakirNL",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Liptauer_on_bread_in_Austria.jpg",
+  "standIn": false
+ },
+ {
+  "id": "roestkaffee",
+  "file": "p-roestkaffee.jpg",
+  "title": "Roasted coffee beans.jpg",
+  "author": "MarkSweep",
+  "license": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File:Roasted_coffee_beans.jpg",
+  "standIn": false
+ }
+]

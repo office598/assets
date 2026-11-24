@@ -1,0 +1,56 @@
+[
+ {
+  "id": "hero",
+  "file": "img/hero.jpg",
+  "title": "Freshly baked pastries with coffee and cookies on a table",
+  "author": "Shixart1985",
+  "license": "CC BY 2.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Freshly_baked_pastries_with_coffee_and_cookies_on_a_table.jpg",
+  "standIn": false
+ },
+ {
+  "id": "buero",
+  "file": "img/buero.jpg",
+  "title": "Panes y mermelada",
+  "author": "Luisfi",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Panes_y_mermelada.jpg",
+  "standIn": true
+ },
+ {
+  "id": "box-sonntag",
+  "file": "img/p-box-sonntag.jpg",
+  "title": "Panes y mermelada",
+  "author": "Luisfi",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Panes_y_mermelada.jpg",
+  "standIn": true
+ },
+ {
+  "id": "geschenk",
+  "file": "img/geschenk.jpg",
+  "title": "Aprikosenkonfitüre.jpg",
+  "author": "Liesbeth Lass",
+  "license": "CC BY-SA 3.0 de",
+  "source": "https://commons.wikimedia.org/wiki/File:Aprikosenkonfit%C3%BCre.jpg",
+  "standIn": true
+ },
+ {
+  "id": "buttercroissant",
+  "file": "img/p-buttercroissant.jpg",
+  "title": "MediasLunasenMardelPlata",
+  "author": "siehe Quelle",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:MediasLunasenMardelPlata.jpg",
+  "standIn": true
+ },
+ {
+  "id": "laugenbreze",
+  "file": "img/p-laugenbreze.jpg",
+  "title": "Pretzel Knot",
+  "author": "siehe Quelle",
+  "license": "CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Pretzel_Knot.jpg",
+  "standIn": false
+ }
+]
