@@ -46,10 +46,11 @@
       return st;
     } catch (e) { T.setOffset(0); return null; }
   }
+  // Gibt false zurück, wenn das Speichern scheitert (Speicherplatz voll, gesperrt); der Zustand im Speicher bleibt erhalten.
   function save() {
-    saveTimer = null;
-    if (!hasStorage() || !state) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ seedDay: state.seedDay, state })); } catch (e) { /* voll oder gesperrt */ }
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    if (!hasStorage() || !state) return true;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ seedDay: state.seedDay, state })); return true; } catch (e) { return false; }
   }
   function scheduleSave() {
     if (!hasStorage() || typeof setTimeout === 'undefined') return;
@@ -701,17 +702,38 @@
     return { households, deliveriesPerWeek: (aboCounts(s)[regionId] || []).reduce((a, b) => a + b, 0) };
   };
 
-  // ----- Navigation (Google Maps)
+  // ----- Zugangshilfe und Navigation (Google Maps)
+  const validLL = (lat, lng) => isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  sel.parseNavPoint = text => {
+    const str = String(text == null ? '' : text).trim();
+    if (!str) return null;
+    let src = str;
+    try { src = decodeURIComponent(str); } catch (e) { /* unverändert */ }
+    const num = '(-?\\d{1,3}\\.\\d+)';
+    const pats = [
+      new RegExp('^' + num + '\\s*[,;\\s]\\s*' + num + '$'),
+      new RegExp('@' + num + ',' + num),
+      new RegExp('[?&](?:q|ll|query|destination|center)=' + num + ',' + num)
+    ];
+    for (let i = 0; i < pats.length; i++) {
+      const m = src.match(pats[i]);
+      if (m) { const lat = parseFloat(m[1]), lng = parseFloat(m[2]); if (validLL(lat, lng)) return { lat, lng }; }
+    }
+    return null;
+  };
+  sel.hasAccessHelp = c => !!(c && c.access && ((c.access.directions || '').trim() || (c.access.photos || []).length || (c.access.code || '').trim() || c.access.navPoint));
   const addressOf = c => c.street + ' ' + c.houseNo + ', ' + c.plz + ' ' + c.city;
+  // Ziel schon URL-kodiert: Navigationspunkt als lat,lng, sonst die Adresse.
+  const targetOf = c => (c.access && c.access.navPoint ? c.access.navPoint.lat + ',' + c.access.navPoint.lng : encodeURIComponent(addressOf(c)));
   sel.mapsUrl = (s, customerId) => {
     const c = sel.customer(s, customerId);
-    return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(c ? addressOf(c) : '') + '&travelmode=driving';
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + (c ? targetOf(c) : '') + '&travelmode=driving';
   };
   sel.mapsRouteUrl = (s, customerIds) => {
-    const list = customerIds.slice(0, 10).map(id => sel.customer(s, id)).filter(Boolean).map(addressOf);
+    const list = customerIds.slice(0, 10).map(id => sel.customer(s, id)).filter(Boolean).map(targetOf);
     if (!list.length) return '';
-    let url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(list[list.length - 1]);
-    if (list.length > 1) url += '&waypoints=' + encodeURIComponent(list.slice(0, -1).join('|'));
+    let url = 'https://www.google.com/maps/dir/?api=1&destination=' + list[list.length - 1];
+    if (list.length > 1) url += '&waypoints=' + list.slice(0, -1).join('%7C');
     return url + '&travelmode=driving';
   };
 
@@ -830,6 +852,31 @@
     const abo = Object.assign({}, d.abo);
     wds.forEach(w => { abo[w] = bagFor(s, w, swap(abo[w] || {})); });
     setDraftPatch({ abo });
+  };
+  // ----- Zugangshilfe
+  const accessOf = c => Object.assign(App.data.emptyAccess(), c.access || {});
+  A.setAccess = (cid, patch) => {
+    const c = sel.customer(get(), cid);
+    if (!c) return false;
+    const acc = Object.assign(accessOf(c), patch, { updatedAt: nowIso(), updatedBy: (patch && patch.updatedBy) || accessOf(c).updatedBy || '' });
+    setState({ customers: mapBy(get().customers, cid, x => Object.assign({}, x, { access: acc })) });
+    return true;
+  };
+  A.addAccessPhoto = (cid, o) => {
+    const c = sel.customer(get(), cid);
+    if (!c || !o || !o.dataUrl) return { ok: false, reason: 'invalid' };
+    const id = newId('ph'), acc = accessOf(c);
+    const photo = { id, dataUrl: o.dataUrl, caption: o.caption || '', addedBy: o.addedBy || 'fahrer', at: nowIso() };
+    const next = Object.assign({}, acc, { photos: acc.photos.concat([photo]).slice(-3), updatedAt: photo.at, updatedBy: photo.addedBy });
+    setState({ customers: mapBy(get().customers, cid, x => Object.assign({}, x, { access: next })) });
+    return save() ? { ok: true, id } : { ok: false, reason: 'storage' };
+  };
+  A.removeAccessPhoto = (cid, photoId) => {
+    const c = sel.customer(get(), cid);
+    if (!c) return false;
+    const acc = accessOf(c);
+    setState({ customers: mapBy(get().customers, cid, x => Object.assign({}, x, { access: Object.assign({}, acc, { photos: acc.photos.filter(p => p.id !== photoId), updatedAt: nowIso() }) })) });
+    return true;
   };
   A.setEconomics = patch => setState({ economics: Object.assign({}, get().economics, patch) });
   A.setWeeklySpecial = patch => setState({ weeklySpecial: Object.assign({}, get().weeklySpecial, patch) });

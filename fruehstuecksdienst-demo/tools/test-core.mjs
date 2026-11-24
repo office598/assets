@@ -312,6 +312,31 @@ check('markStop problem erzeugt Hinweis', !!pn && pn.kind === 'delivery' && pn.c
 A.undoStop('2026-11-25', 'c-huber');
 check('undoStop entfernt Hinweis', !sel.inbox(store.getState(), 'c-huber').some(n => n.title === 'Hinweis zu Ihrer Lieferung'));
 
+// --- Zugangshilfe (8.15)
+const pn1 = sel.parseNavPoint;
+eq('parseNavPoint: Koordinaten', pn1('47.8412, 13.2513'), { lat: 47.8412, lng: 13.2513 });
+eq('parseNavPoint: @lat,lng-Link', pn1('https://www.google.com/maps/place/Thalgau/@47.8412,13.2513,17z/data=x'), { lat: 47.8412, lng: 13.2513 });
+eq('parseNavPoint: q=lat,lng', pn1('https://maps.google.com/?q=47.8412,13.2513'), { lat: 47.8412, lng: 13.2513 });
+eq('parseNavPoint: q mit %2C', pn1('https://maps.google.com/?q=47.8412%2C13.2513'), { lat: 47.8412, lng: 13.2513 });
+check('parseNavPoint: Müll -> null', pn1('hallo') === null && pn1('') === null && pn1('99.1, 13.2') === null && pn1(null) === null);
+const withAcc = store.getState().customers.filter(c => sel.hasAccessHelp(c));
+check('Seed: vier nord-Kunden mit Zugangshilfe, einer mit Code', withAcc.length === 4 && withAcc.every(c => c.regionId === 'nord' && c.access.directions) && withAcc.filter(c => c.access.code === 'Tor 2580').length === 1 && !sel.hasAccessHelp(sel.customer(store.getState(), 'c-huber')));
+A.setAccess('c-huber', { navPoint: { lat: 47.8412, lng: 13.2513, label: 'Eingang' }, code: '1234', updatedBy: 'fahrer' });
+const hc = sel.customer(store.getState(), 'c-huber');
+check('setAccess + hasAccessHelp', sel.hasAccessHelp(hc) && hc.access.code === '1234' && hc.access.updatedBy === 'fahrer' && !!hc.access.updatedAt);
+check('mapsUrl nutzt navPoint', sel.mapsUrl(store.getState(), 'c-huber') === 'https://www.google.com/maps/dir/?api=1&destination=47.8412,13.2513&travelmode=driving' && sel.mapsRouteUrl(store.getState(), ['c-huber', 'me']).includes('destination=') &&
+  sel.mapsRouteUrl(store.getState(), ['me', 'c-huber']).includes('waypoints=') && sel.mapsRouteUrl(store.getState(), ['me', 'c-huber']).includes('destination=47.8412,13.2513'));
+const phIds = [1, 2, 3, 4].map(i => A.addAccessPhoto('c-huber', { dataUrl: 'data:image/jpeg;base64,AAA' + i, caption: 'Foto ' + i, addedBy: 'kunde' }));
+const ph = sel.customer(store.getState(), 'c-huber').access.photos;
+check('Fotos: höchstens 3, ältestes fällt heraus', phIds.every(r => r.ok && r.id) && ph.length === 3 && ph[0].caption === 'Foto 2' && ph[2].addedBy === 'kunde');
+A.removeAccessPhoto('c-huber', ph[0].id);
+check('removeAccessPhoto', sel.customer(store.getState(), 'c-huber').access.photos.length === 2);
+// Speicher voll: Zustand bleibt, Rückgabe meldet storage
+globalThis.localStorage = { getItem: () => null, setItem: () => { throw new Error('QuotaExceededError'); }, removeItem() {} };
+const full = A.addAccessPhoto('me', { dataUrl: 'data:image/jpeg;base64,ZZZ', caption: '', addedBy: 'kunde' });
+delete globalThis.localStorage;
+check('addAccessPhoto bei vollem Speicher', full.ok === false && full.reason === 'storage' && sel.customer(store.getState(), 'me').access.photos.length === 1);
+
 // --- Aussetzen, Pause, Abo bearbeiten
 A.skipDate('c-huber', '2026-11-25');
 check('skipDate: Stopp entfällt', !sel.stopsOn(store.getState(), 'nord', '2026-11-25').some(x => x.customerId === 'c-huber'));

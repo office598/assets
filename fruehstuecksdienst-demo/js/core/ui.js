@@ -33,6 +33,11 @@
         Reserviert beim Einhängen automatisch Platz (Klasse has-bagbar am body). Als letztes Element der View rendern.
    PushBanner({ notification, onOpen, onClose })   Benachrichtigung im Handy-Stil; Position setzt der Aufrufer.
    (Seite ist nur hell: --night/--on-night/--night-2 sind helle Flächen/Espresso-Text, ui-band-night = warme helle Fläche.)
+   AccessView({ customer, compact })   Zugangshilfe einer Adresse (Wegbeschreibung, Code, Navigationspunkt, Foto-Vorschauen; Tippen öffnet das Foto groß).
+        Liest customer.access; ohne Inhalt ein ruhiger Hinweis (Aufrufer prüft vorher App.sel.hasAccessHelp). compact = kleinere Fotos, kürzere Zeilen.
+   AccessEditor({ customerId, addedBy:'fahrer'|'kunde'|'backoffice', onDone })   Bearbeiten: Wegbeschreibung, Code, Navigationspunkt (Link/Koordinaten mit
+        Rückmeldung „erkannt: …“), Fotos (Kamera/Galerie, im Browser auf 1024 px verkleinert), Bildunterschriften, Löschen; Speichern → Toast „Für alle Fahrer gespeichert“.
+   AccessSheet({ open, onClose, customerId, addedBy, title })   Sheet mit AccessEditor (Standardfall).
    Empty({ icon, title, text, action })   Leerzustand; action = fertiger Knopf (vnode).
    Countdown({ to })   „noch 2 Std 13 Min“ bis Date/ms/ISO-String; aktualisiert sich selbst.
    Logo({ onNight, size=22 })   Marke + Wortmarke.
@@ -473,6 +478,114 @@
     </div>`;
   }
 
+
+  /* ---------- Zugangshilfe ---------- */
+  const fmtCoord = (n) => Number(n).toFixed(4).replace('.', ',');
+  const navText = (np) => np ? fmtCoord(np.lat) + ' · ' + fmtCoord(np.lng) : '';
+
+  function AccessView({ customer, compact }) {
+    const [big, setBig] = useState(null);
+    const a = customer && customer.access;
+    if (!a || !((a.directions && a.directions.trim()) || a.code || a.navPoint || (a.photos && a.photos.length))) {
+      return html`<p class="ui-muted ui-access-none">Noch keine Hilfe hinterlegt.</p>`;
+    }
+    return html`<div class=${cx('ui-access', compact && 'ui-access-compact')}>
+      ${a.directions ? html`<div class="ui-access-row"><${Icon} name="route" size=${20} /><p>${a.directions}</p></div>` : null}
+      ${a.code ? html`<div class="ui-access-row"><${Icon} name="lock" size=${20} /><p>Code: <strong class="ui-mono">${a.code}</strong></p></div>` : null}
+      ${a.navPoint ? html`<div class="ui-access-row"><${Icon} name="pin" size=${20} /><p>Navigationspunkt: <span class="ui-mono">${navText(a.navPoint)}</span>${a.navPoint.label ? ' · ' + a.navPoint.label : ''}</p></div>` : null}
+      ${a.photos && a.photos.length ? html`<div class="ui-access-photos">${a.photos.map(ph => html`<button type="button" class="ui-access-thumb" key=${ph.id} onClick=${() => setBig(ph)} aria-label=${'Foto vergrößern' + (ph.caption ? ': ' + ph.caption : '')}>
+        <img src=${ph.dataUrl} alt=${ph.caption || 'Foto vom Zugang'} />${ph.caption ? html`<span>${ph.caption}</span>` : null}</button>`)}</div>` : null}
+      <${Sheet} open=${!!big} onClose=${() => setBig(null)} title=${big && big.caption ? big.caption : 'Foto vom Zugang'} wide>
+        ${big ? html`<img class="ui-access-big" src=${big.dataUrl} alt=${big.caption || 'Foto vom Zugang'} />` : null}
+      <//>
+    </div>`;
+  }
+
+  function downscale(file, max = 1024, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          resolve(c.toDataURL('image/jpeg', quality));
+        } catch (e) { URL.revokeObjectURL(url); reject(e); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bild nicht lesbar')); };
+      img.src = url;
+    });
+  }
+
+  function AccessEditor({ customerId, addedBy = 'kunde', onDone }) {
+    const s = App.useStore();
+    const c = (s.customers || []).find(x => x.id === customerId);
+    const a = (c && c.access) || { directions: '', photos: [], navPoint: null, code: '' };
+    const [dir, setDir] = useState(a.directions || '');
+    const [code, setCode] = useState(a.code || '');
+    const [nav, setNav] = useState(a.navPoint ? fmtCoord(a.navPoint.lat) + ', ' + fmtCoord(a.navPoint.lng) : '');
+    const [caps, setCaps] = useState({});
+    const [err, setErr] = useState('');
+    const [busy, setBusy] = useState(false);
+    const idp = 'acc-' + customerId;
+    if (!c) return null;
+    const parse = (t) => (App.sel && App.sel.parseNavPoint ? App.sel.parseNavPoint(t) : null);
+    const parsed = nav.trim() ? parse(nav) : null;
+    const navErr = nav.trim() && !parsed ? 'Das habe ich nicht erkannt. Fügen Sie einen Google-Maps-Link oder Koordinaten wie 47.8412, 13.2513 ein.' : '';
+
+    const onFile = async (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      setBusy(true); setErr('');
+      try {
+        const dataUrl = await downscale(f);
+        const r = App.actions.addAccessPhoto(customerId, { dataUrl, caption: '', addedBy });
+        if (r && r.ok === false) setErr(r.reason === 'storage' ? 'Das Foto ist zu groß für den Speicher dieses Browsers. Bitte löschen Sie ein anderes Foto oder versuchen Sie es mit einem kleineren Bild.' : 'Das Foto konnte nicht gespeichert werden.');
+      } catch (x) { setErr('Das Foto konnte nicht gelesen werden. Bitte versuchen Sie es noch einmal.'); }
+      setBusy(false);
+    };
+    const save = () => {
+      if (navErr) { setErr(navErr); return; }
+      const photos = (a.photos || []).map(p => (caps[p.id] !== undefined ? { ...p, caption: caps[p.id] } : p));
+      const navPoint = parsed ? { lat: parsed.lat, lng: parsed.lng, label: (a.navPoint && a.navPoint.label) || parsed.label || '' } : null;
+      App.actions.setAccess(customerId, { directions: dir.trim(), code: code.trim(), navPoint, photos, updatedBy: addedBy });
+      toast('Für alle Fahrer gespeichert', 'ok');
+      if (onDone) onDone();
+    };
+    return html`<div class="ui-stack ui-access-editor" style="--gap:18px">
+      <${Field} id=${idp + '-dir'} as="textarea" label="Wegbeschreibung" placeholder="z. B. zweites Haus links nach dem Spielplatz, graue Haustür" value=${dir} onInput=${(e) => setDir(e.target.value)} />
+      <${Field} id=${idp + '-code'} label="Code oder Hinweis zum Tor (optional)" placeholder="z. B. Tor 2580" value=${code} onInput=${(e) => setCode(e.target.value)} />
+      <div>
+        <${Field} id=${idp + '-nav'} label="Navigationspunkt (optional)" hint="Google findet die Adresse nicht? Standort-Link oder Koordinaten einfügen." placeholder="https://maps.google.com/… oder 47.8412, 13.2513"
+          value=${nav} error=${navErr} onInput=${(e) => setNav(e.target.value)} />
+        ${parsed ? html`<div class="ui-access-ok"><${Icon} name="check" size=${16} /> erkannt: ${navText(parsed)}</div>` : null}
+      </div>
+      <div class="ui-stack" style="--gap:10px">
+        <div class="ui-label">Fotos (höchstens 3)</div>
+        ${(a.photos || []).map(p => html`<div class="ui-access-edit-photo" key=${p.id}>
+          <img src=${p.dataUrl} alt=${p.caption || 'Foto vom Zugang'} />
+          <div class="ui-grow"><${Field} id=${idp + '-cap-' + p.id} label="Bildunterschrift" placeholder="z. B. Eingang links" value=${caps[p.id] !== undefined ? caps[p.id] : (p.caption || '')} onInput=${(e) => setCaps({ ...caps, [p.id]: e.target.value })} /></div>
+          <${Btn} variant="quiet" size="sm" icon="trash" aria-label="Foto löschen" onClick=${() => App.actions.removeAccessPhoto(customerId, p.id)} />
+        </div>`)}
+        <label class="ui-btn ui-btn-ghost ui-access-file" for=${idp + '-file'}><${Icon} name="plus" size=${22} />${busy ? 'Foto wird verarbeitet …' : 'Foto aufnehmen oder wählen'}
+          <input id=${idp + '-file'} class="ui-sr" type="file" accept="image/*" capture="environment" onChange=${onFile} disabled=${busy} /></label>
+      </div>
+      ${err ? html`<div class="ui-error-text" role="alert"><${Icon} name="alert" size=${16} /><span>${err}</span></div>` : null}
+      <div class="ui-row">
+        <${Btn} variant="sun" icon="check" onClick=${save}>Speichern<//>
+        ${onDone ? html`<${Btn} variant="ghost" onClick=${onDone}>Abbrechen<//>` : null}
+      </div>
+    </div>`;
+  }
+
+  function AccessSheet({ open, onClose, customerId, addedBy, title = 'Hilfe für den Fahrer' }) {
+    return html`<${Sheet} open=${open} onClose=${onClose} title=${title}>${open ? html`<${AccessEditor} customerId=${customerId} addedBy=${addedBy} onDone=${onClose} />` : null}<//>`;
+  }
+
   /* ---------- Fehlerkasten, Platzhalter ---------- */
   function ErrorBoundary({ name, children }) {
     const [err, reset] = useErrorBoundary((e) => { try { console.error('[' + (name || 'View') + ']', e); } catch (x) { /* egal */ } });
@@ -493,7 +606,7 @@
 
   App.ui = {
     cx, Icon, Btn, Pill, StatusPill, Chip, Sheet, ConfirmSheet, toast, ToastHost, Stepper, Segmented, Tabs, Field, Toggle,
-    DayTag, WeekStrip, Ticket, Photo, ProductCard, Bar, Kpi, Progress, BagBar, PushBanner, Empty, Countdown, Logo, Accordion, ErrorBoundary, Placeholder,
+    DayTag, WeekStrip, Ticket, Photo, ProductCard, Bar, Kpi, Progress, BagBar, PushBanner, Empty, Countdown, Logo, Accordion, AccessView, AccessEditor, AccessSheet, ErrorBoundary, Placeholder,
     ICON_NAMES: Object.keys(ICONS)
   };
 })(typeof window !== 'undefined' ? window : globalThis);

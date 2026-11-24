@@ -258,7 +258,7 @@
         note: o.note != null ? o.note : (nt ? nt.note : ''),
         email: slug(name) + '@mail.example',
         phone: '+43 660 55' + String(randInt(rng, 10000, 99999)),
-        since, notify: { push: rng() < 0.7, email: rng() < 0.8 }, kind, registered: true
+        since, notify: { push: rng() < 0.7, email: rng() < 0.8 }, kind, registered: true, access: emptyAccess()
       };
     }
     return { make };
@@ -387,6 +387,8 @@
   }
 
   // ---------------------------------------------------------------- Entwurf, Kapazität, Seed
+  const emptyAccess = () => ({ directions: '', photos: [], navPoint: null, code: '', updatedAt: null, updatedBy: '' });
+
   function draftDefaults() {
     return {
       plz: '', regionId: null, mode: 'abo', sameForAll: true, abo: {}, flexDate: null, flex: {}, target: null, step: 'plan',
@@ -407,6 +409,21 @@
     return out;
   }
 
+  // Wegbeschreibungen für vier Kunden in nord (ohne erfundene Koordinaten).
+  function seedAccess(customers) {
+    const texts = [
+      ['Neubau ohne Hausnummer: zweites Haus links nach dem Spielplatz, graue Haustür.', ''],
+      ['Kein Name an der Klingel – Sackerl in die Holzbox neben der Garage.', 'Tor 2580'],
+      ['Zufahrt über den Feldweg hinter dem Stadel, nicht über die Hauptstraße.', ''],
+      ['Hund im Garten, Sackerl ans Gartentor hängen.', '']
+    ];
+    const nord = customers.filter(c => c.regionId === 'nord' && c.registered && c.id !== 'c-huber' && c.kind === 'abo');
+    [3, 14, 27, 41].forEach((i, k) => {
+      if (!nord[i]) return;
+      nord[i].access = Object.assign(emptyAccess(), { directions: texts[k][0], code: texts[k][1], updatedAt: T.now().toISOString(), updatedBy: 'backoffice' });
+    });
+  }
+
   function seed() {
     const rng = mulberry32(20261141);
     const today = T.today();
@@ -416,9 +433,10 @@
     const me = {
       id: 'me', name: 'Besucher', street: '', houseNo: '', plz: '', city: '', regionId: null, x: 0, y: 0,
       placement: 'tuerschnalle', note: '', email: '', phone: '', since: today,
-      notify: { push: true, email: true }, kind: 'abo', registered: false
+      notify: { push: true, email: true }, kind: 'abo', registered: false, access: emptyAccess()
     };
     const customers = pop.customers.concat([me]);
+    seedAccess(customers);
     const flexOrders = buildFlexOrders(rng, today, pop.flexOnlyByRegion, products);
     // Beispiel für Aussetzer und Pause (nur unter der Woche, damit die Kalibrierung stabil bleibt)
     const skips = {};
@@ -438,5 +456,5 @@
     };
   }
 
-  App.data = { seed, draftDefaults, mulberry32, unitCost };
+  App.data = { seed, draftDefaults, emptyAccess, mulberry32, unitCost };
 })(typeof window !== 'undefined' ? window : globalThis);
