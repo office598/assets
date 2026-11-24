@@ -9,7 +9,7 @@
   const B = App.boA = App.boA || {};
   B.regionOf = s => s.regions.find(r => r.id === s.ui.boRegion) || s.regions[0];
   B.go = (view, patch) => App.actions.setUi(Object.assign({ backofficeView: view }, patch || {}));
-  B.head = (title, sub, right) => html`<div class="bo-head"><div class="ui-grow"><h1>${title}</h1>${sub ? html`<p class="ui-muted">${sub}</p>` : null}</div>${right || null}</div>`;
+  B.head = (title, sub, right) => html`<div class="bo-hd"><div class="ui-grow"><h1>${title}</h1>${sub ? html`<p class="ui-muted">${sub}</p>` : null}</div>${right || null}</div>`;
   B.plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
   B.driversText = n => n + (n === 1 ? ' Fahrer' : ' Fahrern');
 
@@ -158,9 +158,9 @@
   function Orders({ s, region }) {
     const rows = latestOrders(s, region);
     if (!rows.length) return html`<${Empty} icon="bag" title="Noch keine Bestellungen" text="Neue Bestellungen aus der Kunden-App erscheinen hier." />`;
-    return html`<ul class="bo-orders">${rows.map((r, i) => html`<li key=${i} class="bo-order">
-      <span class="bo-order-time ui-mono">${T.fmt.rel(new Date(r.at))}</span>
-      <span class="bo-order-main"><strong>${r.name}</strong><span class="ui-muted">${r.text}</span></span>
+    return html`<ul class="bo-lorders">${rows.map((r, i) => html`<li key=${i} class="bo-lorder">
+      <span class="bo-lorder-time ui-mono">${T.fmt.rel(new Date(r.at))}</span>
+      <span class="bo-lorder-main"><strong>${r.name}</strong><span class="ui-muted">${r.text}</span></span>
       ${r.app ? html`<${Pill} tone="info" icon="phone">Kunden-App<//>` : html`<${Pill} tone="neutral">Einmalig<//>`}</li>`)}</ul>`;
   }
 

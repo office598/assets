@@ -87,39 +87,66 @@ check('flexInfo alreadyStop -> free', sel.flexInfo(s0, 'nord', '2026-11-28', 'c-
 check('upcoming c-huber: Mi, Sa, So', hubSub.length === 3 && hubSub.map(x => x.wd).join() === '2,5,6' && hubSub[0].changeable === true, hubSub.map(x => x.dateKey));
 
 // --- Preise und Mengenaktionen
-const six = sel.priceBag(s0, { kaisersemmel: 6 }, { wd: 0 });
-check('priceBag: 6 Kaisersemmeln -> eine gratis', six.discounts.length === 1 && six.discounts[0].freeQty === 1 && Math.abs(six.total - 2.75) < 1e-9, six);
-check('priceBag: 5 Kaisersemmeln -> Hinweis', sel.priceBag(s0, { kaisersemmel: 5 }, { wd: 0 }).hints.length === 1);
-check('priceBag: Croissants nur Di-Fr', sel.priceBag(s0, { buttercroissant: 3 }, { wd: 1 }).discounts.length === 1 && sel.priceBag(s0, { buttercroissant: 3 }, { wd: 5 }).discounts.length === 0);
-eq('priceOf ohne Rabatt', sel.priceOf(s0, { kaisersemmel: 6 }), 3.3);
+const on = ids => Object.assign({}, s0, { offers: s0.offers.map(o => (ids.includes(o.id) ? Object.assign({}, o, { active: true }) : o)) });
+const s1 = on(['semmel-5-1', 'croissant-2-1']);
+eq('Seed-Aktionen: aktiv', s0.offers.map(o => [o.id, o.active]), [['brot-dazu', true], ['butter-marmelade', true], ['semmel-5-1', false], ['croissant-2-1', false]]);
+const six = sel.priceBag(s1, { kaisersemmel: 6 }, { wd: 0 });
+check('priceBag: 6 Kaisersemmeln -> eine gratis (Aktion an)', six.discounts.length === 1 && six.discounts[0].freeQty === 1 && Math.abs(six.total - 3.25) < 1e-9, six);
+check('priceBag: Aktion aus -> kein Rabatt', sel.priceBag(s0, { kaisersemmel: 6 }, { wd: 0 }).discounts.length === 0);
+check('priceBag: 5 Kaisersemmeln -> Hinweis', sel.priceBag(s1, { kaisersemmel: 5 }, { wd: 0 }).hints.some(h => h.offerId === 'semmel-5-1'));
+check('priceBag: Croissants nur Di-Fr', sel.priceBag(s1, { buttercroissant: 3 }, { wd: 1 }).discounts.length === 1 && sel.priceBag(s1, { buttercroissant: 3 }, { wd: 5 }).discounts.length === 0);
+const bd10 = sel.priceBag(s0, { kaisersemmel: 4, bauernbrot: 1 }, { wd: 2 });
+check('priceBag: Bauernbrot -10 % bei 4 Semmeln', bd10.discounts.length === 1 && Math.abs(bd10.discounts[0].amount - 0.32) < 1e-9 && Math.abs(bd10.total - (2.6 + 3.2 - 0.32)) < 1e-9, bd10);
+check('Hinweistext Prozent-Aktion', sel.priceBag(s0, { kaisersemmel: 4 }, { wd: 2 }).hints.some(h => h.text === 'Bauernbrot dazu: −10 %'));
+eq('priceOf ohne Rabatt', sel.priceOf(s0, { kaisersemmel: 6 }), 3.9);
 eq('itemsText', sel.itemsText(s0, { kaisersemmel: 4, buttercroissant: 2 }), '4 Kaisersemmeln, 2 Buttercroissants');
-check('offersForProduct Etikett', sel.offersForProduct(s0, 'kaisersemmel', 0)[0].badge === '5 + 1 gratis');
-const oc = sel.offerCalc(s0, s0.offers[0]);
-check('offerCalc plausibel', oc.normalMargin > oc.offerMargin && oc.offerMargin > 0 && oc.breakEvenUpliftPct > 0 && oc.marginDropPct > 0, oc);
-check('feeFor: Neukunde Di gratis, Bestandskunde nicht', sel.feeFor(s0, { mode: 'abo', wd: 1, regionId: 'nord', customerId: 'me' }) === 0 &&
-  sel.feeFor(s0, { mode: 'abo', wd: 1, regionId: 'nord', customerId: 'c-huber' }) === 1.2 && sel.feeFor(s0, { mode: 'flex', wd: 1, regionId: 'nord', customerId: 'me' }) === 2.4);
-check('mapsUrl enthält kodierte Adresse', sel.mapsUrl(s0, 'c-huber') === 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent('Lindenweg 12, 5303 Thalgau') + '&travelmode=driving', sel.mapsUrl(s0, 'c-huber'));
-const ru = sel.mapsRouteUrl(s0, ['c-huber', 'me']);
-check('mapsRouteUrl Waypoints', ru.includes('waypoints=') && ru.includes('destination='));
-
-// --- Verkaufsförderung
-const fr = o => sel.feeFor(s0, Object.assign({ mode: 'abo', wd: 5, regionId: 'nord', customerId: 'c-huber' }, o));
-check('Gratis-Zustellung ab 15 EUR', C.fees.freeDeliveryFrom === 15 && fr({ total: 15 }) === 0 && fr({ total: 14.99 }) === 1.2 && fr({ mode: 'flex', total: 20 }) === 0 && fr({}) === 1.2);
+check('offersForProduct Etikett', sel.offersForProduct(s1, 'kaisersemmel', 0).some(o => o.badge === '5 + 1 gratis'));
+const ocLoss = sel.offerCalc(s0, s0.offers.find(o => o.id === 'semmel-5-1'));
+const ocGain = sel.offerCalc(s0, s0.offers.find(o => o.id === 'brot-dazu'));
+check("offerCalc(semmel-5-1).verdict === 'loss'", ocLoss.verdict === 'loss' && ocLoss.giftUnitMargin < 0 && ocLoss.deltaPerBundle < 0 && ocLoss.driverPerPiece === 0.36 && ocLoss.discountPerUnit === 0.65, ocLoss);
+check("offerCalc(brot-dazu).verdict === 'gain'", ocGain.verdict === 'gain' && ocGain.giftUnitMargin > 0 && ocGain.deltaPerBundle > 0 && ocGain.breakEvenUpliftPct === null, ocGain);
+check('offerCalc: Felder', ['normalRevenue', 'normalCost', 'normalMargin', 'offerRevenue', 'offerCost', 'offerMargin', 'marginDropPct'].every(k => k in ocLoss));
+const fr = o => sel.feeFor(s0, Object.assign({ mode: 'abo', wd: 3, regionId: 'nord', customerId: 'c-huber' }, o));
+check('Gebühren: Werktag/Wochenende, Abo/Einmalig', fr({}) === 1.75 && fr({ wd: 5 }) === 2.75 && fr({ mode: 'flex' }) === 2.5 && fr({ mode: 'flex', wd: 6 }) === 3.5 && C.fees.freeDeliveryFrom === null && fr({ total: 100 }) === 1.75);
+check('feeFor: Neukunde Di gratis, am Sa nicht', sel.feeFor(s0, { mode: 'abo', wd: 1, regionId: 'nord', customerId: 'me' }) === 0 && sel.feeFor(s0, { mode: 'abo', wd: 5, regionId: 'nord', customerId: 'me' }) === 2.75);
+C.fees.freeDeliveryFrom = 15;
+check('Gratis-Zustellung ab 15 EUR (wenn gesetzt)', fr({ total: 15 }) === 0 && fr({ total: 14.99 }) === 1.75 && fr({ mode: 'flex', total: 20 }) === 0);
 const big = { kaisersemmel: 5, buttercroissant: 3, bauernbrot: 3 };
-const dsFree = (() => { const st = Object.assign({}, s0, { draft: Object.assign({}, s0.draft, { regionId: 'nord', abo: { 5: big, 6: { kaisersemmel: 4 } } }) }); return sel.draftSummary(st).deliveries; })();
-check('draftSummary: freeDeliveryMissing', dsFree[0].fee === 0 && dsFree[0].freeDeliveryMissing === 0 && dsFree[1].freeDeliveryMissing > 0 && dsFree[1].fee > 0, dsFree);
+const mkDraft = ab => sel.draftSummary(Object.assign({}, s0, { draft: Object.assign({}, s0.draft, { regionId: 'nord', abo: ab }) })).deliveries;
+const dsFree = mkDraft({ 5: big, 6: { kaisersemmel: 4 } });
+check('draftSummary: freeDeliveryMissing', dsFree[0].fee === 0 && dsFree[0].freeDeliveryMissing === 0 && dsFree[1].freeDeliveryMissing > 12 && dsFree[1].fee === 2.75, dsFree);
+C.fees.freeDeliveryFrom = null;
+check('freeDeliveryMissing aus = 0', mkDraft({ 6: { kaisersemmel: 4 } })[0].freeDeliveryMissing === 0 && mkDraft({ 6: big })[0].fee === 2.75);
 check('Produkt-Flags bestseller/isNew', ['kaisersemmel', 'kornweckerl', 'buttercroissant', 'bauernbrot', 'teebutter', 'box-sonntag'].every(i => sel.product(s0, i).bestseller) &&
   ['dinkelweckerl', 'liptauer', 'box-nikolo'].every(i => sel.product(s0, i).isNew) && !sel.product(s0, 'laugenbreze').bestseller);
+check('Preise 8.7 und Allergene', sel.product(s0, 'kaisersemmel').price === 0.65 && sel.product(s0, 'box-familie').price === 27.9 &&
+  s0.products.every(p => Array.isArray(p.allergens) && p.cost > 0 && p.cost < p.price) && sel.product(s0, 'buttercroissant').allergens.includes('G') && !!C.labels.allergens.A);
 const sb = sel.starterBags(s0);
-check('starterBags: 3 Sackerl mit Summen', sb.length === 3 && sb.every(b => b.total > 0 && b.saving >= 0 && b.title) && sb[1].total === 8.8 && sb[2].total > sb[0].total, sb.map(b => [b.title, b.total, b.saving]));
-eq('starterBags Klassiker 4 Semmeln + 2 Kornweckerl', [sb[0].items, sb[0].total], [{ kaisersemmel: 4, kornweckerl: 2 }, 4.1]);
+check('starterBags: 3 Sackerl mit Summen', sb.length === 3 && sb.every(b => b.total > 0 && b.saving >= 0 && b.title) && sb[1].total === 10.2 && sb[2].total === 12.48, sb.map(b => [b.title, b.total, b.saving]));
+eq('starterBags Klassiker 4 Semmeln + 2 Kornweckerl', [sb[0].items, sb[0].total], [{ kaisersemmel: 4, kornweckerl: 2 }, 5.6]);
 check('suggestions: nie bereits im Sackerl', [{ kaisersemmel: 4 }, { buttercroissant: 2, marillenmarmelade: 1 }, { bauernbrot: 1, bergkaese: 1 }, {}].every(it =>
   { const r = sel.suggestions(s0, it, 3); return r.length > 0 && r.length <= 3 && r.every(p => !(it[p.id] > 0)); }));
 eq('suggestions Gebäck -> Teebutter zuerst', sel.suggestions(s0, { kaisersemmel: 4 }, 2).map(p => p.id), ['teebutter', 'marillenmarmelade']);
 const rs = sel.regionStats(s0, 'nord');
 check('regionStats.households > 0', rs.households > 0 && rs.deliveriesPerWeek === 345, rs);
 
+// --- Wirtschaftlichkeit
+check('pieces', sel.pieces({ kaisersemmel: 4, bauernbrot: 1 }) === 5 && sel.pieces({}) === 0);
+const te = sel.tourEconomics(s0, 'nord', '2026-11-30', 2);
+check('tourEconomics: Fahrer = Stück x 0,36', te.pieces > 100 && Math.abs(te.driverPay - te.pieces * 0.36) < 0.01 && te.stops === sel.stopsOn(s0, 'nord', '2026-11-30').length &&
+  te.perDriver.length === 2 && te.perDriver[0].pieces + te.perDriver[1].pieces === te.pieces && Math.abs(te.perDriver[0].pay - te.perDriver[0].pieces * 0.36) < 0.01 &&
+  Math.abs(te.margin - (te.productRevenue + te.fees - te.goodsCost - te.driverPay)) < 0.011, te);
+const teSat = sel.tourEconomics(s0, 'nord', '2026-11-28');
+check('tourEconomics: Wochenendgebühr 2,75', teSat.fees >= 2.75 * teSat.stops * 0.8, teSat.fees / teSat.stops);
+const kp = sel.kpis(s0, 'nord');
+check('kpis: Deckungsbeitrag pro Woche', kp.weeklyMargin > 0 && Math.abs(kp.weeklyMargin - (kp.weeklyProductRevenue + kp.weeklyFees - kp.weeklyGoodsCost - kp.weeklyDriverPay)) < 0.02, kp);
+console.log('     (nord Deckungsbeitrag/Woche: ' + kp.weeklyMargin + ', Umsatz ' + kp.weeklyProductRevenue + ', Gebühren ' + kp.weeklyFees + ', Ware ' + kp.weeklyGoodsCost + ', Fahrer ' + kp.weeklyDriverPay + ')');
+check('mapsUrl enthält kodierte Adresse', sel.mapsUrl(s0, 'c-huber') === 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent('Lindenweg 12, 5303 Thalgau') + '&travelmode=driving', sel.mapsUrl(s0, 'c-huber'));
+const ru = sel.mapsRouteUrl(s0, ['c-huber', 'me']);
+check('mapsRouteUrl Waypoints', ru.includes('waypoints=') && ru.includes('destination='));
+
 // --- Leitgeschichte
+A.toggleOffer('semmel-5-1', true); A.toggleOffer('croissant-2-1', true);
 A.draftCheckPlz('5303');
 eq('draft.regionId nord', store.getState().draft.regionId, 'nord');
 eq('Mo ausgebucht für Besucher', sel.dayStatusFor(store.getState(), 'nord', 0, 'me'), 'full');
@@ -201,7 +228,7 @@ check('Kampagnen: Ideen vorhanden', sel.campaignIdeas(store.getState(), 'nord').
 const sc = A.sendCampaign({ title: 'Test', body: 'Test', channel: 'push', segment: 'all' });
 check('sendCampaign', sc.recipients > 200 && store.getState().campaigns[0].title === 'Test');
 const sv = A.saveOffer({ title: 'Test', buy: { kind: 'cat', ref: 'suess', qty: 3 }, get: { productId: 'nussschnecke', qty: 1, pct: 50 } });
-check('saveOffer/toggle/delete', store.getState().offers.length === 4 && (A.toggleOffer(sv, false), !store.getState().offers.find(o => o.id === sv).active) && (A.deleteOffer(sv), store.getState().offers.length === 3));
+check('saveOffer/toggle/delete', store.getState().offers.length === 5 && (A.toggleOffer(sv, false), !store.getState().offers.find(o => o.id === sv).active) && (A.deleteOffer(sv), store.getState().offers.length === 4));
 
 // --- Store-API
 let called = 0;
@@ -212,7 +239,7 @@ check('subscribe/unsubscribe', called === 1);
 check('kpis', sel.kpis(store.getState(), 'nord').weeklyStops === 345 + 1 + 1 && sel.kpis(store.getState(), 'nord').utilMonday > 1 === false);
 A.resetDemo();
 s = store.getState();
-check('resetDemo: frischer Zustand', !sel.customer(s, 'me').registered && s.waitlist.length === 20 && s.subs.length === 345 + 246 && s.offers.length === 3 && s.clockPreset === 'echt');
+check('resetDemo: frischer Zustand', !sel.customer(s, 'me').registered && s.waitlist.length === 20 && s.subs.length === 345 + 246 && s.offers.length === 4 && !s.offers[2].active && s.clockPreset === 'echt');
 check('Seed deterministisch', JSON.stringify(App.data.seed()) === JSON.stringify(App.data.seed()));
 check('App.useStore existiert', typeof App.useStore === 'function');
 

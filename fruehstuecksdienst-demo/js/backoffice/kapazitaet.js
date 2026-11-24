@@ -107,7 +107,7 @@
     const d = App.config.capacityDefaults;
     return html`<div class="bo-page">
       ${B().head('Kapazität', region.name + ': Fahrer, Plätze und Tourende je Wochentag')}
-      ${region.planned ? html`<div class="ui-card-flat bo-note"><${Icon} name="info" size=${18} /><span>${region.name} ist noch in Planung. Die Werte gelten ab dem Start.</span></div>` : null}
+      ${region.planned ? html`<div class="ui-card-flat bo-nt"><${Icon} name="info" size=${18} /><span>${region.name} ist noch in Planung. Die Werte gelten ab dem Start.</span></div>` : null}
       <div class="ui-card bo-caps" role="table" aria-label="Kapazität je Wochentag">
         <div class="bo-cap-head" role="row"><span role="columnheader">Tag</span><span role="columnheader">Auslastung</span><span role="columnheader" class="c">Fahrer</span>
           <span role="columnheader" class="c">Stopps je Fahrer</span><span role="columnheader" class="c">Flex</span><span role="columnheader">Tourende / Frist</span><span role="columnheader" class="c">Wartende</span><span role="columnheader"></span></div>

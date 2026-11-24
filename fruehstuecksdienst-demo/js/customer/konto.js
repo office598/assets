@@ -229,8 +229,8 @@
       return html`<div class="k-konto"><h1 class="k-h1">Ihr Konto</h1>
         <${Switcher} cid=${cid} />
         <${Empty} icon="user" title="Noch kein Konto" text="Sobald Sie eine Bestellung aufgegeben haben, sehen Sie hier Ihre Lieferungen, können aussetzen, pausieren und Ihren Wochenplan ändern."
-          action=${html`<div class="ui-row" style="justify-content:center"><${Btn} variant="sun" icon="bag" onClick=${goPlan}>Lieferplan zusammenstellen<//>
-            <${Btn} variant="ghost" icon="user" onClick=${() => act().switchCustomer('c-huber')}>Demo: als Bestandskundin Maria Huber ansehen<//></div>`} />
+          action=${html`<div class="ui-stack" style="--gap:10px;align-items:stretch"><${Btn} variant="sun" icon="bag" onClick=${goPlan}>Lieferplan zusammenstellen<//>
+            <${Btn} variant="ghost" icon="user" onClick=${() => act().switchCustomer('c-huber')}>Demo: Bestandskundin Maria Huber ansehen<//></div>`} />
       </div>`;
     }
     const unread = sel().unreadPush ? s.notifications.filter(n => n.customerId === cid && !n.read).length : 0;

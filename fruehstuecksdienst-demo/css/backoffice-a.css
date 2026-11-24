@@ -1,20 +1,20 @@
 /* backoffice-a.css – V3: Übersicht, Kapazität, Warteliste, Kunden, Sortiment, Marketing. Nur Tokens aus base.css. */
 
 .bo-page { display: flex; flex-direction: column; gap: var(--s-4); min-width: 0; }
-.bo-head { display: flex; align-items: flex-end; gap: var(--s-3); flex-wrap: wrap; }
-.bo-head h1 { font-size: var(--fs-28); letter-spacing: -.025em; }
-.bo-head p { margin: 4px 0 0; }
+.bo-hd { display: flex; align-items: flex-end; gap: var(--s-3); flex-wrap: wrap; }
+.bo-hd h1 { font-size: var(--fs-28); letter-spacing: -.025em; }
+.bo-hd p { margin: 4px 0 0; }
 .bo-sec { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
 .bo-sec h2 { font-size: var(--fs-22); }
 .bo-sec h3 { font-size: var(--fs-18); }
 .bo-sec-sub { margin: -6px 0 0; font-size: 14px; }
-.bo-sec-head { display: flex; align-items: flex-start; gap: var(--s-3); flex-wrap: wrap; }
+.bo-sechd { display: flex; align-items: flex-start; gap: var(--s-3); flex-wrap: wrap; }
 .bo-sub { margin-top: var(--s-4); }
-.bo-grid2 { display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); }
+.bo-grid2 { align-items: start; display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1100px) { .bo-grid2 { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
 .bo-neg { color: var(--full); }
 .bo-pos { color: var(--ok); }
-.bo-note { display: flex; gap: 10px; align-items: center; }
+.bo-nt { display: flex; gap: 10px; align-items: center; }
 .bo-hint, .bo-count { margin: 0; font-size: 14px; }
 .bo-more { display: flex; justify-content: center; }
 .bo-click { cursor: pointer; }
@@ -73,16 +73,16 @@
 .bo-reco-info .bo-reco-ic { color: var(--info); }
 
 /* ---------- Heute zu tun, Bestellungen ---------- */
-.bo-todos, .bo-orders, .bo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.bo-todos, .bo-lorders, .bo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .bo-todo { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .bo-todo:first-child { border-top: 0; padding-top: 0; }
 .bo-todo-main { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; }
-.bo-order { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
-.bo-order:first-child { border-top: 0; padding-top: 0; }
-.bo-order-time { flex: none; width: 92px; font-size: 12px; color: var(--muted); }
-.bo-order-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.bo-order-main .ui-muted { font-size: 14px; }
-@media (max-width: 520px) { .bo-order { flex-wrap: wrap; } .bo-order-time { width: 100%; } }
+.bo-lorder { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.bo-lorder:first-child { border-top: 0; padding-top: 0; }
+.bo-lorder-time { flex: none; width: 92px; font-size: 12px; color: var(--muted); }
+.bo-lorder-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bo-lorder-main .ui-muted { font-size: 14px; }
+@media (max-width: 520px) { .bo-lorder { flex-wrap: wrap; } .bo-lorder-time { width: 100%; } }
 
 /* ---------- Kapazität ---------- */
 .bo-caps { padding: 0; overflow: hidden; }
@@ -171,7 +171,7 @@
 .bo-idea p { margin: 0; font-size: 14.5px; }
 .bo-composer { display: grid; gap: var(--s-5); grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1000px) { .bo-composer { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
-.bo-preview { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); border-radius: 14px; background: var(--surface-2); align-items: flex-start; }
+.bo-prev { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); border-radius: 14px; background: var(--surface-2); align-items: flex-start; }
 .bo-pushprev { width: 100%; max-width: 380px; }
 .bo-pushprev .ui-push { position: static; }
 .bo-mail { width: 100%; max-width: 480px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }

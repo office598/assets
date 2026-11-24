@@ -180,7 +180,7 @@
 .k-konto-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-3); }
 .k-switch { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; padding: 8px 12px; border: 1.5px dashed var(--kraft); border-radius: var(--r-ctl); background: var(--kraft-soft); color: var(--kraft-ink); }
 .k-switch-l { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
-.k-konto-tabs { margin: 0 calc(var(--gut-l) * -1) 0 calc(var(--gut-l) * -1); padding: 0 var(--gut-l); }
+.k-konto-tabs { min-width: 0; max-width: 100%; overflow: hidden; }
 .k-konto-body { min-width: 0; }
 .k-konto-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); align-items: start; }
 @media (min-width: 900px) { .k-konto-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
@@ -229,3 +229,5 @@
 .k-refer { background: var(--butter-soft); }
 
 @media (prefers-reduced-motion: reduce) { .k-bag, .k-reserved, .k-done-ic { animation: none; } .k-starter { transition: none; } }
+
+.k-konto .ui-btn, .k-lieferplan .ui-btn { white-space: normal; text-align: center; }

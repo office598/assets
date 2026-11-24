@@ -48,7 +48,7 @@
         <${Field} id="mk-seg" label="Empfänger" as="select" value=${draft.segment} onChange=${e => set({ segment: e.target.value })} options=${SEGMENTS}
           hint=${n + ' Empfänger in allen Gebieten. Im Demo-Postfach erhalten nur die zwei Demo-Konten die Nachricht.'} />
       </div>
-      <div class="bo-preview"><div class="ui-eyebrow">Vorschau</div>
+      <div class="bo-prev"><div class="ui-eyebrow">Vorschau</div>
         ${draft.channel === 'push' ? html`<div class="bo-pushprev"><${PushBanner} notification=${{ title: draft.title || '(ohne Titel)', body: draft.body || '(ohne Text)' }} /></div>`
           : html`<${EmailPreview} title=${draft.title} body=${draft.body} />`}
         <${Btn} variant="sun" icon="send" disabled=${!ok} onClick=${send}>An ${n} Empfänger senden<//>
@@ -168,7 +168,7 @@
     const [del, setDel] = useState(null);
     const blank = () => ({ title: '', active: true, buy: { kind: 'product', ref: 'kaisersemmel', qty: 5 }, get: { productId: 'kaisersemmel', qty: 1, pct: 100 }, weekdays: null, note: '' });
     return html`<section class="ui-card bo-sec" aria-labelledby="mk-h-offers">
-      <div class="bo-sec-head"><div class="ui-grow"><h2 id="mk-h-offers">Mengenaktionen</h2>
+      <div class="bo-sechd"><div class="ui-grow"><h2 id="mk-h-offers">Mengenaktionen</h2>
         <p class="ui-muted bo-sec-sub">Kaufanreize, die Kunden im Sortiment und im Lieferplan sehen. Die Kalkulation zeigt, ab wann sich eine Aktion lohnt.</p></div>
         <${Btn} size="sm" variant="sun" icon="plus" onClick=${() => setEdit(blank())}>Neue Aktion<//></div>
       <ul class="bo-offers">${s.offers.map(o => {

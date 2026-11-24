@@ -45,7 +45,7 @@
     const can = Math.max(0, Math.min(waiting, cap.status === 'open' ? cap.freeAbo : 0));
     const id = 'wl-' + wd;
     return html`<section class="ui-card bo-sec" aria-labelledby=${id}>
-      <div class="bo-sec-head"><div class="ui-grow"><h2 id=${id}>${T.WD_LONG[wd]}</h2>
+      <div class="bo-sechd"><div class="ui-grow"><h2 id=${id}>${T.WD_LONG[wd]}</h2>
         <p class="ui-muted bo-sec-sub">${B().plural(waiting, 'Person wartet', 'Personen warten')} · ${cap.abo} von ${cap.max} Plätzen belegt · ${cap.freeAbo > 0 ? cap.freeAbo + ' Abo-Plätze frei' : 'keine Abo-Plätze frei'}</p></div>
         <div class="ui-row">
           ${waiting && can > 0 ? html`<${Btn} size="sm" variant="ghost" onClick=${() => offer(region, wd, 1)}>Nächstem Platz anbieten<//>
@@ -69,7 +69,7 @@
         ${groups.map(({ r, list }) => {
           const need = r.neededPrereg || 0, n = list.filter(w => w.status === 'waiting' || w.status === 'notified').length;
           const ready = need > 0 && n >= need;
-          return html`<div key=${r.id} class="bo-prereg"><div class="bo-sec-head"><div class="ui-grow"><h3>${r.name}</h3>
+          return html`<div key=${r.id} class="bo-prereg"><div class="bo-sechd"><div class="ui-grow"><h3>${r.name}</h3>
             <div class="ui-muted">PLZ ${r.plz.join(', ')}</div></div>
             ${r.planned ? html`<${Btn} size="sm" variant=${ready ? 'sun' : 'ghost'} icon="bell" disabled=${!ready || !list.some(w => w.status === 'waiting')}
               onClick=${() => { const x = App.actions.notifyWaitlist(r.id, null); toast(x.notified + ' Vormerkungen benachrichtigt (' + x.push + ' Push, ' + x.email + ' E-Mail)', 'ok'); }}>Gebiet starten und benachrichtigen<//>` : null}</div>

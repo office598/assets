@@ -73,8 +73,7 @@
           <p class="ui-muted">Die Demo zeigt Ihnen die Nachricht, wenn das Backoffice den Tag wieder freigibt (Backoffice › Kapazität).</p>
         </div>`
         : html`<div class="ui-stack">
-          <p>${waiting ? waiting + (waiting === 1 ? ' Person wartet' : ' Personen warten') + ' in ' + (region ? region.name : 'Ihrem Gebiet') + ' bereits auf einen ' + dayName + '.' : 'Aktuell ist kein weiterer ' + dayName + '-Platz frei.'}
-            Sie hören von uns, sobald ein Platz frei wird. Er ist dann ${C.reserveHours} Stunden nur für Sie reserviert.</p>
+          <p>${waiting ? waiting + (waiting === 1 ? ' Person wartet' : ' Personen warten') + ' in ' + (region ? region.name : 'Ihrem Gebiet') + ' bereits auf einen ' + dayName + '.' : 'Aktuell ist kein weiterer ' + dayName + '-Platz frei.'}${' '}Sie hören von uns, sobald ein Platz frei wird. Er ist dann ${C.reserveHours} Stunden nur für Sie reserviert.</p>
           <div class="ui-field"><span class="ui-label" id="k-wl-channel-l">Wie sollen wir Sie benachrichtigen?</span>
             <${Segmented} label="Benachrichtigung" full value=${channel} onChange=${setChannel} options=${[{ value: 'push', label: 'Push in der App', icon: 'bell' }, { value: 'email', label: 'E-Mail', icon: 'mail' }]} /></div>
           ${channel === 'email'
@@ -222,7 +221,7 @@
         </div>
         <aside class="k-hero-ticket" aria-label="Beispiel Lieferzettel">
           <${Ticket} title="Lieferzettel" stamp="frisch" rows=${[['Lieferung', T.fmt.day(next)], ['Sackerl da', 'bis ' + hm(T.deadlineMin(next))], ['Ablage', 'Türschnalle'], ['Bestellschluss', T.fmt.rel(cut)]]}
-            footer=${html`<span>Bestellschluss: <${Countdown} to=${cut} /></span>`} />
+            footer=${html`<span>Noch Zeit: <${Countdown} to=${cut} /></span>`} />
         </aside>
       </div>
     </section>`;
