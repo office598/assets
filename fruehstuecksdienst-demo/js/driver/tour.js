@@ -85,8 +85,10 @@
     const problems = handled.filter((st) => st.delivery.status === 'problem').length;
     const lateMin = tour.endMin - plan.deadlineMin;
     const newSince = T.addDays(today, -14);
-    const recentDone = handled.slice(-3);
-    const doneShown = showDone ? handled : recentDone;
+    const probStops = handled.filter((st) => st.delivery.status === 'problem');
+    const okStops = handled.filter((st) => st.delivery.status !== 'problem');
+    const recentDone = okStops.slice(-3);
+    const doneShown = showDone ? okStops : recentDone;
 
     const loads = {};
     stops.forEach((st) => Object.keys(st.items).forEach((id) => { loads[id] = (loads[id] || 0) + st.items[id]; }));
@@ -95,8 +97,10 @@
 
     const E = s.economics, rate = E.driverPerPiece;
     const eco = App.sel.tourEconomics(s, regionId, date).perDriver[s.ui.driverIdx];
-    const doneStops = stops.filter((st) => st.delivery && st.delivery.status === 'delivered');
-    const piecesDone = doneStops.reduce((n, st) => n + pcs(st.items), 0);
+    const piecesDone = handled.reduce((n, st) => n + pcs(st.items), 0);
+    const complete = open.length === 0;
+    const earned = complete ? eco.pay : piecesDone * rate;
+    const toProblems = () => { const el = document.getElementById('fa-problems'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
     const piecesAll = stops.reduce((n, st) => n + pcs(st.items), 0);
     const markDone = (st) => App.actions.markStop(date, st.customerId, 'delivered');
     const routeIds = open.slice(0, 10).map((st) => st.customerId);
@@ -105,14 +109,14 @@
       ${seg}
       <section class="fa-head" aria-label="Fortschritt">
         <div class="fa-head-top"><div class="fa-prog"><b class="ui-mono">${handled.length}</b> von ${stops.length}</div>
-          <span class="ui-muted">erledigt${problems ? ' · ' + problems + (problems === 1 ? ' Problem' : ' Probleme') : ''}</span></div>
+          <span class="ui-muted">erledigt</span>${problems ? html`<button type="button" class="fa-probbtn" onClick=${toProblems}><${Icon} name="alert" size=${14} />${problems} ${problems === 1 ? 'Problem' : 'Probleme'} ansehen</button>` : null}</div>
         <${Bar} value=${handled.length} max=${stops.length} tone="ok" label="Fortschritt" />
         <div class="fa-head-facts">
           <div><span>Ende ca.</span><b class=${'ui-mono ' + (lateMin > 0 ? 'is-late' : '')}>${hm(tour.endMin)}</b></div>
           <div><span>Deadline</span><b class="ui-mono">${hm(plan.deadlineMin)}</b></div>
           <div><span>Start</span><b class="ui-mono">${hm(tour.startMin)}</b></div>
         </div>
-        ${html`<div class="fa-earn"><span>Ihr Verdienst heute</span><b class="ui-mono">${App.fmt.eur(piecesDone * rate)}</b><span class="ui-muted">von ca. ${App.fmt.eur(eco.pay)} · ${piecesDone} von ${piecesAll} Stück</span>
+        ${html`<div class="fa-earn"><span>Ihr Verdienst heute</span><b class="ui-mono">${App.fmt.eur(earned)}</b><span class="ui-muted">${complete ? 'Tour abgeschlossen' : 'von ca. ' + App.fmt.eur(eco.pay)} · ${piecesDone} von ${piecesAll} Stück</span>
           ${eco.minApplied ? html`<span class="fa-earn-km fa-minpay">Mindestvergütung ${App.fmt.eur(eco.pay)} für diese Tour (nach Stück wären es ${App.fmt.eur(eco.pieceBased)})</span>` : null}
           <span class="ui-muted fa-earn-km">nach Fahrzeugkosten (Annahme ${App.fmt.eur(E.kmCost)}/km): ${App.fmt.eur(eco.afterKm)} für die ganze Tour</span></div>`}
         ${lateMin > 0 ? html`<div class="fa-late"><${Icon} name="alert" size=${16} /> ${lateMin} Min nach der Deadline – die Disposition ist informiert.</div>` : null}
@@ -120,17 +124,26 @@
 
       ${open.length ? html`<${Btn} variant="primary" full icon="route" href=${App.sel.mapsRouteUrl(s, routeIds)} target="_blank" rel="noopener">Nächste ${routeIds.length} Stopps als Route öffnen<//>` : null}
 
+      ${probStops.length ? html`<section class="fa-problems" id="fa-problems" aria-label="Probleme">
+        <h3 class="fa-problems-h"><${Icon} name="alert" size=${18} />Probleme (${probStops.length})</h3>
+        <ul class="fa-prob-list">${probStops.map((st) => html`<li class="fa-prob" key=${st.customerId}>
+          <div class="fa-prob-top"><span class="fa-no ui-mono">${st.seq}</span><strong>${st.customer.street} ${st.customer.houseNo}</strong><span class="ui-mono fa-prob-time">${hm(new Date(st.delivery.at))}</span></div>
+          <div class="fa-prob-name">${st.customer.name} · ${st.customer.plz} ${st.customer.city}</div>
+          <div class="fa-prob-reason"><${Icon} name="alert" size=${16} /><span>Problem: ${st.delivery.reason || 'ohne Angabe'}</span></div>
+          <div class="fa-actions-row"><${Btn} variant="primary" size="sm" icon="check" onClick=${() => markDone(st)}>Doch zugestellt<//>
+            <${Btn} variant="ghost" size="sm" icon="refresh" onClick=${() => App.actions.undoStop(date, st.customerId)}>Rückgängig<//></div></li>`)}</ul></section>` : null}
+
       <section class="fa-load">
         <button type="button" class="fa-load-btn" aria-expanded=${showLoad ? 'true' : 'false'} onClick=${() => setShowLoad(!showLoad)}>
           <${Icon} name="bag" size=${18} /><strong>Ladeliste</strong><span class="ui-muted">${loadTotal} Stück</span><span class="ui-grow"></span><${Icon} name=${showLoad ? 'chevron-up' : 'chevron-down'} size=${18} /></button>
         ${showLoad ? html`<ul class="fa-load-list">${loadList.map((p) => html`<li key=${p.id}><span class="ui-mono fa-load-n">${loads[p.id]}×</span><span>${p.name}</span></li>`)}</ul>` : null}
       </section>
 
-      ${handled.length ? html`<section aria-label="Erledigte Stopps">
-        ${handled.length > recentDone.length ? html`<button type="button" class="fa-more" onClick=${() => setShowDone(!showDone)}>${showDone ? 'Erledigte ausblenden' : 'Alle ' + handled.length + ' erledigten anzeigen'}</button>` : null}
+      ${okStops.length ? html`<section aria-label="Erledigte Stopps">
+        ${okStops.length > recentDone.length ? html`<button type="button" class="fa-more" onClick=${() => setShowDone(!showDone)}>${showDone ? 'Erledigte ausblenden' : 'Alle ' + okStops.length + ' erledigten anzeigen'}</button>` : null}
         <ul class="fa-done-list">${doneShown.map((st) => html`<${DoneRow} key=${st.customerId} st=${st} d=${st.delivery} onUndo=${() => App.actions.undoStop(date, st.customerId)} />`)}</ul></section>` : null}
 
-      ${open.length === 0 ? html`<div class="fa-finished"><${Icon} name="check" size=${28} /><div><strong>Tour abgeschlossen</strong><div class="ui-muted">Alle ${stops.length} Stopps sind erledigt. Danke!</div></div></div>` : null}
+      ${open.length === 0 ? html`<div class="fa-finished"><${Icon} name="check" size=${28} /><div><strong>Tour abgeschlossen</strong><div class="ui-muted">Alle ${stops.length} Stopps sind erledigt${problems ? ', ' + problems + ' davon mit Problem' : ''}. Danke!</div></div></div>` : null}
 
       <ol class="fa-list" aria-label="Offene Stopps">
         ${open.map((st, i) => html`<${Ticket} key=${st.customerId} s=${s} st=${st} next=${i === 0} following=${open[i + 1]}

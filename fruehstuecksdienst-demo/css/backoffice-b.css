@@ -135,3 +135,7 @@
 .bo-routelink { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 12px; border-radius: var(--r-pill); border: 1.5px solid var(--line); color: var(--ink-2); font-size: 13px; font-weight: 600; text-decoration: none; background: var(--surface); }
 .bo-routelink:hover { border-color: var(--muted); color: var(--ink); }
 .bo-routes-note { flex-basis: 100%; }
+
+.bo-stop.is-problem { background: var(--full-soft); }
+.bo-map-prob circle { fill: var(--full-soft); stroke: var(--full); stroke-width: 2; }
+.bo-map-prob path { fill: none; stroke: var(--full); stroke-width: 2; stroke-linecap: round; }

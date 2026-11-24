@@ -141,6 +141,7 @@
           return html`<g key=${st.customerId} class=${'bo-map-stop' + (on ? ' is-on' : '')} onMouseEnter=${() => setActive(st.customerId)} onMouseLeave=${() => setActive(null)}
               onClick=${(e) => { e.stopPropagation(); setActive(on ? null : st.customerId); }}>
             <circle class="bo-map-hit" cx=${px} cy=${py} r="11" />
+            ${st.delivery && st.delivery.status === 'problem' ? html`<g class="bo-map-prob"><circle cx=${px} cy=${py} r="12" /><path d=${`M${px} ${py - 6}v4.5M${px} ${py + 4.5}v.2`} /></g>` : null}
             ${one ? html`<circle class="bo-map-oneoff" cx=${px} cy=${py} r="8.5" />` : null}
             ${shape(ti, px, py, on ? 6.5 : 4.6)}
           </g>`;
@@ -193,7 +194,7 @@
       <ol class="bo-stops">
         ${t.stops.map((st) => {
           const c = st.customer, d = st.delivery, on = active === st.customerId;
-          return html`<li key=${st.customerId} class=${'bo-stop' + (on ? ' is-on' : '')} onMouseEnter=${() => setActive(st.customerId)} onMouseLeave=${() => setActive(null)} onClick=${() => setActive(on ? null : st.customerId)}>
+          return html`<li key=${st.customerId} class=${'bo-stop' + (on ? ' is-on' : '') + (d && d.status === 'problem' ? ' is-problem' : '')} onMouseEnter=${() => setActive(st.customerId)} onMouseLeave=${() => setActive(null)} onClick=${() => setActive(on ? null : st.customerId)}>
             <span class="bo-stop-no ui-mono" style=${'--tone:' + TONES[ti % 4]}>${st.seq}</span>
             <div class="bo-stop-main">
               <div class="bo-stop-top"><strong>${addr(c)}</strong><span class="bo-stop-eta ui-mono">${hm(st.etaMin)}</span></div>
