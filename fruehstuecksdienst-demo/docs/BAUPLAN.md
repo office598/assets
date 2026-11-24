@@ -504,3 +504,22 @@ Rückmeldung: Wer Mo, Mi und Fr dasselbe will, soll nicht jeden Tag einzeln fül
 - Gemeinsames Sackerl (Standard): eine Karte „Ihr Sackerl für Mo · Mi · Fr“ mit den Tagen als Chips und einem schlichten Link „Jeden Tag anders zusammenstellen“. Getrennte Sackerl: je Tag eine Karte, darin „Auf andere Tage übernehmen“ (Sheet mit Tages-Auswahl, Status je Tag, volle Tage gesperrt) und oben der Link „Für alle Tage gleich“ (mit Rückfrage, wenn sich die Sackerl unterscheiden).
 - Zusammenfassung „Ihre Woche“ neu gestalten: ruhige Karte statt Kassenrolle; Fließtext-Schrift, Mono nur für kleine Etiketten; keine Punktlinien. Inhalt: je Gruppe eine Zeile mit Tages-Chips, kurzem Inhalt („4 Kaisersemmeln, 1 Laugenbreze“) und Preis je Lieferung; Zustellung mit Betrag bzw. „gratis (Aktion)“; groß „Pro Woche € …“ mit Anzahl Lieferungen; Abo-Vorteil aus `saving` als kleine grüne Zeile, nur wenn > 0; darunter mit Icons „Erste Lieferung: Mittwoch, 25. November, bis 06:30“ und „Änderbar bis heute 16:30 (noch …)“; Vertrauenszeile. Leere gewählte Tage als freundlicher Hinweis („Mittwoch ist noch leer – Artikel hinzufügen oder abwählen“).
 - Nur ein Weiter-Knopf je Ansicht: die Sackerl-Leiste unten bleibt, der doppelte Knopf in der Zusammenfassung entfällt.
+
+### 8.15 Zugangshilfe je Adresse (Fotos, Wegbeschreibung, Navigationspunkt)
+Schwierige Adressen: keine Hausnummer, kein Name an der Klingel, Neubau, den Google noch nicht findet. Jede Adresse bekommt eine Zugangshilfe, die alle Fahrer sehen. Anlegen können sie der Fahrer vor Ort, der Kunde selbst und das Backoffice.
+
+**Logik (K1).**
+- `customers[i].access = { directions:'', photos:[ { id, dataUrl, caption, addedBy:'fahrer'|'kunde'|'backoffice', at } ], navPoint:null | { lat, lng, label }, code:'', updatedAt, updatedBy }` (Standard leer).
+- Aktionen: `setAccess(customerId, patch)`, `addAccessPhoto(customerId, { dataUrl, caption, addedBy })` (höchstens 3 Fotos je Adresse, ältestes fällt heraus), `removeAccessPhoto(customerId, photoId)`.
+- Helfer `App.sel.parseNavPoint(text)` erkennt „47.8412, 13.2513“ und Google-Maps-Links mit `@lat,lng`, `q=lat,lng`, `ll=` oder `/place/…/@lat,lng` → `{ lat, lng }` oder `null`.
+- `mapsUrl`/`mapsRouteUrl`: Hat ein Kunde einen `navPoint`, wird `lat,lng` statt der Adresse als Ziel bzw. Zwischenziel verwendet.
+- `sel.hasAccessHelp(customer)` → true, wenn Beschreibung, Foto, Code oder Navigationspunkt vorhanden ist.
+- Seed: vier Kunden in `nord` bekommen eine Wegbeschreibung (z. B. „Neubau ohne Hausnummer: zweites Haus links nach dem Spielplatz, graue Haustür“, „Kein Name an der Klingel – Sackerl in die Holzbox neben der Garage“, „Zufahrt über den Feldweg hinter dem Stadel, nicht über die Hauptstraße“, „Hund im Garten, Sackerl ans Gartentor hängen“), einer davon den Code „Tor 2580“. Keine erfundenen Koordinaten.
+- Persistenz: Fotos sind verkleinerte Daten-URLs; scheitert das Speichern am Speicherplatz, bleibt der Zustand im Speicher und `addAccessPhoto` gibt `{ ok:false, reason:'storage' }` zurück, sonst `{ ok:true, id }`.
+
+**Oberfläche (K2, baut die gemeinsamen Bausteine und bindet sie überall ein).**
+- `App.ui.AccessView({ customer, compact })`: Wegbeschreibung, Code, Navigationspunkt-Hinweis und Foto-Vorschauen (Tippen öffnet das Foto groß im Sheet).
+- `App.ui.AccessEditor({ customerId, addedBy, onDone })` im Sheet: Textfeld Wegbeschreibung, Feld Code, Feld „Navigationspunkt“ (Google-Maps-Link oder Koordinaten einfügen, Rückmeldung „erkannt: 47,8412 · 13,2513“ oder Fehlerhinweis), Foto hinzufügen über `<input type="file" accept="image/*" capture="environment">` (im Browser auf max. 1024 px verkleinert, JPEG ~0,7), Fotos mit Bildunterschrift und Löschen, Speichern mit Toast „Für alle Fahrer gespeichert“.
+- Fahrer-App: Stopps mit Zugangshilfe tragen ein Etikett „Wegbeschreibung“ bzw. „Foto“; beim nächsten offenen Stopp ist die Zugangshilfe aufgeklappt. Jeder Stopp hat „Wegbeschreibung / Foto ergänzen“. „Navigation“ und „Zugestellt & weiter“ nutzen den Navigationspunkt.
+- Kunden-App: im Schritt Adresse und im Konto unter Ablageort ein Bereich „Hilfe für den Fahrer (optional)“: Foto vom Eingang, Beschreibung, „Google findet Ihre Adresse nicht? Standort-Link einfügen“.
+- Backoffice: Kunden-Detail zeigt und bearbeitet die Zugangshilfe; in der Kundenliste ein Filter „mit Zugangshilfe“; Touren-Stoppliste mit kleinem Symbol.
