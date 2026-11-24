@@ -71,3 +71,4 @@
 .fa-access-btn { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; border: 0; background: transparent; font-weight: 700; font-size: 16px; text-align: left; }
 .fa-access-body { padding: 2px 14px 14px; }
 .fa-addhelp { margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--sun-text); font-weight: 700; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+.fa-access-body, .fa-access-body p { font-family: var(--font-body); }

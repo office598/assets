@@ -635,6 +635,8 @@
         <p class="ui-lead">Ihre erste Lieferung: <strong>${T.fmt.dayLong(o.firstDelivery)}</strong>, bis spätestens ${T.fmt.hm(T.deadlineMin(o.firstDelivery))} Uhr an Ihrer Tür.</p></div>
       <${Ticket} title=${'Bestellung ' + o.orderNo} stamp="bestätigt" rows=${rows}
         footer=${html`<div class="k-first"><span>Erste Lieferung</span><strong>${T.fmt.dayLong(o.firstDelivery)}</strong><span>Änderbar bis</span><strong>${T.fmt.rel(o.cutoff)}</strong></div>`} />
+      <div class="k-card"><h3 class="k-h3">Hilfe für den Fahrer (optional)</h3>
+        <${App.ui.AccessBlock} customerId=${s.session.customerId} addedBy="kunde" intro="Damit das Sackerl sicher bei Ihnen landet: Foto vom Eingang oder kurze Beschreibung." /></div>
       <div class="k-lnote k-lnote-info"><${Icon} name="truck" size=${20} /><div><strong>So geht es weiter:</strong> Ihre Bestellung ist jetzt im Backoffice sichtbar und in der Tour der Fahrer-App eingeplant.
         <div class="k-done-links"><button type="button" class="k-link" onClick=${() => act().go('backoffice')}>Im Backoffice ansehen</button> · <button type="button" class="k-link" onClick=${() => act().go('fahrer')}>In der Fahrer-App ansehen</button></div></div></div>
       <div class="k-nav-row"><${Btn} variant="sun" size="lg" iconAfter="chevron-right" onClick=${() => { act().setUi({ customerView: 'konto' }); scrollTop(); }}>Zum Konto<//>

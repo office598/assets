@@ -197,7 +197,7 @@
           return html`<li key=${st.customerId} class=${'bo-stop' + (on ? ' is-on' : '') + (d && d.status === 'problem' ? ' is-problem' : '')} onMouseEnter=${() => setActive(st.customerId)} onMouseLeave=${() => setActive(null)} onClick=${() => setActive(on ? null : st.customerId)}>
             <span class="bo-stop-no ui-mono" style=${'--tone:' + TONES[ti % 4]}>${st.seq}</span>
             <div class="bo-stop-main">
-              <div class="bo-stop-top"><strong>${addr(c)}</strong><span class="bo-stop-eta ui-mono">${hm(st.etaMin)}</span></div>
+              <div class="bo-stop-top"><strong>${addr(c)}</strong>${App.sel.hasAccessHelp(c) ? html`<span title="Zugangshilfe hinterlegt" aria-label="Zugangshilfe hinterlegt" style="color:var(--sun-text);display:inline-flex"><${Icon} name="route" size=${15} /></span>` : null}<span class="bo-stop-eta ui-mono">${hm(st.etaMin)}</span></div>
               <div class="ui-muted bo-small">${c.name} · ${c.plz} ${c.city}</div>
               <div class="bo-stop-items">${App.sel.itemsText(s, st.items, 4)}</div>
               <div class="bo-small ui-muted">${placementText(s, c)}</div>

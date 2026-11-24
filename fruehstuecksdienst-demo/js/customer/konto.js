@@ -201,6 +201,9 @@
         <div class="k-lnote-row"><${Field} id="konto-note" as="textarea" rows="2" label="Hinweis für die Zustellung" value=${note} onInput=${e => setNote(e.target.value)} placeholder="z. B. Hinterhof, grünes Tor" />
           <${Btn} variant="ghost" size="sm" disabled=${note === (cust.note || '')} onClick=${() => { act().updateCustomer(cust.id, { note }); toast('Hinweis gespeichert.', 'ok'); }}>Hinweis speichern<//></div></section>
 
+      <section class="k-card"><h3 class="k-h3">Hilfe für den Fahrer (optional)</h3>
+        <${U.AccessBlock} customerId=${cust.id} addedBy="kunde" intro="Foto vom Eingang, eine kurze Beschreibung oder ein Standort-Link helfen, wenn Google Ihre Adresse nicht findet." /></section>
+
       <section class="k-card"><h3 class="k-h3">Benachrichtigungen</h3>
         <div class="k-toggles">
           <${Toggle} id="konto-n-push" label="Push-Nachricht" hint="„Ihr Frühstück ist da“, Wartelisten-Meldungen" checked=${cust.notify.push} onChange=${v => act().updateCustomer(cust.id, { notify: { push: v } })} />

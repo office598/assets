@@ -466,6 +466,24 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
   .has-bagbar .fd-root.is-kunde { --toast-lift: 90px; }
 }
 
+/* ---------- 15c. Zugangshilfe ---------- */
+.ui-access { display: flex; flex-direction: column; gap: 10px; }
+.ui-access-row { display: flex; gap: 10px; align-items: flex-start; }
+.ui-access-row > .ui-icon { margin-top: 2px; color: var(--sun-text); }
+.ui-access-row p { margin: 0; font-size: 16px; line-height: 1.45; }
+.ui-access-photos { display: flex; gap: 10px; flex-wrap: wrap; }
+.ui-access-thumb { position: relative; width: 112px; padding: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface-2); display: block; text-align: left; }
+.ui-access-thumb img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+.ui-access-thumb span { display: block; padding: 4px 8px 6px; font-size: 12px; line-height: 1.3; color: var(--ink-2); }
+.ui-access-compact .ui-access-thumb { width: 84px; }
+.ui-access-none { margin: 0; font-size: 14px; }
+.ui-access-big { display: block; width: 100%; max-height: 70vh; object-fit: contain; border-radius: 14px; background: var(--surface-2); }
+.ui-access-ok { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 14px; font-weight: 650; color: var(--ok); font-family: var(--font-mono); }
+.ui-access-edit-photo { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+.ui-access-edit-photo > img { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; flex: none; }
+.ui-access-file { cursor: pointer; width: 100%; position: relative; }
+.ui-access-file:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+
 /* ---------- 16. App-Hülle und Demo-Leiste ---------- */
 .fd-root { min-height: 100%; display: flex; flex-direction: column; }
 .fd-demobar {
@@ -1551,6 +1569,13 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
 .fa-prob-name { font-size: 14px; color: var(--ink-2); }
 .fa-prob-reason { display: flex; align-items: center; gap: 6px; color: var(--full); font-weight: 700; }
 
+/* Zugangshilfe an Stopps */
+.fa-access { margin-top: 10px; border: 1.5px solid var(--butter); border-radius: var(--r-ctl); background: var(--butter-soft); overflow: hidden; }
+.fa-access-btn { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; border: 0; background: transparent; font-weight: 700; font-size: 16px; text-align: left; }
+.fa-access-body { padding: 2px 14px 14px; }
+.fa-addhelp { margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--sun-text); font-weight: 700; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+.fa-access-body, .fa-access-body p { font-family: var(--font-body); }
+
 </style>
 <style>
 /* concept.css – Konzept-Seite (V5). Nur Tokens aus base.css. Präfix kz- */
@@ -2364,7 +2389,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
         note: o.note != null ? o.note : (nt ? nt.note : ''),
         email: slug(name) + '@mail.example',
         phone: '+43 660 55' + String(randInt(rng, 10000, 99999)),
-        since, notify: { push: rng() < 0.7, email: rng() < 0.8 }, kind, registered: true
+        since, notify: { push: rng() < 0.7, email: rng() < 0.8 }, kind, registered: true, access: emptyAccess()
       };
     }
     return { make };
@@ -2493,6 +2518,8 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
   }
 
   // ---------------------------------------------------------------- Entwurf, Kapazität, Seed
+  const emptyAccess = () => ({ directions: '', photos: [], navPoint: null, code: '', updatedAt: null, updatedBy: '' });
+
   function draftDefaults() {
     return {
       plz: '', regionId: null, mode: 'abo', sameForAll: true, abo: {}, flexDate: null, flex: {}, target: null, step: 'plan',
@@ -2513,6 +2540,21 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     return out;
   }
 
+  // Wegbeschreibungen für vier Kunden in nord (ohne erfundene Koordinaten).
+  function seedAccess(customers) {
+    const texts = [
+      ['Neubau ohne Hausnummer: zweites Haus links nach dem Spielplatz, graue Haustür.', ''],
+      ['Kein Name an der Klingel – Sackerl in die Holzbox neben der Garage.', 'Tor 2580'],
+      ['Zufahrt über den Feldweg hinter dem Stadel, nicht über die Hauptstraße.', ''],
+      ['Hund im Garten, Sackerl ans Gartentor hängen.', '']
+    ];
+    const nord = customers.filter(c => c.regionId === 'nord' && c.registered && c.id !== 'c-huber' && c.kind === 'abo');
+    [3, 14, 27, 41].forEach((i, k) => {
+      if (!nord[i]) return;
+      nord[i].access = Object.assign(emptyAccess(), { directions: texts[k][0], code: texts[k][1], updatedAt: T.now().toISOString(), updatedBy: 'backoffice' });
+    });
+  }
+
   function seed() {
     const rng = mulberry32(20261141);
     const today = T.today();
@@ -2522,9 +2564,10 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     const me = {
       id: 'me', name: 'Besucher', street: '', houseNo: '', plz: '', city: '', regionId: null, x: 0, y: 0,
       placement: 'tuerschnalle', note: '', email: '', phone: '', since: today,
-      notify: { push: true, email: true }, kind: 'abo', registered: false
+      notify: { push: true, email: true }, kind: 'abo', registered: false, access: emptyAccess()
     };
     const customers = pop.customers.concat([me]);
+    seedAccess(customers);
     const flexOrders = buildFlexOrders(rng, today, pop.flexOnlyByRegion, products);
     // Beispiel für Aussetzer und Pause (nur unter der Woche, damit die Kalibrierung stabil bleibt)
     const skips = {};
@@ -2544,7 +2587,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     };
   }
 
-  App.data = { seed, draftDefaults, mulberry32, unitCost };
+  App.data = { seed, draftDefaults, emptyAccess, mulberry32, unitCost };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -2690,10 +2733,11 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
       return st;
     } catch (e) { T.setOffset(0); return null; }
   }
+  // Gibt false zurück, wenn das Speichern scheitert (Speicherplatz voll, gesperrt); der Zustand im Speicher bleibt erhalten.
   function save() {
-    saveTimer = null;
-    if (!hasStorage() || !state) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ seedDay: state.seedDay, state })); } catch (e) { /* voll oder gesperrt */ }
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    if (!hasStorage() || !state) return true;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ seedDay: state.seedDay, state })); return true; } catch (e) { return false; }
   }
   function scheduleSave() {
     if (!hasStorage() || typeof setTimeout === 'undefined') return;
@@ -3345,17 +3389,38 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     return { households, deliveriesPerWeek: (aboCounts(s)[regionId] || []).reduce((a, b) => a + b, 0) };
   };
 
-  // ----- Navigation (Google Maps)
+  // ----- Zugangshilfe und Navigation (Google Maps)
+  const validLL = (lat, lng) => isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  sel.parseNavPoint = text => {
+    const str = String(text == null ? '' : text).trim();
+    if (!str) return null;
+    let src = str;
+    try { src = decodeURIComponent(str); } catch (e) { /* unverändert */ }
+    const num = '(-?\\d{1,3}\\.\\d+)';
+    const pats = [
+      new RegExp('^' + num + '\\s*[,;\\s]\\s*' + num + '$'),
+      new RegExp('@' + num + ',' + num),
+      new RegExp('[?&](?:q|ll|query|destination|center)=' + num + ',' + num)
+    ];
+    for (let i = 0; i < pats.length; i++) {
+      const m = src.match(pats[i]);
+      if (m) { const lat = parseFloat(m[1]), lng = parseFloat(m[2]); if (validLL(lat, lng)) return { lat, lng }; }
+    }
+    return null;
+  };
+  sel.hasAccessHelp = c => !!(c && c.access && ((c.access.directions || '').trim() || (c.access.photos || []).length || (c.access.code || '').trim() || c.access.navPoint));
   const addressOf = c => c.street + ' ' + c.houseNo + ', ' + c.plz + ' ' + c.city;
+  // Ziel schon URL-kodiert: Navigationspunkt als lat,lng, sonst die Adresse.
+  const targetOf = c => (c.access && c.access.navPoint ? c.access.navPoint.lat + ',' + c.access.navPoint.lng : encodeURIComponent(addressOf(c)));
   sel.mapsUrl = (s, customerId) => {
     const c = sel.customer(s, customerId);
-    return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(c ? addressOf(c) : '') + '&travelmode=driving';
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + (c ? targetOf(c) : '') + '&travelmode=driving';
   };
   sel.mapsRouteUrl = (s, customerIds) => {
-    const list = customerIds.slice(0, 10).map(id => sel.customer(s, id)).filter(Boolean).map(addressOf);
+    const list = customerIds.slice(0, 10).map(id => sel.customer(s, id)).filter(Boolean).map(targetOf);
     if (!list.length) return '';
-    let url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(list[list.length - 1]);
-    if (list.length > 1) url += '&waypoints=' + encodeURIComponent(list.slice(0, -1).join('|'));
+    let url = 'https://www.google.com/maps/dir/?api=1&destination=' + list[list.length - 1];
+    if (list.length > 1) url += '&waypoints=' + list.slice(0, -1).join('%7C');
     return url + '&travelmode=driving';
   };
 
@@ -3474,6 +3539,31 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     const abo = Object.assign({}, d.abo);
     wds.forEach(w => { abo[w] = bagFor(s, w, swap(abo[w] || {})); });
     setDraftPatch({ abo });
+  };
+  // ----- Zugangshilfe
+  const accessOf = c => Object.assign(App.data.emptyAccess(), c.access || {});
+  A.setAccess = (cid, patch) => {
+    const c = sel.customer(get(), cid);
+    if (!c) return false;
+    const acc = Object.assign(accessOf(c), patch, { updatedAt: nowIso(), updatedBy: (patch && patch.updatedBy) || accessOf(c).updatedBy || '' });
+    setState({ customers: mapBy(get().customers, cid, x => Object.assign({}, x, { access: acc })) });
+    return true;
+  };
+  A.addAccessPhoto = (cid, o) => {
+    const c = sel.customer(get(), cid);
+    if (!c || !o || !o.dataUrl) return { ok: false, reason: 'invalid' };
+    const id = newId('ph'), acc = accessOf(c);
+    const photo = { id, dataUrl: o.dataUrl, caption: o.caption || '', addedBy: o.addedBy || 'fahrer', at: nowIso() };
+    const next = Object.assign({}, acc, { photos: acc.photos.concat([photo]).slice(-3), updatedAt: photo.at, updatedBy: photo.addedBy });
+    setState({ customers: mapBy(get().customers, cid, x => Object.assign({}, x, { access: next })) });
+    return save() ? { ok: true, id } : { ok: false, reason: 'storage' };
+  };
+  A.removeAccessPhoto = (cid, photoId) => {
+    const c = sel.customer(get(), cid);
+    if (!c) return false;
+    const acc = accessOf(c);
+    setState({ customers: mapBy(get().customers, cid, x => Object.assign({}, x, { access: Object.assign({}, acc, { photos: acc.photos.filter(p => p.id !== photoId), updatedAt: nowIso() }) })) });
+    return true;
   };
   A.setEconomics = patch => setState({ economics: Object.assign({}, get().economics, patch) });
   A.setWeeklySpecial = patch => setState({ weeklySpecial: Object.assign({}, get().weeklySpecial, patch) });
@@ -4346,6 +4436,12 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
         Reserviert beim Einhängen automatisch Platz (Klasse has-bagbar am body). Als letztes Element der View rendern.
    PushBanner({ notification, onOpen, onClose })   Benachrichtigung im Handy-Stil; Position setzt der Aufrufer.
    (Seite ist nur hell: --night/--on-night/--night-2 sind helle Flächen/Espresso-Text, ui-band-night = warme helle Fläche.)
+   AccessView({ customer, compact })   Zugangshilfe einer Adresse (Wegbeschreibung, Code, Navigationspunkt, Foto-Vorschauen; Tippen öffnet das Foto groß).
+        Liest customer.access; ohne Inhalt ein ruhiger Hinweis (Aufrufer prüft vorher App.sel.hasAccessHelp). compact = kleinere Fotos, kürzere Zeilen.
+   AccessEditor({ customerId, addedBy:'fahrer'|'kunde'|'backoffice', onDone })   Bearbeiten: Wegbeschreibung, Code, Navigationspunkt (Link/Koordinaten mit
+        Rückmeldung „erkannt: …“), Fotos (Kamera/Galerie, im Browser auf 1024 px verkleinert), Bildunterschriften, Löschen; Speichern → Toast „Für alle Fahrer gespeichert“.
+   AccessSheet({ open, onClose, customerId, addedBy, title })   Sheet mit AccessEditor (Standardfall).
+   AccessBlock({ customerId, addedBy, intro })   Fertiger Bereich: aktuelle Zugangshilfe (live) + Knopf „Hinzufügen/Bearbeiten“ (öffnet AccessSheet). Für Konto, Bestätigung, Backoffice.
    Empty({ icon, title, text, action })   Leerzustand; action = fertiger Knopf (vnode).
    Countdown({ to })   „noch 2 Std 13 Min“ bis Date/ms/ISO-String; aktualisiert sich selbst.
    Logo({ onNight, size=22 })   Marke + Wortmarke.
@@ -4455,6 +4551,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
 
   /* ---------- Sheet ---------- */
   let sheetSeq = 0, lockCount = 0;
+  const sheetStack = [];
   const FOCUSABLE = 'a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])';
   function Sheet({ open, onClose, title, footer, wide, children }) {
     const panel = useRef(null);
@@ -4465,9 +4562,11 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     useEffect(() => {
       if (!open) return undefined;
       const prev = document.activeElement;
+      sheetStack.push(idRef.current);
       lockCount++; document.documentElement.classList.add('ui-lock');
       if (panel.current) panel.current.focus();
       const onKey = (e) => {
+        if (sheetStack[sheetStack.length - 1] !== idRef.current) return;
         if (e.key === 'Escape') { e.stopPropagation(); if (closeRef.current) closeRef.current(); return; }
         if (e.key === 'Tab' && panel.current) {
           const f = Array.from(panel.current.querySelectorAll(FOCUSABLE)).filter(n => n.offsetParent !== null);
@@ -4480,6 +4579,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
       document.addEventListener('keydown', onKey, true);
       return () => {
         document.removeEventListener('keydown', onKey, true);
+        const si = sheetStack.indexOf(idRef.current); if (si >= 0) sheetStack.splice(si, 1);
         if (--lockCount <= 0) { lockCount = 0; document.documentElement.classList.remove('ui-lock'); }
         if (prev && prev.focus && document.contains(prev)) { try { prev.focus(); } catch (e) { /* egal */ } }
       };
@@ -4786,6 +4886,129 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     </div>`;
   }
 
+
+  /* ---------- Zugangshilfe ---------- */
+  const fmtCoord = (n) => Number(n).toFixed(4).replace('.', ',');
+  const navText = (np) => np ? fmtCoord(np.lat) + ' · ' + fmtCoord(np.lng) : '';
+
+  function AccessView({ customer, compact }) {
+    const [big, setBig] = useState(null);
+    const a = customer && customer.access;
+    if (!a || !((a.directions && a.directions.trim()) || a.code || a.navPoint || (a.photos && a.photos.length))) {
+      return html`<p class="ui-muted ui-access-none">Noch keine Hilfe hinterlegt.</p>`;
+    }
+    return html`<div class=${cx('ui-access', compact && 'ui-access-compact')}>
+      ${a.directions ? html`<div class="ui-access-row"><${Icon} name="route" size=${20} /><p>${a.directions}</p></div>` : null}
+      ${a.code ? html`<div class="ui-access-row"><${Icon} name="lock" size=${20} /><p>Code: <strong class="ui-mono">${a.code}</strong></p></div>` : null}
+      ${a.navPoint ? html`<div class="ui-access-row"><${Icon} name="pin" size=${20} /><p>Navigationspunkt: <span class="ui-mono">${navText(a.navPoint)}</span>${a.navPoint.label ? ' · ' + a.navPoint.label : ''}</p></div>` : null}
+      ${a.photos && a.photos.length ? html`<div class="ui-access-photos">${a.photos.map(ph => html`<button type="button" class="ui-access-thumb" key=${ph.id} onClick=${() => setBig(ph)} aria-label=${'Foto vergrößern' + (ph.caption ? ': ' + ph.caption : '')}>
+        <img src=${ph.dataUrl} alt=${ph.caption || 'Foto vom Zugang'} />${ph.caption ? html`<span>${ph.caption}</span>` : null}</button>`)}</div>` : null}
+      <${Sheet} open=${!!big} onClose=${() => setBig(null)} title=${big && big.caption ? big.caption : 'Foto vom Zugang'} wide>
+        ${big ? html`<img class="ui-access-big" src=${big.dataUrl} alt=${big.caption || 'Foto vom Zugang'} />` : null}
+      <//>
+    </div>`;
+  }
+
+  function downscale(file, max = 1024, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+          const c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          resolve(c.toDataURL('image/jpeg', quality));
+        } catch (e) { URL.revokeObjectURL(url); reject(e); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bild nicht lesbar')); };
+      img.src = url;
+    });
+  }
+
+  function AccessEditor({ customerId, addedBy = 'kunde', onDone }) {
+    const s = App.useStore();
+    const c = (s.customers || []).find(x => x.id === customerId);
+    const a = (c && c.access) || { directions: '', photos: [], navPoint: null, code: '' };
+    const [dir, setDir] = useState(a.directions || '');
+    const [code, setCode] = useState(a.code || '');
+    const [nav, setNav] = useState(a.navPoint ? fmtCoord(a.navPoint.lat) + ', ' + fmtCoord(a.navPoint.lng) : '');
+    const [caps, setCaps] = useState({});
+    const [err, setErr] = useState('');
+    const [busy, setBusy] = useState(false);
+    const idp = 'acc-' + customerId;
+    if (!c) return null;
+    const parse = (t) => (App.sel && App.sel.parseNavPoint ? App.sel.parseNavPoint(t) : null);
+    const parsed = nav.trim() ? parse(nav) : null;
+    const navErr = nav.trim() && !parsed ? 'Das habe ich nicht erkannt. Fügen Sie einen Google-Maps-Link oder Koordinaten wie 47.8412, 13.2513 ein.' : '';
+
+    const onFile = async (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      setBusy(true); setErr('');
+      try {
+        const dataUrl = await downscale(f);
+        const r = App.actions.addAccessPhoto(customerId, { dataUrl, caption: '', addedBy });
+        if (r && r.ok === false) setErr(r.reason === 'storage' ? 'Das Foto ist zu groß für den Speicher dieses Browsers. Bitte löschen Sie ein anderes Foto oder versuchen Sie es mit einem kleineren Bild.' : 'Das Foto konnte nicht gespeichert werden.');
+      } catch (x) { setErr('Das Foto konnte nicht gelesen werden. Bitte versuchen Sie es noch einmal.'); }
+      setBusy(false);
+    };
+    const save = () => {
+      if (navErr) { setErr(navErr); return; }
+      const photos = (a.photos || []).map(p => (caps[p.id] !== undefined ? { ...p, caption: caps[p.id] } : p));
+      const navPoint = parsed ? { lat: parsed.lat, lng: parsed.lng, label: (a.navPoint && a.navPoint.label) || parsed.label || '' } : null;
+      App.actions.setAccess(customerId, { directions: dir.trim(), code: code.trim(), navPoint, photos, updatedBy: addedBy });
+      toast('Für alle Fahrer gespeichert', 'ok');
+      if (onDone) onDone();
+    };
+    return html`<div class="ui-stack ui-access-editor" style="--gap:18px">
+      <${Field} id=${idp + '-dir'} as="textarea" label="Wegbeschreibung" placeholder="z. B. zweites Haus links nach dem Spielplatz, graue Haustür" value=${dir} onInput=${(e) => setDir(e.target.value)} />
+      <${Field} id=${idp + '-code'} label="Code oder Hinweis zum Tor (optional)" placeholder="z. B. Tor 2580" value=${code} onInput=${(e) => setCode(e.target.value)} />
+      <div>
+        <${Field} id=${idp + '-nav'} label="Navigationspunkt (optional)" hint="Google findet die Adresse nicht? Standort-Link oder Koordinaten einfügen." placeholder="https://maps.google.com/… oder 47.8412, 13.2513"
+          value=${nav} error=${navErr} onInput=${(e) => setNav(e.target.value)} />
+        ${parsed ? html`<div class="ui-access-ok"><${Icon} name="check" size=${16} /> erkannt: ${navText(parsed)}</div>` : null}
+      </div>
+      <div class="ui-stack" style="--gap:10px">
+        <div class="ui-label">Fotos (höchstens 3)</div>
+        ${(a.photos || []).map(p => html`<div class="ui-access-edit-photo" key=${p.id}>
+          <img src=${p.dataUrl} alt=${p.caption || 'Foto vom Zugang'} />
+          <div class="ui-grow"><${Field} id=${idp + '-cap-' + p.id} label="Bildunterschrift" placeholder="z. B. Eingang links" value=${caps[p.id] !== undefined ? caps[p.id] : (p.caption || '')} onInput=${(e) => setCaps({ ...caps, [p.id]: e.target.value })} /></div>
+          <${Btn} variant="quiet" size="sm" icon="trash" aria-label="Foto löschen" onClick=${() => App.actions.removeAccessPhoto(customerId, p.id)} />
+        </div>`)}
+        <label class="ui-btn ui-btn-ghost ui-access-file" for=${idp + '-file'}><${Icon} name="plus" size=${22} />${busy ? 'Foto wird verarbeitet …' : 'Foto aufnehmen oder wählen'}
+          <input id=${idp + '-file'} class="ui-sr" type="file" accept="image/*" capture="environment" onChange=${onFile} disabled=${busy} /></label>
+      </div>
+      ${err ? html`<div class="ui-error-text" role="alert"><${Icon} name="alert" size=${16} /><span>${err}</span></div>` : null}
+      <div class="ui-row">
+        <${Btn} variant="sun" icon="check" onClick=${save}>Speichern<//>
+        ${onDone ? html`<${Btn} variant="ghost" onClick=${onDone}>Abbrechen<//>` : null}
+      </div>
+    </div>`;
+  }
+
+  function AccessSheet({ open, onClose, customerId, addedBy, title = 'Hilfe für den Fahrer' }) {
+    return html`<${Sheet} open=${open} onClose=${onClose} title=${title}>${open ? html`<${AccessEditor} customerId=${customerId} addedBy=${addedBy} onDone=${onClose} />` : null}<//>`;
+  }
+
+
+  function AccessBlock({ customerId, addedBy, intro }) {
+    const s = App.useStore();
+    const [open, setOpen] = useState(false);
+    const c = (s.customers || []).find(x => x.id === customerId);
+    if (!c) return null;
+    const has = App.sel.hasAccessHelp(c);
+    return html`<div class="ui-stack" style="--gap:12px">
+      ${intro ? html`<p class="ui-muted" style="margin:0">${intro}</p>` : null}
+      ${has ? html`<${AccessView} customer=${c} />` : null}
+      <div><${Btn} variant=${has ? 'ghost' : 'primary'} icon=${has ? 'edit' : 'plus'} onClick=${() => setOpen(true)}>${has ? 'Hilfe bearbeiten' : 'Hilfe für den Fahrer hinzufügen'}<//></div>
+      <${AccessSheet} open=${open} onClose=${() => setOpen(false)} customerId=${customerId} addedBy=${addedBy} />
+    </div>`;
+  }
+
   /* ---------- Fehlerkasten, Platzhalter ---------- */
   function ErrorBoundary({ name, children }) {
     const [err, reset] = useErrorBoundary((e) => { try { console.error('[' + (name || 'View') + ']', e); } catch (x) { /* egal */ } });
@@ -4806,7 +5029,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
 
   App.ui = {
     cx, Icon, Btn, Pill, StatusPill, Chip, Sheet, ConfirmSheet, toast, ToastHost, Stepper, Segmented, Tabs, Field, Toggle,
-    DayTag, WeekStrip, Ticket, Photo, ProductCard, Bar, Kpi, Progress, BagBar, PushBanner, Empty, Countdown, Logo, Accordion, ErrorBoundary, Placeholder,
+    DayTag, WeekStrip, Ticket, Photo, ProductCard, Bar, Kpi, Progress, BagBar, PushBanner, Empty, Countdown, Logo, Accordion, AccessView, AccessEditor, AccessSheet, AccessBlock, ErrorBoundary, Placeholder,
     ICON_NAMES: Object.keys(ICONS)
   };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -6168,6 +6391,8 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
         <p class="ui-lead">Ihre erste Lieferung: <strong>${T.fmt.dayLong(o.firstDelivery)}</strong>, bis spätestens ${T.fmt.hm(T.deadlineMin(o.firstDelivery))} Uhr an Ihrer Tür.</p></div>
       <${Ticket} title=${'Bestellung ' + o.orderNo} stamp="bestätigt" rows=${rows}
         footer=${html`<div class="k-first"><span>Erste Lieferung</span><strong>${T.fmt.dayLong(o.firstDelivery)}</strong><span>Änderbar bis</span><strong>${T.fmt.rel(o.cutoff)}</strong></div>`} />
+      <div class="k-card"><h3 class="k-h3">Hilfe für den Fahrer (optional)</h3>
+        <${App.ui.AccessBlock} customerId=${s.session.customerId} addedBy="kunde" intro="Damit das Sackerl sicher bei Ihnen landet: Foto vom Eingang oder kurze Beschreibung." /></div>
       <div class="k-lnote k-lnote-info"><${Icon} name="truck" size=${20} /><div><strong>So geht es weiter:</strong> Ihre Bestellung ist jetzt im Backoffice sichtbar und in der Tour der Fahrer-App eingeplant.
         <div class="k-done-links"><button type="button" class="k-link" onClick=${() => act().go('backoffice')}>Im Backoffice ansehen</button> · <button type="button" class="k-link" onClick=${() => act().go('fahrer')}>In der Fahrer-App ansehen</button></div></div></div>
       <div class="k-nav-row"><${Btn} variant="sun" size="lg" iconAfter="chevron-right" onClick=${() => { act().setUi({ customerView: 'konto' }); scrollTop(); }}>Zum Konto<//>
@@ -6422,6 +6647,9 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
         <${Sh.PlacementCards} idp="konto-pl" value=${cust.placement} onChange=${v => { act().updateCustomer(cust.id, { placement: v }); toast('Ablageort gespeichert.', 'ok'); }} />
         <div class="k-lnote-row"><${Field} id="konto-note" as="textarea" rows="2" label="Hinweis für die Zustellung" value=${note} onInput=${e => setNote(e.target.value)} placeholder="z. B. Hinterhof, grünes Tor" />
           <${Btn} variant="ghost" size="sm" disabled=${note === (cust.note || '')} onClick=${() => { act().updateCustomer(cust.id, { note }); toast('Hinweis gespeichert.', 'ok'); }}>Hinweis speichern<//></div></section>
+
+      <section class="k-card"><h3 class="k-h3">Hilfe für den Fahrer (optional)</h3>
+        <${U.AccessBlock} customerId=${cust.id} addedBy="kunde" intro="Foto vom Eingang, eine kurze Beschreibung oder ein Standort-Link helfen, wenn Google Ihre Adresse nicht findet." /></section>
 
       <section class="k-card"><h3 class="k-h3">Benachrichtigungen</h3>
         <div class="k-toggles">
@@ -7268,7 +7496,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
 (function (root) {
   const App = root.App = root.App || {};
   const { html, useState, useMemo } = App.lib;
-  const { Btn, Pill, Sheet, Field, Empty } = App.ui;
+  const { Btn, Pill, Sheet, Field, Empty, Icon, AccessBlock } = App.ui;
   const T = App.time, F = App.fmt;
   const PAGE = 40;
 
@@ -7295,6 +7523,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
           <${Row} label="Benachrichtigung">${[c.notify && c.notify.push ? 'Push' : null, c.notify && c.notify.email ? 'E-Mail' : null].filter(Boolean).join(' und ') || 'keine'}<//>
           <${Row} label="Kunde seit">${T.fmt.day(c.since)} · ${c.kind === 'abo' ? 'Abo' : 'Einmalbesteller'}<//>
         </dl>
+        <div><h4>Zugangshilfe für Fahrer</h4><${AccessBlock} customerId=${c.id} addedBy="backoffice" /></div>
         <div><h4>Wochenplan</h4>
           ${plan.length ? html`<ul class="bo-list">${plan.map(p => html`<li key=${p.wd}><strong>${T.WD_LONG[p.wd]}</strong><span class="ui-muted">${App.sel.itemsText(s, p.items, 4)}</span><span class="ui-mono">${F.eur(p.total)}</span></li>`)}</ul>`
             : html`<p class="ui-muted">Kein Abo. Bestellt nur einzeln.</p>`}</div>
@@ -7317,6 +7546,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     const [reg, setReg] = useState('');
     const [kind, setKind] = useState('');
     const [wd, setWd] = useState('');
+    const [acc, setAcc] = useState('');
     const [limit, setLimit] = useState(PAGE);
     const [open, setOpen] = useState(null);
     const days = useMemo(() => {
@@ -7327,7 +7557,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     }, [s.subs]);
     const all = s.customers.filter(c => c.registered);
     const term = q.trim().toLowerCase();
-    const list = all.filter(c => (!reg || c.regionId === reg) && (!kind || c.kind === kind) &&
+    const list = all.filter(c => (!reg || c.regionId === reg) && (!kind || c.kind === kind) && (!acc || App.sel.hasAccessHelp(c)) &&
       (wd === '' || (days.get(c.id) || []).includes(Number(wd))) &&
       (!term || (c.name + ' ' + c.street + ' ' + c.city + ' ' + c.plz + ' ' + c.email).toLowerCase().includes(term)));
     const shown = list.slice(0, limit);
@@ -7342,13 +7572,15 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
           options=${[{ value: '', label: 'Alle Gebiete' }].concat(s.regions.filter(r => !r.planned).map(r => ({ value: r.id, label: r.name })))} />
         <${Field} id="kd-kind" label="Art" as="select" value=${kind} onChange=${e => reset(setKind)(e.target.value)}
           options=${[{ value: '', label: 'Abo und Einmalig' }, { value: 'abo', label: 'Abo' }, { value: 'flex', label: 'Nur einmalig' }]} />
+        <${Field} id="kd-acc" label="Zugangshilfe" as="select" value=${acc} onChange=${e => reset(setAcc)(e.target.value)}
+          options=${[{ value: '', label: 'Alle' }, { value: '1', label: 'mit Zugangshilfe' }]} />
         <${Field} id="kd-wd" label="Liefertag" as="select" value=${wd} onChange=${e => reset(setWd)(e.target.value)}
           options=${[{ value: '', label: 'Alle Tage' }].concat(T.WD_LONG.map((n, i) => ({ value: String(i), label: n })))} />
       </div>
       <div class="ui-muted bo-count" aria-live="polite">${list.length} ${list.length === 1 ? 'Treffer' : 'Treffer'}</div>
       ${list.length ? html`<div class="ui-tablewrap"><table class="ui-table bo-cust-table"><thead><tr><th>Name</th><th>Adresse</th><th>Art</th><th>Liefertage</th><th>Seit</th><th></th></tr></thead>
         <tbody>${shown.map(c => html`<tr key=${c.id} class="bo-click" onClick=${() => setOpen(c.id)}>
-          <td><strong>${c.name}</strong></td><td>${c.street} ${c.houseNo}, <span class="ui-muted">${c.plz} ${c.city}</span></td>
+          <td><strong>${c.name}</strong>${App.sel.hasAccessHelp(c) ? html` <span title="Zugangshilfe hinterlegt" aria-label="Zugangshilfe hinterlegt"><${Icon} name="route" size=${15} /></span>` : null}</td><td>${c.street} ${c.houseNo}, <span class="ui-muted">${c.plz} ${c.city}</span></td>
           <td><${Pill} tone=${c.kind === 'abo' ? 'ok' : 'neutral'}>${c.kind === 'abo' ? 'Abo' : 'Einmalig'}<//></td>
           <td>${(days.get(c.id) || []).map(d => T.WD[d]).join(' · ') || html`<span class="ui-muted">–</span>`}</td>
           <td class="ui-mono">${T.fmt.day(c.since)}</td>
@@ -7715,7 +7947,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
           return html`<li key=${st.customerId} class=${'bo-stop' + (on ? ' is-on' : '') + (d && d.status === 'problem' ? ' is-problem' : '')} onMouseEnter=${() => setActive(st.customerId)} onMouseLeave=${() => setActive(null)} onClick=${() => setActive(on ? null : st.customerId)}>
             <span class="bo-stop-no ui-mono" style=${'--tone:' + TONES[ti % 4]}>${st.seq}</span>
             <div class="bo-stop-main">
-              <div class="bo-stop-top"><strong>${addr(c)}</strong><span class="bo-stop-eta ui-mono">${hm(st.etaMin)}</span></div>
+              <div class="bo-stop-top"><strong>${addr(c)}</strong>${App.sel.hasAccessHelp(c) ? html`<span title="Zugangshilfe hinterlegt" aria-label="Zugangshilfe hinterlegt" style="color:var(--sun-text);display:inline-flex"><${Icon} name="route" size=${15} /></span>` : null}<span class="bo-stop-eta ui-mono">${hm(st.etaMin)}</span></div>
               <div class="ui-muted bo-small">${c.name} · ${c.plz} ${c.city}</div>
               <div class="bo-stop-items">${App.sel.itemsText(s, st.items, 4)}</div>
               <div class="bo-small ui-muted">${placementText(s, c)}</div>
@@ -7996,7 +8228,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
 (function (root) {
   const App = root.App = root.App || {};
   const { html, useState } = App.lib;
-  const { Icon, Btn, Pill, Segmented, Sheet, Bar, Empty, toast } = App.ui;
+  const { Icon, Btn, Pill, Segmented, Sheet, Bar, Empty, AccessView, AccessSheet, toast } = App.ui;
   const T = App.time;
 
   const REASONS = ['Niemand erreichbar', 'Zugang nicht möglich', 'Adresse nicht gefunden', 'Ablageort blockiert', 'Lieferung abgelehnt', 'Sonstiges'];
@@ -8012,8 +8244,10 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
 
   function Tags({ st, isNew }) {
     const one = st.kinds.indexOf('abo') < 0;
-    if (!one && !isNew) return null;
-    return html`<span class="fa-tags">${one ? html`<${Pill} tone="kraft">einmalig<//>` : null}${isNew ? html`<${Pill} tone="info">neu<//>` : null}</span>`;
+    const a = st.customer.access || {};
+    const hasDir = !!((a.directions || '').trim() || a.code || a.navPoint), hasPhoto = !!(a.photos && a.photos.length);
+    if (!one && !isNew && !hasDir && !hasPhoto) return null;
+    return html`<span class="fa-tags">${one ? html`<${Pill} tone="kraft">einmalig<//>` : null}${isNew ? html`<${Pill} tone="info">neu<//>` : null}${hasDir ? html`<${Pill} tone="sun" icon="route">Wegbeschreibung<//>` : null}${hasPhoto ? html`<${Pill} tone="sun" icon="pin">Foto<//>` : null}</span>`;
   }
 
   function DoneRow({ st, d, onUndo }) {
@@ -8026,8 +8260,11 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     </li>`;
   }
 
-  function Ticket({ s, st, next, following, onDone, onProblem, isNew }) {
+  function Ticket({ s, st, next, following, onDone, onProblem, onAccess, isNew }) {
     const c = st.customer;
+    const has = App.sel.hasAccessHelp(c);
+    const [openOverride, setOpenOverride] = useState(null);
+    const showAccess = openOverride === null ? next : openOverride;
     const navUrl = App.sel.mapsUrl(s, st.customerId);
     return html`<li class=${'fa-ticket' + (next ? ' is-next' : '')} aria-current=${next ? 'step' : undefined}>
       <div class="fa-t-top"><span class="fa-no ui-mono">${st.seq}</span><span class="fa-eta ui-mono">${hm(st.etaMin)}</span>
@@ -8037,6 +8274,11 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
       <div class="fa-tear"></div>
       <div class="fa-items">${App.sel.itemsText(s, st.items, 99)}</div>
       <div class="fa-place"><${Icon} name="door" size=${16} /><span>${placementText(c)}</span></div>
+      ${has ? html`<div class="fa-access">
+        <button type="button" class="fa-access-btn" aria-expanded=${showAccess ? 'true' : 'false'} onClick=${() => setOpenOverride(!showAccess)}>
+          <${Icon} name="route" size=${18} /><span>Zugangshilfe</span><span class="ui-grow"></span><${Icon} name=${showAccess ? 'chevron-up' : 'chevron-down'} size=${18} /></button>
+        ${showAccess ? html`<div class="fa-access-body"><${AccessView} customer=${c} /></div>` : null}</div>` : null}
+      <button type="button" class="fa-addhelp" onClick=${onAccess}><${Icon} name="plus" size=${18} />Wegbeschreibung / Foto ergänzen</button>
       ${next ? html`<div class="fa-actions">
         ${following
           ? html`<${Btn} variant="sun" size="lg" full icon="check" href=${App.sel.mapsUrl(s, following.customerId)} target="_blank" rel="noopener" onClick=${onDone}>Zugestellt & weiter<//>
@@ -8058,6 +8300,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
     const [problem, setProblem] = useState(null);
     const [showDone, setShowDone] = useState(false);
     const [showLoad, setShowLoad] = useState(false);
+    const [accessFor, setAccessFor] = useState(null);
     const reg0 = App.sel.region(s, s.ui.boRegion);
     const regionId = reg0 && !reg0.planned ? reg0.id : 'nord';
     const date = s.ui.driverDate, today = T.today();
@@ -8142,10 +8385,12 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
       <ol class="fa-list" aria-label="Offene Stopps">
         ${open.map((st, i) => html`<${Ticket} key=${st.customerId} s=${s} st=${st} next=${i === 0} following=${open[i + 1]}
           isNew=${st.customer.since >= newSince}
-          onDone=${() => markDone(st)} onProblem=${() => setProblem(st)} />`)}
+          onDone=${() => markDone(st)} onProblem=${() => setProblem(st)} onAccess=${() => setAccessFor(st.customerId)} />`)}
       </ol>
 
       <p class="fa-note ui-muted">Die Demo-Adressen sind erfunden. In der echten Version stehen hier die Kundenadressen.</p>
+
+      <${AccessSheet} open=${!!accessFor} onClose=${() => setAccessFor(null)} customerId=${accessFor} addedBy="fahrer" title="Wegbeschreibung / Foto ergänzen" />
 
       <${Sheet} open=${!!problem} onClose=${() => setProblem(null)} title="Problem melden">
         ${problem ? html`<p class="ui-muted" style="margin-top:0">${problem.seq} · ${problem.customer.street} ${problem.customer.houseNo}. Was ist passiert?</p>

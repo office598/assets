@@ -2,7 +2,7 @@
 (function (root) {
   const App = root.App = root.App || {};
   const { html, useState, useMemo } = App.lib;
-  const { Btn, Pill, Sheet, Field, Empty } = App.ui;
+  const { Btn, Pill, Sheet, Field, Empty, Icon, AccessBlock } = App.ui;
   const T = App.time, F = App.fmt;
   const PAGE = 40;
 
@@ -29,6 +29,7 @@
           <${Row} label="Benachrichtigung">${[c.notify && c.notify.push ? 'Push' : null, c.notify && c.notify.email ? 'E-Mail' : null].filter(Boolean).join(' und ') || 'keine'}<//>
           <${Row} label="Kunde seit">${T.fmt.day(c.since)} · ${c.kind === 'abo' ? 'Abo' : 'Einmalbesteller'}<//>
         </dl>
+        <div><h4>Zugangshilfe für Fahrer</h4><${AccessBlock} customerId=${c.id} addedBy="backoffice" /></div>
         <div><h4>Wochenplan</h4>
           ${plan.length ? html`<ul class="bo-list">${plan.map(p => html`<li key=${p.wd}><strong>${T.WD_LONG[p.wd]}</strong><span class="ui-muted">${App.sel.itemsText(s, p.items, 4)}</span><span class="ui-mono">${F.eur(p.total)}</span></li>`)}</ul>`
             : html`<p class="ui-muted">Kein Abo. Bestellt nur einzeln.</p>`}</div>
@@ -51,6 +52,7 @@
     const [reg, setReg] = useState('');
     const [kind, setKind] = useState('');
     const [wd, setWd] = useState('');
+    const [acc, setAcc] = useState('');
     const [limit, setLimit] = useState(PAGE);
     const [open, setOpen] = useState(null);
     const days = useMemo(() => {
@@ -61,7 +63,7 @@
     }, [s.subs]);
     const all = s.customers.filter(c => c.registered);
     const term = q.trim().toLowerCase();
-    const list = all.filter(c => (!reg || c.regionId === reg) && (!kind || c.kind === kind) &&
+    const list = all.filter(c => (!reg || c.regionId === reg) && (!kind || c.kind === kind) && (!acc || App.sel.hasAccessHelp(c)) &&
       (wd === '' || (days.get(c.id) || []).includes(Number(wd))) &&
       (!term || (c.name + ' ' + c.street + ' ' + c.city + ' ' + c.plz + ' ' + c.email).toLowerCase().includes(term)));
     const shown = list.slice(0, limit);
@@ -76,13 +78,15 @@
           options=${[{ value: '', label: 'Alle Gebiete' }].concat(s.regions.filter(r => !r.planned).map(r => ({ value: r.id, label: r.name })))} />
         <${Field} id="kd-kind" label="Art" as="select" value=${kind} onChange=${e => reset(setKind)(e.target.value)}
           options=${[{ value: '', label: 'Abo und Einmalig' }, { value: 'abo', label: 'Abo' }, { value: 'flex', label: 'Nur einmalig' }]} />
+        <${Field} id="kd-acc" label="Zugangshilfe" as="select" value=${acc} onChange=${e => reset(setAcc)(e.target.value)}
+          options=${[{ value: '', label: 'Alle' }, { value: '1', label: 'mit Zugangshilfe' }]} />
         <${Field} id="kd-wd" label="Liefertag" as="select" value=${wd} onChange=${e => reset(setWd)(e.target.value)}
           options=${[{ value: '', label: 'Alle Tage' }].concat(T.WD_LONG.map((n, i) => ({ value: String(i), label: n })))} />
       </div>
       <div class="ui-muted bo-count" aria-live="polite">${list.length} ${list.length === 1 ? 'Treffer' : 'Treffer'}</div>
       ${list.length ? html`<div class="ui-tablewrap"><table class="ui-table bo-cust-table"><thead><tr><th>Name</th><th>Adresse</th><th>Art</th><th>Liefertage</th><th>Seit</th><th></th></tr></thead>
         <tbody>${shown.map(c => html`<tr key=${c.id} class="bo-click" onClick=${() => setOpen(c.id)}>
-          <td><strong>${c.name}</strong></td><td>${c.street} ${c.houseNo}, <span class="ui-muted">${c.plz} ${c.city}</span></td>
+          <td><strong>${c.name}</strong>${App.sel.hasAccessHelp(c) ? html` <span title="Zugangshilfe hinterlegt" aria-label="Zugangshilfe hinterlegt"><${Icon} name="route" size=${15} /></span>` : null}</td><td>${c.street} ${c.houseNo}, <span class="ui-muted">${c.plz} ${c.city}</span></td>
           <td><${Pill} tone=${c.kind === 'abo' ? 'ok' : 'neutral'}>${c.kind === 'abo' ? 'Abo' : 'Einmalig'}<//></td>
           <td>${(days.get(c.id) || []).map(d => T.WD[d]).join(' · ') || html`<span class="ui-muted">–</span>`}</td>
           <td class="ui-mono">${T.fmt.day(c.since)}</td>

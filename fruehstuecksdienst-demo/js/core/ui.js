@@ -38,6 +38,7 @@
    AccessEditor({ customerId, addedBy:'fahrer'|'kunde'|'backoffice', onDone })   Bearbeiten: Wegbeschreibung, Code, Navigationspunkt (Link/Koordinaten mit
         Rückmeldung „erkannt: …“), Fotos (Kamera/Galerie, im Browser auf 1024 px verkleinert), Bildunterschriften, Löschen; Speichern → Toast „Für alle Fahrer gespeichert“.
    AccessSheet({ open, onClose, customerId, addedBy, title })   Sheet mit AccessEditor (Standardfall).
+   AccessBlock({ customerId, addedBy, intro })   Fertiger Bereich: aktuelle Zugangshilfe (live) + Knopf „Hinzufügen/Bearbeiten“ (öffnet AccessSheet). Für Konto, Bestätigung, Backoffice.
    Empty({ icon, title, text, action })   Leerzustand; action = fertiger Knopf (vnode).
    Countdown({ to })   „noch 2 Std 13 Min“ bis Date/ms/ISO-String; aktualisiert sich selbst.
    Logo({ onNight, size=22 })   Marke + Wortmarke.
@@ -147,6 +148,7 @@
 
   /* ---------- Sheet ---------- */
   let sheetSeq = 0, lockCount = 0;
+  const sheetStack = [];
   const FOCUSABLE = 'a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])';
   function Sheet({ open, onClose, title, footer, wide, children }) {
     const panel = useRef(null);
@@ -157,9 +159,11 @@
     useEffect(() => {
       if (!open) return undefined;
       const prev = document.activeElement;
+      sheetStack.push(idRef.current);
       lockCount++; document.documentElement.classList.add('ui-lock');
       if (panel.current) panel.current.focus();
       const onKey = (e) => {
+        if (sheetStack[sheetStack.length - 1] !== idRef.current) return;
         if (e.key === 'Escape') { e.stopPropagation(); if (closeRef.current) closeRef.current(); return; }
         if (e.key === 'Tab' && panel.current) {
           const f = Array.from(panel.current.querySelectorAll(FOCUSABLE)).filter(n => n.offsetParent !== null);
@@ -172,6 +176,7 @@
       document.addEventListener('keydown', onKey, true);
       return () => {
         document.removeEventListener('keydown', onKey, true);
+        const si = sheetStack.indexOf(idRef.current); if (si >= 0) sheetStack.splice(si, 1);
         if (--lockCount <= 0) { lockCount = 0; document.documentElement.classList.remove('ui-lock'); }
         if (prev && prev.focus && document.contains(prev)) { try { prev.focus(); } catch (e) { /* egal */ } }
       };
@@ -586,6 +591,21 @@
     return html`<${Sheet} open=${open} onClose=${onClose} title=${title}>${open ? html`<${AccessEditor} customerId=${customerId} addedBy=${addedBy} onDone=${onClose} />` : null}<//>`;
   }
 
+
+  function AccessBlock({ customerId, addedBy, intro }) {
+    const s = App.useStore();
+    const [open, setOpen] = useState(false);
+    const c = (s.customers || []).find(x => x.id === customerId);
+    if (!c) return null;
+    const has = App.sel.hasAccessHelp(c);
+    return html`<div class="ui-stack" style="--gap:12px">
+      ${intro ? html`<p class="ui-muted" style="margin:0">${intro}</p>` : null}
+      ${has ? html`<${AccessView} customer=${c} />` : null}
+      <div><${Btn} variant=${has ? 'ghost' : 'primary'} icon=${has ? 'edit' : 'plus'} onClick=${() => setOpen(true)}>${has ? 'Hilfe bearbeiten' : 'Hilfe für den Fahrer hinzufügen'}<//></div>
+      <${AccessSheet} open=${open} onClose=${() => setOpen(false)} customerId=${customerId} addedBy=${addedBy} />
+    </div>`;
+  }
+
   /* ---------- Fehlerkasten, Platzhalter ---------- */
   function ErrorBoundary({ name, children }) {
     const [err, reset] = useErrorBoundary((e) => { try { console.error('[' + (name || 'View') + ']', e); } catch (x) { /* egal */ } });
@@ -606,7 +626,7 @@
 
   App.ui = {
     cx, Icon, Btn, Pill, StatusPill, Chip, Sheet, ConfirmSheet, toast, ToastHost, Stepper, Segmented, Tabs, Field, Toggle,
-    DayTag, WeekStrip, Ticket, Photo, ProductCard, Bar, Kpi, Progress, BagBar, PushBanner, Empty, Countdown, Logo, Accordion, AccessView, AccessEditor, AccessSheet, ErrorBoundary, Placeholder,
+    DayTag, WeekStrip, Ticket, Photo, ProductCard, Bar, Kpi, Progress, BagBar, PushBanner, Empty, Countdown, Logo, Accordion, AccessView, AccessEditor, AccessSheet, AccessBlock, ErrorBoundary, Placeholder,
     ICON_NAMES: Object.keys(ICONS)
   };
 })(typeof window !== 'undefined' ? window : globalThis);
