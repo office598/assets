@@ -33,17 +33,17 @@
     return [
       {
         id: 'nord', name: 'Flachgau Ost', plz: ['5303', '5322', '5321', '5301', '5302', '5202', '5203', '5300', '5023'], planned: false,
-        bakery: bakery(7.8, 4.6), area: { x0: 0.6, y0: 0.6, x1: 16.6, y1: 8.6 },
+        bakery: bakery(7.6, 4.4), area: { x0: 0.6, y0: 0.6, x1: 16.6, y1: 10.6 },
         clusters: [
-          cl('thalgau', 'Thalgau', 7.6, 4.2, 0.9, 0.20, '5303', 'Thalgau', ['Lindenweg', 'Kirchengasse', 'Marktstraße', 'Bachstraße', 'Gartenstraße']),
-          cl('hof', 'Hof bei Salzburg', 12.4, 3.0, 0.8, 0.14, '5322', 'Hof bei Salzburg', ['Hauptstraße', 'Seeweg', 'Wiesenweg', 'Waldweg']),
-          cl('koppl', 'Koppl', 3.4, 2.0, 0.7, 0.10, '5321', 'Koppl', rural),
-          cl('eugendorf', 'Eugendorf', 5.0, 5.8, 0.8, 0.12, '5301', 'Eugendorf', ['Salzburger Straße', 'Schulweg', 'Fliederweg', 'Ahornweg']),
-          cl('henndorf', 'Henndorf', 9.8, 6.6, 0.7, 0.10, '5302', 'Henndorf am Wallersee', rural),
-          cl('neumarkt', 'Neumarkt', 14.2, 6.4, 0.8, 0.10, '5202', 'Neumarkt am Wallersee', ['Marktplatz', 'Bahnhofstraße', 'Seestraße', 'Gewerbeweg']),
-          cl('koestendorf', 'Köstendorf', 11.6, 7.4, 0.6, 0.08, '5203', 'Köstendorf', rural),
-          cl('hallwang', 'Hallwang', 2.2, 4.6, 0.6, 0.08, '5300', 'Hallwang', rural),
-          cl('gnigl', 'Salzburg-Gnigl', 2.6, 7.4, 0.6, 0.08, '5023', 'Salzburg', ['Gniglerstraße', 'Eichstraße', 'Parkweg', 'Kuenburgstraße'])
+          cl('thalgau', 'Thalgau', 7.4, 3.8, 0.9, 0.20, '5303', 'Thalgau', ['Lindenweg', 'Kirchengasse', 'Marktstraße', 'Bachstraße', 'Gartenstraße']),
+          cl('hof', 'Hof bei Salzburg', 13.2, 2.0, 0.8, 0.14, '5322', 'Hof bei Salzburg', ['Hauptstraße', 'Seeweg', 'Wiesenweg', 'Waldweg']),
+          cl('koppl', 'Koppl', 2.3, 0.5, 0.7, 0.10, '5321', 'Koppl', rural),
+          cl('eugendorf', 'Eugendorf', 4.2, 6.2, 0.8, 0.12, '5301', 'Eugendorf', ['Salzburger Straße', 'Schulweg', 'Fliederweg', 'Ahornweg']),
+          cl('henndorf', 'Henndorf', 10.1, 7.4, 0.7, 0.10, '5302', 'Henndorf am Wallersee', rural),
+          cl('neumarkt', 'Neumarkt', 15.4, 7.1, 0.8, 0.10, '5202', 'Neumarkt am Wallersee', ['Marktplatz', 'Bahnhofstraße', 'Seestraße', 'Gewerbeweg']),
+          cl('koestendorf', 'Köstendorf', 12.3, 8.6, 0.6, 0.08, '5203', 'Köstendorf', rural),
+          cl('hallwang', 'Hallwang', 0.8, 4.4, 0.6, 0.08, '5300', 'Hallwang', rural),
+          cl('gnigl', 'Salzburg-Gnigl', 1.3, 8.6, 0.6, 0.08, '5023', 'Salzburg', ['Gniglerstraße', 'Eichstraße', 'Parkweg', 'Kuenburgstraße'])
         ]
       },
       {
