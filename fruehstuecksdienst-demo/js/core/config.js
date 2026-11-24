@@ -11,15 +11,15 @@
     cutoff: { h: 16, m: 30 },                       // Bestellschluss am Vortag; für Sa, So und Mo gilt Freitag
     deadlineMin: { weekday: 390, weekend: 510 },    // 06:30 / 08:30
     tour: {
-      startMin: { weekday: 240, weekend: 300 },
-      speedKmh: 30,
+      startMin: { weekday: 210, weekend: 270 },     // 03:30 / 04:30
+      speedKmh: 40,
       roadFactor: 1.3,
       serviceMin: 1.4                               // Minuten je Stopp (kalibriert, siehe tools/test-core.mjs)
     },
     capacityDefaults: {
-      stopsPerDriver: { weekday: 60, weekend: 95 },
-      flexQuota: 6,
-      fewThreshold: 8
+      stopsPerDriver: { weekday: 38, weekend: 55 },
+      flexQuota: 3,
+      fewThreshold: 4
     },
     // Kundenpreise inkl. USt (netto rund 1,60 / 2,50). freeDeliveryFrom: null = keine Gratis-Zustellung ab Bestellwert.
     fees: { abo: 1.75, aboWeekend: 2.75, flex: 2.50, flexWeekend: 3.50, flexMinOrder: 6.00, freeDeliveryFrom: null },

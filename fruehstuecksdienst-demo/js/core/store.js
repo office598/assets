@@ -40,7 +40,7 @@
       if (!raw) return null;
       const saved = JSON.parse(raw);
       const st = saved && saved.state;
-      if (!st || !Array.isArray(st.regions) || !st.draft || !st.ui || !st.capacity) return null;
+      if (!st || !Array.isArray(st.regions) || !st.draft || !st.ui || !st.capacity || !st.weeklySpecial || !st.offers) return null;
       T.setOffset(st.clockOffset || 0);
       if (saved.seedDay !== T.today()) { T.setOffset(0); return null; }
       return st;
@@ -215,6 +215,11 @@
       if (free > 0) discounts.push({ offerId: o.id, title: o.title, productId: gp.id, freeQty: free, amount: round2(free * gp.price * o.get.pct / 100) });
       if (text) hints.push({ offerId: o.id, title: o.title, text, missing, giftProductId: gp.id });
     });
+    const ws = s.weeklySpecial;
+    if (ws && ws.pct > 0 && items && items[ws.productId] > 0) {
+      const wp = sel.product(s, ws.productId);
+      if (wp) discounts.push({ offerId: 'weekly-special', title: ws.title, productId: wp.id, freeQty: items[wp.id], amount: round2(items[wp.id] * wp.price * ws.pct / 100) });
+    }
     const total = round2(subtotal - discounts.reduce((a, d) => a + d.amount, 0));
     return { lines, subtotal, discounts, total, hints };
   };
@@ -594,17 +599,24 @@
 
   // ----- Verkaufsförderung
   const STARTER = [
-    { id: 'klassiker', title: 'Klassiker', text: 'Der Frühstückstisch für zwei, schnell gepackt.', items: { kaisersemmel: 4, kornweckerl: 2 } },
-    { id: 'suesser-morgen', title: 'Süßer Morgen', text: 'Croissants, Semmeln und Marillenmarmelade.', items: { buttercroissant: 2, kaisersemmel: 2, marillenmarmelade: 1 } },
-    { id: 'familie', title: 'Familie', text: 'Reichlich Gebäck, Brot und Butter für alle.', items: { kaisersemmel: 6, salzstangerl: 2, bauernbrot: 1, teebutter: 1 } }
+    { id: 'klassiker', title: 'Klassiker', text: 'Der Frühstückstisch für zwei, schnell gepackt.', items: { kaisersemmel: 3, kornweckerl: 2, salzstangerl: 1 } },
+    { id: 'brotzeit', title: 'Brotzeit', text: 'Bauernbrot, Stangerl und Butter für eine gemütliche Jause.', popular: true, items: { bauernbrot: 1, salzstangerl: 2, teebutter: 1 } },
+    { id: 'sonntag', title: 'Sonntag', text: 'Das Sonntagsfrühstück für zwei mit Butter-Briochestriezel.', anchor: true, items: { 'box-sonntag': 1, briochestriezel: 1 } }
   ];
   sel.starterBags = s => STARTER.map(b => {
     const items = {};
     Object.keys(b.items).forEach(id => { const p = sel.product(s, id); if (p && p.active !== false) items[id] = b.items[id]; });
     if (!Object.keys(items).length) return null;
     const bag = sel.priceBag(s, items, {});
-    return { id: b.id, title: b.title, text: b.text, items, total: bag.total, saving: round2(bag.subtotal - bag.total) };
+    return { id: b.id, title: b.title, text: b.text, items, total: bag.total, saving: round2(bag.subtotal - bag.total), popular: !!b.popular, anchor: !!b.anchor };
   }).filter(Boolean);
+
+  // Deckungsbeitrag je Stück: Nettopreis minus Einkauf minus Fahrervergütung.
+  sel.unitMargin = (s, p) => round2(net(p.price) - sel.costOf(s, p) - C.economics.driverPerPiece);
+  const um = (s, p) => net(p.price) - sel.costOf(s, p) - C.economics.driverPerPiece;
+
+  sel.focusProposal = (s, n) => s.products.filter(p => p.active !== false).slice()
+    .sort((a, b) => um(s, b) - um(s, a) || s.products.indexOf(a) - s.products.indexOf(b)).slice(0, n || 5);
 
   sel.suggestions = (s, items, max) => {
     const have = items || {}, inBag = id => have[id] > 0;
@@ -615,10 +627,26 @@
     if (ids.includes('buttercroissant') || ids.includes('topfengolatsche') || ids.includes('nussschnecke')) order.push('marillenmarmelade', 'orangensaft');
     if (cats.includes('brot')) order.push('bergkaese', 'beinschinken');
     if (cats.includes('gebaeck') && !spread.some(inBag)) order.push('teebutter', 'marillenmarmelade');
-    s.products.filter(p => p.bestseller && p.active !== false).forEach(p => order.push(p.id));
+    s.products.filter(p => (p.bestseller || p.focus) && p.active !== false).forEach(p => order.push(p.id));
     const seen = new Set();
-    return order.filter(id => { if (seen.has(id) || inBag(id)) return false; seen.add(id); return true; })
-      .map(id => sel.product(s, id)).filter(p => p && p.active !== false).slice(0, max || 3);
+    const cand = order.filter(id => { if (seen.has(id) || inBag(id)) return false; seen.add(id); return true; })
+      .map(id => sel.product(s, id)).filter(p => p && p.active !== false && p.cat !== 'boxen' && !p.season && !p.weekendOnly);
+    const rank = new Map(cand.map((p, i) => [p.id, i]));
+    cand.sort((a, b) => (b.focus ? 1 : 0) - (a.focus ? 1 : 0) || um(s, b) - um(s, a) || rank.get(a.id) - rank.get(b.id));
+    return cand.slice(0, max || 3);
+  };
+
+  const SWAPS = [['kaisersemmel', 'handsemmel'], ['salzstangerl', 'laugenbreze'], ['kornweckerl', 'dinkelweckerl'], ['topfengolatsche', 'nussschnecke'], ['bauernbrot', 'dinkelbrot']];
+  sel.tradeUps = (s, items) => {
+    const out = [];
+    SWAPS.forEach(pair => {
+      const from = sel.product(s, pair[0]), to = sel.product(s, pair[1]);
+      if (!from || !to || to.active === false || !(items && items[from.id] > 0) || um(s, to) <= um(s, from)) return;
+      const diff = round2(to.price - from.price);
+      out.push({ fromId: from.id, toId: to.id, qty: items[from.id], diffPerPiece: diff,
+        text: 'Lieber ' + to.name + ' statt ' + from.name + '? ' + (diff >= 0 ? '+' : '−') + App.fmt.eur(Math.abs(diff)) + ' je Stück' });
+    });
+    return out;
   };
 
   sel.regionStats = (s, regionId) => {
@@ -720,6 +748,16 @@
     if (target && target.flex) setDraftPatch({ flex: copy });
     else setDraftPatch({ abo: Object.assign({}, d.abo, { [target.wd]: copy }) });
   };
+  A.draftSwap = (target, fromId, toId) => {
+    const d = get().draft, bag = Object.assign({}, target && target.flex ? d.flex : d.abo[target.wd] || {});
+    const q = bag[fromId] || 0;
+    if (!q || fromId === toId) return;
+    delete bag[fromId];
+    bag[toId] = (bag[toId] || 0) + q;
+    if (target && target.flex) setDraftPatch({ flex: bag });
+    else setDraftPatch({ abo: Object.assign({}, d.abo, { [target.wd]: bag }) });
+  };
+  A.setWeeklySpecial = patch => setState({ weeklySpecial: Object.assign({}, get().weeklySpecial, patch) });
   A.draftSetFlexDate = dateKey => setDraftPatch({ flexDate: dateKey });
 
   function coordsFor(region, address) {

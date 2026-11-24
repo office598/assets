@@ -29,35 +29,40 @@
   function worldRegions() {
     const bakery = (x, y) => ({ name: 'Backstube Kornfeld', since: 1928, x, y });
     const cl = (id, name, x, y, spread, w, plz, city, streets) => ({ id, name, x, y, spread, w, plz, city, streets });
+    const rural = ['Dorfstraße', 'Hauptstraße', 'Bachweg', 'Kirchenweg', 'Birkenweg', 'Am Anger'];
     return [
       {
-        id: 'nord', name: 'Thalgau & Hof', plz: ['5303', '5322'], planned: false,
-        bakery: bakery(3.1, 2.6), area: { x0: 0.6, y0: 0.6, x1: 5.6, y1: 4.6 },
+        id: 'nord', name: 'Flachgau Ost', plz: ['5303', '5322', '5321', '5301', '5302', '5202', '5203', '5300', '5023'], planned: false,
+        bakery: bakery(7.8, 4.6), area: { x0: 0.6, y0: 0.6, x1: 16.6, y1: 8.6 },
         clusters: [
-          cl('thalgau-markt', 'Thalgau Markt', 3.2, 2.2, 0.45, 0.30, '5303', 'Thalgau', ['Kirchengasse', 'Schmiedgasse', 'Marktstraße', 'Badgasse', 'Stiftergasse']),
-          cl('unterdorf', 'Unterdorf', 1.5, 1.5, 0.55, 0.20, '5303', 'Thalgau', ['Rosenweg', 'Birkenweg', 'Hangstraße', 'Veilchenweg', 'Dorfstraße']),
-          cl('enzersberg', 'Enzersberg', 4.8, 1.4, 0.5, 0.15, '5303', 'Thalgau', ['Bachstraße', 'Mühlweg', 'Weidenstraße', 'Auweg', 'Bergweg']),
-          cl('vetterbach', 'Vetterbach', 1.6, 3.7, 0.6, 0.20, '5303', 'Thalgau', ['Lindenweg', 'Kastanienallee', 'Feldstraße', 'Ahornweg', 'Gartenstraße']),
-          cl('hof', 'Hof', 4.4, 3.7, 0.5, 0.15, '5322', 'Hof bei Salzburg', ['Hauptstraße', 'Postgasse', 'Seeweg', 'Wiesenweg', 'Waldweg'])
+          cl('thalgau', 'Thalgau', 7.6, 4.2, 0.9, 0.20, '5303', 'Thalgau', ['Lindenweg', 'Kirchengasse', 'Marktstraße', 'Bachstraße', 'Gartenstraße']),
+          cl('hof', 'Hof bei Salzburg', 12.4, 3.0, 0.8, 0.14, '5322', 'Hof bei Salzburg', ['Hauptstraße', 'Seeweg', 'Wiesenweg', 'Waldweg']),
+          cl('koppl', 'Koppl', 3.4, 2.0, 0.7, 0.10, '5321', 'Koppl', rural),
+          cl('eugendorf', 'Eugendorf', 5.0, 5.8, 0.8, 0.12, '5301', 'Eugendorf', ['Salzburger Straße', 'Schulweg', 'Fliederweg', 'Ahornweg']),
+          cl('henndorf', 'Henndorf', 9.8, 6.6, 0.7, 0.10, '5302', 'Henndorf am Wallersee', rural),
+          cl('neumarkt', 'Neumarkt', 14.2, 6.4, 0.8, 0.10, '5202', 'Neumarkt am Wallersee', ['Marktplatz', 'Bahnhofstraße', 'Seestraße', 'Gewerbeweg']),
+          cl('koestendorf', 'Köstendorf', 11.6, 7.4, 0.6, 0.08, '5203', 'Köstendorf', rural),
+          cl('hallwang', 'Hallwang', 2.2, 4.6, 0.6, 0.08, '5300', 'Hallwang', rural),
+          cl('gnigl', 'Salzburg-Gnigl', 2.6, 7.4, 0.6, 0.08, '5023', 'Salzburg', ['Gniglerstraße', 'Eichstraße', 'Parkweg', 'Kuenburgstraße'])
         ]
       },
       {
         id: 'sued', name: 'Mondseeland', plz: ['5310', '5311'], planned: false,
-        bakery: bakery(8.7, 5.4), area: { x0: 6.2, y0: 3.4, x1: 11.2, y1: 7.4 },
+        bakery: bakery(19.2, 12.6), area: { x0: 15.0, y0: 9.0, x1: 24.0, y1: 16.0 },
         clusters: [
-          cl('mondsee-markt', 'Mondsee Markt', 7.4, 4.4, 0.5, 0.25, '5310', 'Mondsee', ['Kirchengasse', 'Marktplatz', 'Schulstraße', 'Hirtengasse']),
-          cl('tiefgraben', 'Tiefgraben', 9.6, 4.5, 0.5, 0.20, '5310', 'Mondsee', ['Siedlerweg', 'Fliederweg', 'Rainstraße', 'Kleeweg']),
-          cl('st-lorenz', 'St. Lorenz', 7.6, 6.5, 0.55, 0.20, '5310', 'Mondsee', ['Seestraße', 'Uferweg', 'Schilfgasse', 'Teichweg']),
-          cl('schwarzindien', 'Schwarzindien', 9.8, 6.4, 0.5, 0.15, '5310', 'Mondsee', ['Bachstraße', 'Pfarrgasse', 'Friedhofweg', 'Glockengasse']),
-          cl('loibichl', 'Loibichl', 8.6, 7.0, 0.4, 0.20, '5311', 'Loibichl', ['Dorfstraße', 'Lindenweg', 'Wiesenweg', 'Birkenweg'])
+          cl('mondsee-markt', 'Mondsee Markt', 17.2, 11.0, 0.6, 0.25, '5310', 'Mondsee', ['Kirchengasse', 'Marktplatz', 'Schulstraße', 'Hirtengasse']),
+          cl('tiefgraben', 'Tiefgraben', 21.4, 11.3, 0.6, 0.20, '5310', 'Mondsee', ['Siedlerweg', 'Fliederweg', 'Rainstraße', 'Kleeweg']),
+          cl('st-lorenz', 'St. Lorenz', 17.8, 14.0, 0.6, 0.20, '5310', 'Mondsee', ['Seestraße', 'Uferweg', 'Schilfgasse', 'Teichweg']),
+          cl('schwarzindien', 'Schwarzindien', 21.2, 14.2, 0.6, 0.15, '5310', 'Mondsee', ['Bachstraße', 'Pfarrgasse', 'Friedhofweg', 'Glockengasse']),
+          cl('loibichl', 'Loibichl', 19.4, 15.0, 0.4, 0.20, '5311', 'Loibichl', ['Dorfstraße', 'Lindenweg', 'Wiesenweg', 'Birkenweg'])
         ]
       },
       {
         id: 'west', name: 'Fuschlsee', plz: ['5330', '5340'], planned: true, neededPrereg: 25,
-        bakery: bakery(2.6, 6.4), area: { x0: 0.6, y0: 5.2, x1: 4.6, y1: 7.6 },
+        bakery: bakery(4.5, 12.5), area: { x0: 0.6, y0: 9.6, x1: 9.0, y1: 15.4 },
         clusters: [
-          cl('fuschl', 'Fuschl am See', 1.7, 6.2, 0.5, 0.5, '5330', 'Fuschl am See', ['Seestraße', 'Waldweg']),
-          cl('st-gilgen', 'St. Gilgen', 3.4, 6.7, 0.5, 0.5, '5340', 'St. Gilgen', ['Hauptstraße', 'Hangweg'])
+          cl('fuschl', 'Fuschl am See', 3.0, 11.6, 0.6, 0.5, '5330', 'Fuschl am See', ['Seestraße', 'Waldweg']),
+          cl('st-gilgen', 'St. Gilgen', 6.6, 13.2, 0.6, 0.5, '5340', 'St. Gilgen', ['Hauptstraße', 'Hangweg'])
         ]
       }
     ];
@@ -103,6 +108,7 @@
     ].map(withCost).map(withFlags);
   }
 
+  const FOCUS = ['bauernbrot', 'dinkelbrot', 'nussbrot', 'briochestriezel', 'box-sonntag', 'box-familie', 'box-buero', 'box-nikolo', 'buttercroissant'];
   const BESTSELLER = ['kaisersemmel', 'kornweckerl', 'buttercroissant', 'bauernbrot', 'teebutter', 'box-sonntag'];
   const NEW_IDS = ['dinkelweckerl', 'liptauer', 'box-nikolo'];
   const ALLERGENS = {'kaisersemmel': 'A', 'handsemmel': 'A', 'kornweckerl': 'A N', 'salzstangerl': 'A', 'mohnflesserl': 'A', 'laugenbreze': 'A', 'dinkelweckerl': 'A', 'buttercroissant': 'A C G', 'topfengolatsche': 'A C G', 'nussschnecke': 'A C G H', 'marillenkrapfen': 'A C G', 'briochestriezel': 'A C G', 'bauernbrot': 'A', 'dinkelbrot': 'A', 'nussbrot': 'A H', 'teebutter': 'G', 'marillenmarmelade': '', 'bluetenhonig': '', 'beinschinken': '', 'bergkaese': 'G', 'freilandeier': 'C', 'frischmilch': 'G', 'orangensaft': '', 'naturjoghurt': 'G', 'liptauer': 'G M', 'roestkaffee': '', 'box-sonntag': 'A C G', 'box-familie': 'A C G H', 'box-buero': 'A C G H', 'box-nikolo': 'A C G H'};
@@ -110,6 +116,7 @@
     pr.allergens = (ALLERGENS[pr.id] || '').split(' ').filter(Boolean);
     pr.bestseller = BESTSELLER.includes(pr.id);
     pr.isNew = NEW_IDS.includes(pr.id);
+    pr.focus = FOCUS.includes(pr.id);
     return pr;
   }
 
@@ -184,21 +191,24 @@
   }
 
   // ---------------------------------------------------------------- Warenkörbe
+  // Mischung nach Stück: rund 23 % Semmeln, 57 % Weckerl/Stangerl, 16 % Süßes, 4 % Brot; im Mittel rund 5 Stück.
+  const MIX = [
+    { w: 0.23, ids: ['kaisersemmel', 'kaisersemmel', 'kaisersemmel', 'kaisersemmel', 'kaisersemmel', 'kaisersemmel', 'kaisersemmel', 'kaisersemmel', 'kaisersemmel', 'handsemmel'] },
+    { w: 0.57, ids: ['kornweckerl', 'kornweckerl', 'kornweckerl', 'kornweckerl', 'salzstangerl', 'salzstangerl', 'salzstangerl', 'salzstangerl', 'salzstangerl', 'salzstangerl', 'mohnflesserl', 'mohnflesserl', 'mohnflesserl', 'laugenbreze', 'laugenbreze', 'laugenbreze', 'dinkelweckerl', 'dinkelweckerl'] },
+    { w: 0.16, ids: ['buttercroissant', 'buttercroissant', 'buttercroissant', 'buttercroissant', 'topfengolatsche', 'topfengolatsche', 'nussschnecke', 'marillenkrapfen', 'marillenkrapfen'] },
+    { w: 0.04, ids: ['bauernbrot', 'bauernbrot', 'bauernbrot', 'dinkelbrot', 'nussbrot'] }
+  ];
   function randBasket(rng, wd) {
     const items = {};
-    const gb = ['kaisersemmel', 'kaisersemmel', 'handsemmel', 'kornweckerl', 'salzstangerl', 'mohnflesserl', 'laugenbreze', 'dinkelweckerl'];
-    const su = ['buttercroissant', 'buttercroissant', 'topfengolatsche', 'nussschnecke', 'marillenkrapfen'];
-    const ex = ['teebutter', 'marillenmarmelade', 'frischmilch', 'freilandeier', 'naturjoghurt', 'bluetenhonig'];
-    const sizes = wd >= 5 ? [4, 5, 5, 6, 6, 7] : [3, 4, 4, 5, 5, 6];
-    let rem = pick(rng, sizes);
-    const add = (id, q) => { items[id] = (items[id] || 0) + q; rem -= q; };
-    if (wd >= 5 && rng() < 0.08 && rem >= 2) add('briochestriezel', 1);
-    if (wd === 6 && rng() < 0.05) add('box-sonntag', 1);
-    if (rem >= 3 && rng() < 0.15) add(pick(rng, ['bauernbrot', 'dinkelbrot', 'nussbrot']), 1);
-    if (rem >= 3 && rng() < 0.12) add(pick(rng, ex), 1);
-    if (rem >= 3 && rng() < 0.5) add(pick(rng, su), Math.min(rem - 1, randInt(rng, 1, 2)));
-    if (rem >= 3 && rng() < 0.35) add(pick(rng, gb), Math.floor(rem / 2));
-    if (rem > 0) add(pick(rng, gb), rem);
+    const add = (id, q) => { items[id] = (items[id] || 0) + (q || 1); };
+    let n = pick(rng, wd >= 5 ? [4, 5, 5, 6, 6, 5] : [3, 4, 5, 5, 6, 5, 4, 6]);
+    if (wd >= 5 && rng() < 0.07 && n > 2) { add('briochestriezel'); n--; }
+    if (wd === 6 && rng() < 0.04 && n > 2) { add('box-sonntag'); n--; }
+    if (rng() < 0.05 && n > 2) { add(pick(rng, ['teebutter', 'marillenmarmelade', 'freilandeier', 'naturjoghurt'])); n--; }
+    for (let i = 0; i < n; i++) {
+      const g = MIX[weightedIndex(rng, MIX.map(m => m.w))];
+      add(pick(rng, g.ids));
+    }
     return items;
   }
 
@@ -257,8 +267,8 @@
     const customers = [], subs = [], flexOnlyByRegion = {};
     const factory = makeCustomerFactory(rng, today);
     const plans = {
-      nord: { quotas: [64, 31, 29, 33, 36, 70, 82], pool: 140, flex: 15 },
-      sued: { quotas: [44, 22, 20, 24, 27, 51, 58], pool: 95, flex: 15 }
+      nord: { quotas: [41, 19, 18, 21, 22, 38, 50], pool: 85, flex: 10 },
+      sued: { quotas: [26, 12, 11, 13, 14, 24, 30], pool: 55, flex: 10 }
     };
     Object.keys(plans).forEach(rid => {
       const region = regions.find(r => r.id === rid), plan = plans[rid];
@@ -268,7 +278,7 @@
       for (let i = 0; i < plan.pool; i++) {
         let c;
         if (rid === 'nord' && i === 0) {
-          const cl = region.clusters.find(x => x.id === 'vetterbach');
+          const cl = region.clusters.find(x => x.id === 'thalgau');
           c = factory.make(region, 'abo', { id: 'c-huber', name: 'Maria Huber', street: 'Lindenweg', houseNo: '12', cluster: cl,
             placement: 'tuerschnalle', note: '', since: T.addDays(today, -430) });
           c.email = 'maria.huber@mail.example'; c.notify = { push: true, email: true };
@@ -278,8 +288,8 @@
           let items = randBasket(rng, wd);
           if (c.id === 'c-huber') {
             items = wd === 2 ? { kaisersemmel: 2, buttercroissant: 1 }
-              : wd === 5 ? { kaisersemmel: 4, kornweckerl: 2, topfengolatsche: 2 }
-                : { kaisersemmel: 4, buttercroissant: 2, freilandeier: 1 };
+              : wd === 5 ? { kaisersemmel: 3, kornweckerl: 2, salzstangerl: 1, topfengolatsche: 1 }
+                : { kaisersemmel: 3, buttercroissant: 2, salzstangerl: 1, freilandeier: 1 };
           }
           subs.push({ id: 's-' + c.id + '-' + wd, customerId: c.id, weekday: wd, items,
             since: c.since > T.addDays(today, -14) ? c.since : T.addDays(c.since, randInt(rng, 0, 20)) });
@@ -297,7 +307,7 @@
       const pool = flexOnly[rid]; let ptr = 0;
       if (!pool.length) return;
       dates.forEach(k => {
-        const cnt = randInt(rng, 1, 4);
+        const cnt = randInt(rng, 0, 2);
         for (let i = 0; i < cnt; i++) {
           const c = pool[ptr++ % pool.length];
           orders.push({ id: 'f-' + (orders.length + 1), customerId: c.id, dateKey: k, items: flexBasket(rng, products),
@@ -417,7 +427,8 @@
     const pauses = pauseSub ? [{ id: 'p-1', customerId: pauseSub.customerId, from: T.addDays(today, 1), to: T.addDays(today, 10) }] : [];
     return {
       regions, drivers: DRIVERS.map(d => Object.assign({}, d)), capacity: defaultCapacity(), products,
-      offers: worldOffers(), customers, subs: pop.subs, skips, pauses, flexOrders,
+      offers: worldOffers(),
+      weeklySpecial: { productId: 'nussbrot', title: 'Brot der Woche', text: 'Mit Walnüssen und Haselnüssen, frisch aus dem Ofen.', pct: 0 }, customers, subs: pop.subs, skips, pauses, flexOrders,
       waitlist: buildWaitlist(rng, today),
       notifications: buildHuberInbox(today),
       campaigns: pastCampaigns(pop.customers, pop.subs),
