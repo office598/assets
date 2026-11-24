@@ -1,10 +1,80 @@
-/* STUB (V3): wird ersetzt. Registriert App.views.backoffice.sortiment. */
+/* Backoffice › Sortiment (V3): Preise, Einkauf, Marge, aktiv/inaktiv, Kategorie, Partner. */
 (function (root) {
   const App = root.App = root.App || {};
-  const { html } = App.lib;
+  const { html, useState, useEffect } = App.lib;
+  const { Pill, Toggle, Field, Chip } = App.ui;
+  const F = App.fmt;
+
+  const parseNum = v => { const n = parseFloat(String(v).replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? n : null; };
+  const num2 = n => (Math.round(n * 100) / 100).toFixed(2).replace('.', ',');
+
+  /* Zahlenfeld: schreibt erst bei Verlassen bzw. Enter */
+  function MoneyInput({ id, label, value, onCommit }) {
+    const [txt, setTxt] = useState(num2(value));
+    const [bad, setBad] = useState(false);
+    useEffect(() => { setTxt(num2(value)); setBad(false); }, [value]);
+    const commit = () => {
+      const n = parseNum(txt);
+      if (n == null || n < 0) { setBad(true); return; }
+      setBad(false);
+      if (Math.abs(n - value) > 1e-9) onCommit(Math.round(n * 100) / 100); else setTxt(num2(value));
+    };
+    return html`<div class="bo-money"><label class="ui-sr" for=${id}>${label}</label>
+      <input id=${id} class="ui-input ui-num" inputmode="decimal" value=${txt} aria-invalid=${bad ? 'true' : undefined}
+        onInput=${e => setTxt(e.target.value)} onBlur=${commit} onKeyDown=${e => { if (e.key === 'Enter') e.target.blur(); }} /><span class="bo-money-eur" aria-hidden="true">€</span></div>`;
+  }
+
+  function TextInput({ id, label, value, onCommit }) {
+    const [txt, setTxt] = useState(value || '');
+    useEffect(() => setTxt(value || ''), [value]);
+    return html`<div><label class="ui-sr" for=${id}>${label}</label>
+      <input id=${id} class="ui-input" value=${txt} onInput=${e => setTxt(e.target.value)}
+        onBlur=${() => { const v = txt.trim(); if (v && v !== value) onCommit(v); else setTxt(value || ''); }} onKeyDown=${e => { if (e.key === 'Enter') e.target.blur(); }} /></div>`;
+  }
+
+  function Row({ p }) {
+    const cats = App.config.labels.cat;
+    const margin = p.price - (p.cost || 0), mp = p.price ? margin / p.price : 0;
+    const tone = margin <= 0 ? 'full' : mp < 0.3 ? 'warn' : 'ok';
+    const up = patch => App.actions.updateProduct(p.id, patch);
+    return html`<tr class=${p.active === false ? 'bo-off' : ''}>
+      <td><strong>${p.name}</strong><div class="ui-muted bo-unit">${p.unit}${p.weekendOnly ? ' · nur Wochenende' : ''}${p.season ? ' · Saison' : ''}</div></td>
+      <td><label class="ui-sr" for=${'pc-' + p.id}>Kategorie ${p.name}</label>
+        <select id=${'pc-' + p.id} class="ui-input" value=${p.cat} onChange=${e => up({ cat: e.target.value })}>
+          ${Object.keys(cats).map(k => html`<option key=${k} value=${k} selected=${k === p.cat}>${cats[k]}</option>`)}</select></td>
+      <td><${TextInput} id=${'pp-' + p.id} label=${'Partner ' + p.name} value=${p.partner} onCommit=${v => up({ partner: v })} /></td>
+      <td><${MoneyInput} id=${'pe-' + p.id} label=${'Verkaufspreis ' + p.name + ' in Euro'} value=${p.price} onCommit=${v => up({ price: v })} /></td>
+      <td><${MoneyInput} id=${'pk-' + p.id} label=${'Einkaufspreis ' + p.name + ' in Euro'} value=${p.cost || 0} onCommit=${v => up({ cost: v })} /></td>
+      <td class="num"><${Pill} tone=${tone} mono>${F.eur(margin)} · ${Math.round(mp * 100)} %<//></td>
+      <td><${Toggle} id=${'pa-' + p.id} label=${p.active === false ? 'inaktiv' : 'aktiv'} checked=${p.active !== false} onChange=${v => up({ active: v })} /></td>
+    </tr>`;
+  }
+
+  function Sortiment() {
+    const s = App.useStore();
+    const [cat, setCat] = useState('');
+    const [q, setQ] = useState('');
+    const cats = App.config.labels.cat;
+    const term = q.trim().toLowerCase();
+    const list = s.products.filter(p => (!cat || p.cat === cat) && (!term || p.name.toLowerCase().includes(term)));
+    const act = s.products.filter(p => p.active !== false);
+    const avg = act.length ? act.reduce((a, p) => a + (p.price ? (p.price - (p.cost || 0)) / p.price : 0), 0) / act.length : 0;
+    return html`<div class="bo-page">
+      ${App.boA.head('Sortiment', act.length + ' von ' + s.products.length + ' Artikeln aktiv · durchschnittliche Marge ' + F.pct(avg))}
+      <div class="ui-card bo-filters bo-filters-2">
+        <${Field} id="so-q" label="Suche" type="search" placeholder="Artikel suchen" value=${q} onInput=${e => setQ(e.target.value)} />
+        <div class="ui-field"><span class="ui-label">Kategorie</span><div class="ui-row bo-chips" role="group" aria-label="Kategorie">
+          <${Chip} selected=${cat === ''} onClick=${() => setCat('')}>Alle<//>
+          ${Object.keys(cats).map(k => html`<${Chip} key=${k} selected=${cat === k} onClick=${() => setCat(k)}>${cats[k]}<//>`)}</div></div>
+      </div>
+      <p class="ui-muted bo-hint">Preise gelten sofort in der Kunden-App. Marge = Verkaufspreis − Einkaufspreis, in Prozent vom Verkaufspreis. Inaktive Artikel sind für Kunden nicht bestellbar.</p>
+      <div class="ui-tablewrap"><table class="ui-table bo-prod-table"><thead><tr><th>Artikel</th><th>Kategorie</th><th>Partner</th><th>Verkauf</th><th>Einkauf</th><th class="num">Marge</th><th>Status</th></tr></thead>
+        <tbody>${list.map(p => html`<${Row} key=${p.id} p=${p} />`)}</tbody></table></div>
+      ${!list.length ? html`<p class="ui-muted">Kein Artikel gefunden.</p>` : null}
+    </div>`;
+  }
+
   App.views = App.views || {};
   App.views.backoffice = App.views.backoffice || {};
-  App.views.backoffice.sortiment = function () {
-    return html`<${App.ui.Placeholder} title="Platzhalter backoffice/sortiment" text="Dieser Bereich wird von V3 gebaut." />`;
-  };
+  App.views.backoffice.sortiment = Sortiment;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1,10 +1,622 @@
-/* STUB (V2): wird ersetzt. Registriert App.views.customer.lieferplan. */
+/* Kunden-App: Lieferplan – geführter Ablauf Sackerl → Adresse → Bezahlung → Fertig.
+   Schritt 1 (Sackerl) ist das Herzstück: Wochenleiste, Sackerl-Karten, Aktionen, Zusammenfassung.
+   Geteilte Bausteine (für konto.js): App.views.customer.lieferplan.shared */
 (function (root) {
   const App = root.App = root.App || {};
-  const { html } = App.lib;
+  const L = App.lib;
+  const { html, useState, useEffect, useRef } = L;
+  const U = App.ui;
+  const { Icon, Btn, Pill, Sheet, Segmented, Field, Toggle, WeekStrip, Ticket, Photo, Progress, BagBar, Countdown, Stepper, Tabs, ProductCard, Empty, cx, toast } = U;
+  const T = App.time, C = App.config;
+  const sel = () => App.sel, act = () => App.actions;
+  const eur = n => App.fmt.eur(n);
+  const WD = T.WD, WDL = T.WD_LONG;
+
+  const sumQty = o => Object.keys(o || {}).reduce((a, k) => a + (o[k] > 0 ? o[k] : 0), 0);
+  const dateShort = k => T.fmt.day(k).replace(/^\D+/, '');
+  const artikel = n => n + (n === 1 ? ' Artikel' : ' Artikel');
+  const reduceMotion = () => { try { return root.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+  const scrollToId = id => setTimeout(() => {
+    const el = document.getElementById(id);
+    if (el && el.scrollIntoView) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center' });
+  }, 60);
+  const scrollTop = () => { if (root.scrollTo) root.scrollTo(0, 0); };
+  const state = () => App.store.getState();
+
+  /* ---------- Hilfen ---------- */
+  function problemText(p) {
+    const [k, v] = p.split(':');
+    const m = {
+      'no-region': 'Bitte geben Sie zuerst Ihre Postleitzahl ein.',
+      'region-planned': 'In diesem Gebiet liefern wir noch nicht.',
+      'no-days': 'Wählen Sie mindestens einen Liefertag.',
+      'empty-day': 'Das Sackerl für ' + WDL[v] + ' ist noch leer.',
+      'day-full': WDL[v] + ' ist ausgebucht. Setzen Sie sich auf die Warteliste.',
+      'flex-no-date': 'Wählen Sie einen Liefertag.',
+      'flex-empty': 'Das Sackerl ist noch leer.',
+      'flex-min': 'Der Mindestbestellwert von ' + eur(C.fees.flexMinOrder) + ' ist noch nicht erreicht.',
+      'flex-full': 'Dieser Tag ist ausgebucht. Wählen Sie einen anderen Tag.',
+      'flex-cutoff': 'Der Bestellschluss für diesen Tag ist vorbei.',
+      'address-incomplete': 'Bitte vervollständigen Sie Ihre Adresse.'
+    };
+    return m[k] || 'Bitte prüfen Sie Ihre Angaben.';
+  }
+
+  function bookDay(wd) {
+    let s = state();
+    const a = act();
+    if (s.draft.mode !== 'abo') a.setDraft({ mode: 'abo' });
+    if (!s.draft.abo[wd]) a.draftToggleDay(wd);
+    s = state();
+    if (!sumQty(s.draft.abo[wd])) {
+      const src = Object.keys(s.draft.abo).map(Number).sort().find(w => w !== wd && sumQty(s.draft.abo[w]) > 0);
+      const bags = sel().starterBags ? sel().starterBags(s) : [];
+      if (src != null) a.draftCopyDay(src, wd);
+      else if (bags[0]) a.draftApplyBag({ wd }, bags[0].items);
+    }
+    if (state().draft.step !== 'plan') a.setDraft({ step: 'plan' });
+  }
+
+  function reservedFor(s, cid, regionId) {
+    const now = T.now().getTime();
+    return s.waitlist.filter(w => w.customerId === cid && w.status === 'notified' && w.weekday != null && w.reservedUntil &&
+      new Date(w.reservedUntil).getTime() > now && (!regionId || w.regionId === regionId))
+      .sort((a, b) => a.weekday - b.weekday);
+  }
+
+  /* ---------- Auswahlkarten Ablageort (auch im Konto) ---------- */
+  const PLACE = {
+    tuerschnalle: { icon: 'door', text: 'Das Sackerl hängt an der Türschnalle. Der Klassiker.' },
+    'vor-der-tuer': { icon: 'home', text: 'Direkt vor der Wohnungstür, z. B. im Stiegenhaus.' },
+    box: { icon: 'bag', text: 'In der Zeitungsbox oder im Briefkasten-Korb.' },
+    hinweis: { icon: 'edit', text: 'Sie schreiben uns, wo es hin soll.' }
+  };
+  function PlacementCards({ value, onChange, idp = 'pl' }) {
+    const lab = C.labels.placement;
+    return html`<div class="k-place" role="radiogroup" aria-label="Ablageort">
+      ${Object.keys(lab).map(k => html`<button type="button" key=${k} id=${idp + '-' + k} role="radio" aria-checked=${value === k ? 'true' : 'false'}
+        class=${cx('k-place-card', value === k && 'is-on')} onClick=${() => onChange(k)}>
+        <span class="k-place-ic"><${Icon} name=${(PLACE[k] || {}).icon || 'door'} size=${22} /></span>
+        <span class="k-place-t"><strong>${lab[k]}</strong><small>${(PLACE[k] || {}).text || ''}</small></span>
+        <span class="k-place-check" aria-hidden="true">${value === k ? html`<${Icon} name="check" size=${16} />` : null}</span>
+      </button>`)}
+    </div>`;
+  }
+
+  /* ---------- Sheet: Artikel hinzufügen ---------- */
+  function badgeFor(s, p, wd) {
+    const o = sel().offersForProduct ? sel().offersForProduct(s, p.id, wd) : [];
+    if (o.length) return o[0].badge;
+    if (p.isNew) return 'Neu';
+    if (p.bestseller) return 'Bestseller';
+    return null;
+  }
+  function ProductSheet({ open, onClose, s, items, wd, onQty, title = 'Artikel hinzufügen', mode }) {
+    const cats = Object.keys(C.labels.cat);
+    const [cat, setCat] = useState('gebaeck');
+    const list = s.products.filter(p => p.active !== false && p.cat === cat && (!p.weekendOnly || wd == null || wd >= 5) && (!p.season || mode === 'flex'));
+    const total = sumQty(items);
+    const tabs = cats.filter(c => s.products.some(p => p.cat === c && p.active !== false)).map(c => ({ id: c, label: C.labels.cat[c] }));
+    const price = sel().priceBag(s, items || {}, { wd });
+    return html`<${Sheet} open=${open} onClose=${onClose} title=${title} wide
+      footer=${html`<div class="k-sheetfoot"><span><strong>${artikel(total)}</strong> · ${eur(price.total)}</span><${Btn} variant="sun" onClick=${onClose}>Fertig<//></div>`}>
+      <div class="k-pickertabs"><${Tabs} tabs=${tabs} value=${cat} onChange=${setCat} label="Kategorien" /></div>
+      <div class="k-pgrid">
+        ${list.map(p => html`<${ProductCard} key=${p.id} product=${p} qty=${(items && items[p.id]) || 0} onQty=${n => onQty(p.id, n)} badge=${badgeFor(s, p, wd)} />`)}
+      </div>
+    <//>`;
+  }
+
+  /* ---------- Sheet: Warteliste ---------- */
+  function WaitlistSheet({ open, onClose, s, wd, regionId }) {
+    const cid = s.session.customerId, cust = sel().customer(s, cid);
+    const entry = open && s.waitlist.find(w => w.customerId === cid && w.regionId === regionId && w.weekday === wd && (w.status === 'waiting' || w.status === 'notified'));
+    const [channel, setChannel] = useState('push');
+    const [email, setEmail] = useState('');
+    const [err, setErr] = useState('');
+    const region = sel().region(s, regionId);
+    useEffect(() => { setErr(''); if (cust && cust.email) setEmail(cust.email); }, [open, wd]);
+    if (!open || wd == null) return null;
+    const pos = entry ? sel().waitPosition(s, cid, regionId, wd) : null;
+    const join = () => {
+      if (channel === 'email' && !/^\S+@\S+\.\S+$/.test(email.trim())) { setErr('Bitte geben Sie eine gültige E-Mail-Adresse ein.'); return; }
+      const r = act().joinWaitlist({ regionId, weekday: wd, channel, customerId: cid, contact: { plz: s.draft.plz || (cust && cust.plz) || '', email: email.trim(), name: cust && cust.registered ? cust.name : '' } });
+      toast('Vorgemerkt: Platz ' + r.position + ' für ' + WDL[wd], 'ok');
+    };
+    const foot = entry
+      ? html`<${Btn} variant="ghost" onClick=${() => { act().leaveWaitlist(entry.id); toast('Sie stehen nicht mehr auf der Warteliste.', 'info'); onClose(); }}>Von der Warteliste streichen<//><${Btn} variant="sun" onClick=${onClose}>Fertig<//>`
+      : html`<${Btn} variant="ghost" onClick=${onClose}>Abbrechen<//><${Btn} variant="sun" icon="bell" onClick=${join}>Auf die Warteliste<//>`;
+    return html`<${Sheet} open=${open} onClose=${onClose} title=${WDL[wd] + ' ist ausgebucht'} footer=${foot}>
+      ${entry ? html`<div class="ui-stack" style="--gap:12px">
+        <div class="k-note k-note-ok"><${Icon} name="check" size=${20} /><div><strong>Sie stehen auf Platz ${pos} für ${WDL[wd]}.</strong>
+          <div>${entry.status === 'notified' ? 'Der Tag ist frei geworden. Buchen Sie ihn im Lieferplan.' : 'Wir melden uns per ' + (entry.channel === 'push' ? 'Push-Nachricht' : 'E-Mail') + ', sobald ein Platz frei wird.'}</div></div></div>
+      </div>` : html`<div class="ui-stack" style="--gap:14px">
+        <p class="ui-muted" style="margin:0">${region ? region.name : 'Ihr Gebiet'}: Alle Abo-Plätze am ${WDL[wd]} sind vergeben. Setzen Sie sich auf die Warteliste. Wird ein Platz frei, reservieren wir ihn ${C.reserveHours} Stunden für Sie.</p>
+        <div><div class="ui-label" id="wl-ch-l" style="margin-bottom:6px">Wie sollen wir Sie benachrichtigen?</div>
+          <${Segmented} label="Benachrichtigungskanal" value=${channel} onChange=${setChannel} full
+            options=${[{ value: 'push', label: 'Push-Nachricht', icon: 'bell' }, { value: 'email', label: 'E-Mail', icon: 'mail' }]} /></div>
+        ${channel === 'email' ? html`<${Field} id="wl-email" label="E-Mail-Adresse" type="email" autocomplete="email" value=${email} error=${err}
+          onInput=${e => { setEmail(e.target.value); setErr(''); }} placeholder="name@beispiel.at" />` : null}
+        <p class="ui-hint" style="margin:0">Bis dahin können Sie auch einen anderen Tag oder eine Einmallieferung wählen.</p>
+      </div>`}
+    <//>`;
+  }
+
+  /* ---------- PLZ ---------- */
+  function PlzForm({ s, onDone, compact }) {
+    const [v, setV] = useState(s.draft.plz || '');
+    const [res, setRes] = useState(null);
+    const submit = e => {
+      e.preventDefault();
+      const r = act().draftCheckPlz(v);
+      setRes(r === null ? { bad: true } : r);
+      if (r && r.region && onDone) onDone(r);
+    };
+    return html`<form class=${cx('k-plz', compact && 'is-compact')} onSubmit=${submit} noValidate>
+      <${Field} id=${compact ? 'plz-edit' : 'plz-in'} label="Ihre Postleitzahl" inputMode="numeric" maxLength="4" autocomplete="postal-code" placeholder="z. B. 5303"
+        value=${v} onInput=${e => setV(e.target.value.replace(/\D/g, '').slice(0, 4))}
+        error=${res && res.bad ? 'Bitte geben Sie eine vierstellige Postleitzahl ein.' : null} />
+      <${Btn} type="submit" variant="sun" iconAfter="chevron-right">Liefertage prüfen<//>
+      ${res && res.outside ? html`<div class="k-note k-note-warn"><${Icon} name="info" size=${20} /><div><strong>Für diese PLZ liefern wir noch nicht.</strong>
+        <div>Auf der Startseite können Sie Ihre PLZ vormerken.</div></div></div>` : null}
+      <div class="k-plz-ex"><span class="ui-muted">Demo:</span>
+        ${['5303', '5310', '5330'].map(p => html`<button type="button" class="ui-chip" key=${p} onClick=${() => { setV(p); const r = act().draftCheckPlz(p); setRes(r); if (r && r.region && onDone) onDone(r); }}>${p}</button>`)}</div>
+    </form>`;
+  }
+
+  /* ---------- Schrittleiste ---------- */
+  function Steps({ steps, current }) {
+    const cur = steps.findIndex(x => x.id === current);
+    return html`<ol class="k-steps" aria-label="Bestellschritte">${steps.map((t, i) => html`<li key=${t.id} class=${cx(i < cur && 'is-done', i === cur && 'is-now')} aria-current=${i === cur ? 'step' : undefined}>
+      <span class="k-step-n">${i < cur ? html`<${Icon} name="check" size=${14} />` : i + 1}</span><span class="k-step-t">${t.label}</span></li>`)}</ol>`;
+  }
+
+  /* ---------- Sackerl-Karte ---------- */
+  function addHintToBag(s, target, hint, openPicker) {
+    const o = (s.offers || []).find(x => x.id === hint.offerId);
+    if (!o) return;
+    const items = target.flex ? s.draft.flex : (s.draft.abo[target.wd] || {});
+    const same = o.buy.kind === 'product' && o.buy.ref === o.get.productId;
+    let id = null;
+    if (same || /dazulegen/.test(hint.text)) id = hint.giftProductId;
+    else if (o.buy.kind === 'product') id = o.buy.ref;
+    if (!id) { openPicker(); return; }
+    act().draftSetQty(target, id, (items[id] || 0) + Math.max(1, hint.missing));
+  }
+
+  function BagCard({ s, target, del, tried, onAdd, copySrc, onRemove, status }) {
+    const flex = !!target.flex, wd = flex ? (s.draft.flexDate ? T.weekday(s.draft.flexDate) : null) : target.wd;
+    const items = flex ? s.draft.flex : (s.draft.abo[target.wd] || {});
+    const bag = sel().priceBag(s, items, { wd });
+    const count = sumQty(items);
+    const setQty = (id, n) => act().draftSetQty(target, id, n);
+    const starters = !count && sel().starterBags ? sel().starterBags(s) : [];
+    const sugg = count && sel().suggestions ? sel().suggestions(s, items, 3) : [];
+    const from = C.fees.freeDeliveryFrom;
+    const d = del || { total: bag.total, fee: 0, discounts: bag.discounts, hints: bag.hints, freeDeliveryMissing: 0 };
+    const stdFee = flex ? C.fees.flex : C.fees.abo;
+    const feeFree = d.fee === 0 && count > 0;
+    const byThreshold = from && d.total >= from - 1e-9;
+    const minMissing = flex ? Math.max(0, Math.round((C.fees.flexMinOrder - d.total) * 100) / 100) : 0;
+    const title = flex ? 'Ihr Sackerl' + (s.draft.flexDate ? ' für ' + WDL[T.weekday(s.draft.flexDate)] : '') : 'Sackerl für ' + WDL[target.wd];
+    const dateK = flex ? s.draft.flexDate : T.nextDateForWeekday(target.wd);
+    const empty = tried && !count;
+    return html`<section class=${cx('k-bag', empty && 'has-error')} id=${'k-bag-' + (flex ? 'flex' : target.wd)} aria-label=${title}>
+      <header class="k-bag-head">
+        <div class="k-bag-ic"><${Icon} name="bag" size=${22} /></div>
+        <div class="ui-grow"><h3>${title}</h3>
+          <div class="k-bag-sub">${dateK ? (flex ? 'am ' : 'ab ') + T.fmt.dayLong(dateK) + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : 'Tag wählen'}
+            ${status === 'reserved' ? html` <${Pill} tone="info">für Sie reserviert<//>` : null}</div></div>
+        ${onRemove ? html`<${Btn} variant="quiet" size="sm" icon="x" aria-label=${WDL[target.wd] + ' entfernen'} onClick=${onRemove}>Entfernen<//>` : null}
+      </header>
+
+      ${count ? html`<ul class="k-lines">${bag.lines.map(l => html`<li class="k-line" key=${l.product.id}>
+        <div class="k-line-ph"><${Photo} id=${l.product.id} alt=${l.product.name} ratio="1/1" /></div>
+        <div class="k-line-main"><div class="k-line-name">${l.product.name}</div>
+          <div class="k-line-sub">${eur(l.product.price)}${l.product.unit ? ' · ' + l.product.unit : ''}</div>
+          <${Stepper} size="sm" value=${l.qty} onChange=${n => setQty(l.product.id, n)} label=${l.product.name} /></div>
+        <div class="k-line-sum">${eur(l.sum)}</div>
+      </li>`)}
+        ${d.discounts.map(x => { const p = sel().product(s, x.productId); return html`<li class="k-line k-line-disc" key=${x.offerId}>
+          <div class="k-line-ph"><${Icon} name="gift" size=${22} /></div>
+          <div class="k-line-main"><div class="k-line-name">${x.title}</div><div class="k-line-sub">${x.freeQty} ${x.freeQty === 1 ? p.name : p.plural} gratis</div></div>
+          <div class="k-line-sum">− ${eur(x.amount)}</div></li>`; })}
+      </ul>` : html`<div class="k-bag-empty">
+        <p>${empty ? 'Dieses Sackerl ist noch leer. Wählen Sie ein Schnellstart-Sackerl oder legen Sie Artikel hinein.' : 'Noch leer. Starten Sie mit einem Vorschlag oder legen Sie selbst Artikel hinein.'}</p>
+        ${starters.length ? html`<div class="k-starters">${starters.map(b => html`<button type="button" key=${b.id} class="k-starter" onClick=${() => act().draftApplyBag(target, b.items)}>
+          <strong>${b.title}</strong><span class="k-starter-t">${sel().itemsText(s, b.items, 3)}</span>
+          <span class="k-starter-p">${eur(b.total)}${b.saving > 0 ? html` <em>spart ${eur(b.saving)}</em>` : null}</span></button>`)}</div>` : null}
+      </div>`}
+
+      ${d.hints.length ? html`<div class="k-hints">${d.hints.map(hn => html`<div class="k-hint" key=${hn.offerId}><${Icon} name="gift" size=${20} />
+        <span>${hn.text}</span><${Btn} size="sm" variant="ghost" icon="plus" onClick=${() => addHintToBag(s, target, hn, onAdd)}>Hinzufügen<//></div>`)}</div>` : null}
+
+      <div class="k-bag-actions">
+        <${Btn} variant="ghost" size="sm" icon="plus" onClick=${onAdd}>Artikel hinzufügen<//>
+        ${copySrc != null ? html`<${Btn} variant="quiet" size="sm" icon="refresh" onClick=${() => act().draftCopyDay(copySrc, target.wd)}>wie ${WDL[copySrc]} übernehmen<//>` : null}
+      </div>
+
+      ${sugg.length ? html`<div class="k-sugg"><div class="ui-eyebrow">Dazu passt</div><div class="k-sugg-row">${sugg.map(p => html`<button type="button" key=${p.id} class="k-sugg-i"
+        onClick=${() => setQty(p.id, (items[p.id] || 0) + 1)} aria-label=${p.name + ' hinzufügen, ' + eur(p.price)}>
+        <span class="k-sugg-ph"><${Photo} id=${p.id} alt="" ratio="1/1" /></span><span class="k-sugg-n">${p.name}<small>${eur(p.price)}</small></span>
+        <span class="k-sugg-plus"><${Icon} name="plus" size=${18} /></span></button>`)}</div></div>` : null}
+
+      ${count ? html`<div class="k-bag-foot">
+        ${flex && minMissing > 0 ? html`<div class=${cx('k-hint', tried && 'is-err')}><${Icon} name="info" size=${20} /><span>Mindestbestellwert ${eur(C.fees.flexMinOrder)}: noch ${eur(minMissing)}.</span></div>` : null}
+        ${!feeFree && d.freeDeliveryMissing > 0 && from ? html`<${Progress} value=${d.total} max=${from} label=${'Noch ' + eur(d.freeDeliveryMissing) + ' bis zur Gratis-Zustellung'} />` : null}
+        ${byThreshold ? html`<${Progress} value=${d.total} max=${from} label=${'Gratis-Zustellung ab ' + eur(from) + ' erreicht'} />` : null}
+        <dl class="k-sum">
+          ${d.discounts.length ? html`<div><dt>Warenwert</dt><dd>${eur(d.subtotal != null ? d.subtotal : bag.subtotal)}</dd></div><div class="is-ok"><dt>Aktionen</dt><dd>− ${eur(d.discounts.reduce((a, x) => a + x.amount, 0))}</dd></div>` : null}
+          <div><dt>Zustellung</dt><dd>${feeFree ? html`<s>${eur(stdFee)}</s> <strong class="k-free">gratis</strong>` : eur(d.fee)}</dd></div>
+          <div class="is-total"><dt>${flex ? 'Summe' : 'Je Lieferung'}</dt><dd>${eur(d.total + d.fee)}</dd></div>
+        </dl>
+        ${feeFree && !byThreshold && !flex ? html`<div class="k-promo"><${Icon} name="gift" size=${16} /> Aktionstag: Zustellung für Neukunden ${C.promo.weakDayFreeWeeks} Wochen gratis.</div>` : null}
+      </div>` : null}
+    </section>`;
+  }
+
+  /* ---------- Wochen- und Datumsleiste ---------- */
+  function WeekPicker({ s, onPick }) {
+    const d = s.draft, cid = s.session.customerId, rid = d.regionId, weak = sel().weakDays(s, rid);
+    const days = [0, 1, 2, 3, 4, 5, 6].map(wd => {
+      const eff = sel().dayStatusFor(s, rid, wd, cid), cap = sel().cap(s, rid, wd), k = T.nextDateForWeekday(wd);
+      const e = { wd, effective: eff, dateLabel: dateShort(k), selected: d.abo[wd] != null };
+      if (eff === 'few') e.sub = 'nur noch ' + cap.freeAbo + (cap.freeAbo === 1 ? ' Platz' : ' Plätze');
+      if (eff === 'reserved') {
+        const w = reservedFor(s, cid, rid).find(x => x.weekday === wd);
+        e.sub = 'bis ' + (w ? T.fmt.rel(w.reservedUntil) : '');
+        e.promo = 'für Sie reserviert';
+      }
+      if ((eff === 'free' || eff === 'few') && weak.includes(wd) && sel().feeFor(s, { mode: 'abo', wd, regionId: rid, customerId: cid }) === 0) e.promo = 'Zustellung gratis';
+      e.disabled = eff === 'closed' || eff === 'planned';
+      return e;
+    });
+    return html`<${WeekStrip} days=${days} onPick=${onPick} label="Liefertage wählen" />`;
+  }
+
+  function FlexPicker({ s, onFull }) {
+    const d = s.draft, cid = s.session.customerId, rid = d.regionId;
+    const dates = T.nextDates(14);
+    const lab = { free: 'frei', few: 'wenige Plätze', full: 'ausgebucht', cutoff: 'Bestellschluss vorbei', closed: 'gesperrt', planned: 'in Planung' };
+    return html`<div class="ui-week" role="group" aria-label="Liefertag wählen">${dates.map(k => {
+      const fi = sel().flexInfo(s, rid, k, cid), wd = T.weekday(k), st = fi.state;
+      const eff = st === 'cutoff' ? 'closed' : st;
+      const dis = st === 'cutoff' || st === 'closed' || st === 'planned';
+      const sub = st === 'few' ? 'nur noch ' + fi.free + (fi.free === 1 ? ' Platz' : ' Plätze') : fi.alreadyStop ? 'Sie liefern schon' : '';
+      return html`<button type="button" key=${k} class=${cx('ui-day', 'ui-day-' + eff, d.flexDate === k && 'is-selected')} disabled=${dis}
+        aria-pressed=${d.flexDate === k ? 'true' : 'false'} aria-label=${[WDL[wd], dateShort(k), lab[st], sub].filter(Boolean).join(', ')}
+        onClick=${() => (st === 'full' ? onFull(k) : act().draftSetFlexDate(k))}>
+        <span class="ui-day-wd">${WD[wd]}</span><span class="ui-day-date">${dateShort(k)}</span>
+        <span class="ui-day-status"><span class="ui-dot"></span><span>${lab[st]}</span></span>
+        ${sub ? html`<span class="ui-day-sub">${sub}</span>` : null}
+        <span class="ui-day-time">bis ${T.fmt.hm(T.deadlineMin(k))}</span></button>`;
+    })}</div>`;
+  }
+
+  /* ---------- Zusammenfassung (Lieferzettel) ---------- */
+  function SummaryTicket({ s, sum, abo, children, footer }) {
+    const rows = sum.deliveries.map(x => ({
+      label: (abo ? WDL[x.wd] : (x.dateKey ? T.fmt.day(x.dateKey) : 'Liefertag')) + ' · ' + artikel(sumQty(x.items)),
+      value: eur(x.total + x.fee)
+    }));
+    const goods = sum.deliveries.reduce((a, x) => a + (x.subtotal != null ? x.subtotal : x.total), 0);
+    const disc = sum.deliveries.reduce((a, x) => a + (x.discounts || []).reduce((b, y) => b + y.amount, 0), 0);
+    const fees = sum.deliveries.reduce((a, x) => a + x.fee, 0);
+    const more = [];
+    if (abo) more.push({ label: 'Lieferungen pro Woche', value: String(sum.count) });
+    if (sum.count) {
+      more.push({ label: 'Warenwert', value: eur(goods) });
+      if (disc > 0.004) more.push({ label: 'Aktionen', value: '− ' + eur(disc) });
+      more.push({ label: 'Zustellung', value: fees > 0 ? eur(fees) : 'gratis' });
+      more.push({ label: abo ? 'Summe pro Woche' : 'Gesamtsumme', value: eur(sum.total), strong: true });
+    }
+    return html`<${Ticket} title="Ihr Lieferzettel" stamp=${abo ? 'Abo' : 'einmalig'} rows=${sum.count ? rows.concat(more) : []} footer=${footer}>
+      ${!sum.count ? html`<p class="ui-muted" style="margin:0">Hier erscheint Ihre Bestellung, sobald Sie Tage und Artikel gewählt haben.</p>` : null}
+      ${children}
+    <//>`;
+  }
+
+  function Reassure() {
+    return html`<p class="k-reassure"><${Icon} name="lock" size=${16} /> Keine Bindung · jederzeit pausieren · bis 16:30 am Vortag änderbar</p>`;
+  }
+
+  /* ---------- Schritt 1: Sackerl ---------- */
+  function PlanStep({ s, registered }) {
+    const d = s.draft, cid = s.session.customerId, rid = d.regionId, region = sel().region(s, rid);
+    const [tried, setTried] = useState(false);
+    const [picker, setPicker] = useState(null);       // { wd } | { flex:true }
+    const [wl, setWl] = useState(null);
+    const [fullPick, setFullPick] = useState(null);
+    const [editPlz, setEditPlz] = useState(false);
+    const abo = d.mode === 'abo';
+    const sum = sel().draftSummary(s);
+    const stats = sel().regionStats ? sel().regionStats(s, rid) : null;
+    const reserved = reservedFor(s, cid, rid);
+    const wds = Object.keys(d.abo).map(Number).sort((a, b) => a - b);
+    const nItems = abo ? wds.reduce((a, w) => a + sumQty(d.abo[w]), 0) : sumQty(d.flex);
+    const saveWeek = abo ? Math.round(sum.deliveries.reduce((a, x) => a + (C.fees.flex - x.fee), 0) * 100) / 100 : 0;
+
+    const pick = day => {
+      const wd = day.wd;
+      if (day.effective === 'full') { setWl(wd); return; }
+      if (day.effective === 'booked') { toast(WDL[wd] + ' ist schon in Ihrem Wochenplan. Änderungen finden Sie im Konto.', 'info'); return; }
+      const had = d.abo[wd] != null;
+      act().draftToggleDay(wd);
+      if (!had) scrollToId('k-bag-' + wd);
+    };
+    const next = () => {
+      setTried(true);
+      if (!sum.planValid) {
+        toast(problemText(sum.planProblems[0]), 'warn');
+        const p = sum.planProblems[0].split(':');
+        if (p[0] === 'empty-day') scrollToId('k-bag-' + p[1]); else scrollToId('k-summary');
+        return;
+      }
+      if (registered) {
+        const r = act().placeOrder();
+        if (!r.ok) { toast(problemText(r.problems[0]), 'warn'); return; }
+      } else act().setDraft({ step: 'adresse' });
+      scrollTop();
+    };
+    const copySrcFor = wd => wds.find(w => w !== wd && sumQty(d.abo[w]) > 0);
+    const pickerItems = picker ? (picker.flex ? d.flex : d.abo[picker.wd] || {}) : {};
+    const pickerWd = picker ? (picker.flex ? (d.flexDate ? T.weekday(d.flexDate) : null) : picker.wd) : null;
+
+    if (region && region.planned) {
+      return html`<${Empty} icon="map" title=${region.name + ': Gebiet in Planung'} text="Hier liefern wir noch nicht. Auf der Startseite können Sie sich vormerken lassen."
+        action=${html`<${Btn} variant="sun" onClick=${() => act().setUi({ customerView: 'start' })}>Zur Startseite<//>`} />`;
+    }
+    const unfitFlex = !abo && !d.flexDate;
+    return html`<div class="k-plan">
+      <div class="k-plan-main">
+        <div class="k-region">
+          <div class="k-region-t"><${Icon} name="pin" size=${18} /><span><strong>${region ? region.name : ''}</strong> · ${d.plz}</span>
+            <button type="button" class="k-link" onClick=${() => setEditPlz(!editPlz)}>${editPlz ? 'schließen' : 'ändern'}</button></div>
+          ${stats && stats.households > 5 ? html`<div class="k-region-s">${stats.households} Haushalte in ${region.name} frühstücken schon mit uns.</div>` : null}
+          ${editPlz ? html`<${PlzForm} s=${s} compact onDone=${() => setEditPlz(false)} />` : null}
+        </div>
+
+        <div class="k-mode">
+          <${Segmented} label="Lieferart" full value=${d.mode} onChange=${m => act().setDraft({ mode: m })}
+            options=${[{ value: 'abo', label: html`Regelmäßig <span class="k-reco">Empfohlen</span>` }, { value: 'flex', label: 'Einmalig' }]} />
+          <p class="k-mode-t">${abo
+            ? html`Fester Platz auf der Tour, Zustellung nur <strong>${eur(C.fees.abo)}</strong> statt ${eur(C.fees.flex)}. Sie sparen ${eur(C.fees.flex - C.fees.abo)} je Lieferung. Pausieren oder aussetzen jederzeit.`
+            : html`Einmal liefern, solange noch Platz ist: Zustellung ${eur(C.fees.flex)}, Mindestbestellwert ${eur(C.fees.flexMinOrder)}.`}</p>
+        </div>
+
+        ${reserved.map(w => {
+          const have = d.abo[w.weekday] != null && sumQty(d.abo[w.weekday]) > 0;
+          return html`<div class="k-reserved" key=${w.id} id=${'k-res-' + w.weekday}>
+            <div class="k-reserved-ic"><${Icon} name="bell" size=${24} /></div>
+            <div class="ui-grow"><strong>${WDL[w.weekday]} ist frei und für Sie reserviert.</strong>
+              <div>Reserviert bis ${T.fmt.rel(w.reservedUntil)} · <${Countdown} to=${w.reservedUntil} /></div></div>
+            ${have ? html`<${Btn} variant="primary" onClick=${() => scrollToId('k-summary')}>Weiter zum Bestellen<//>`
+              : html`<${Btn} variant="sun" icon="check" onClick=${() => { bookDay(w.weekday); scrollToId('k-bag-' + w.weekday); }}>${WDL[w.weekday]} buchen<//>`}
+          </div>`;
+        })}
+
+        <h2 class="k-h2">${abo ? 'An welchen Tagen sollen wir liefern?' : 'Für welchen Tag?'}</h2>
+        ${abo ? html`<${WeekPicker} s=${s} onPick=${pick} />` : html`<${FlexPicker} s=${s} onFull=${setFullPick} />`}
+        ${abo ? html`<p class="ui-hint k-strip-hint">Tippen Sie auf einen Anhänger. Ausgebuchte Tage: Warteliste.</p>` : null}
+
+        ${!abo && fullPick ? (() => {
+          const nk = T.nextDates(14, fullPick).find(k => { const f = sel().flexInfo(s, rid, k, cid).state; return f === 'free' || f === 'few'; });
+          return html`<div class="k-note k-note-warn"><${Icon} name="info" size=${20} /><div><strong>${WDL[T.weekday(fullPick)]}, ${dateShort(fullPick)} ist für Einmallieferungen ausgebucht.</strong>
+            ${nk ? html`<div>Nächster freier Tag: ${T.fmt.dayLong(nk)}. <button type="button" class="k-link" onClick=${() => { act().draftSetFlexDate(nk); setFullPick(null); }}>Diesen Tag wählen</button></div>` : null}</div></div>`;
+        })() : null}
+
+        ${abo ? html`${!wds.length ? html`<div class="k-bag-empty k-bag-first"><${Icon} name="door" size=${28} /><p><strong>Noch kein Liefertag gewählt.</strong><br />Tippen Sie oben auf die Tage, an denen Ihr Sackerl an der Tür hängen soll.</p></div>` : null}
+          ${wds.map(wd => html`<${BagCard} key=${wd} s=${s} target=${{ wd }} tried=${tried} del=${sum.deliveries.find(x => x.wd === wd)} status=${sel().dayStatusFor(s, rid, wd, cid)}
+            onAdd=${() => setPicker({ wd })} copySrc=${copySrcFor(wd)} onRemove=${() => act().draftToggleDay(wd)} />`)}`
+          : html`${unfitFlex ? html`<div class="k-bag-empty k-bag-first"><${Icon} name="calendar" size=${28} /><p><strong>Wählen Sie einen Liefertag.</strong><br />Danach packen Sie Ihr Sackerl.</p></div>`
+            : html`<${BagCard} s=${s} target=${{ flex: true }} tried=${tried} del=${sum.deliveries[0]} onAdd=${() => setPicker({ flex: true })} />`}
+            <div class="k-note k-note-info"><${Icon} name="leaf" size=${20} /><div>Bei regelmäßiger Lieferung zahlen Sie ${eur(C.fees.abo)} statt ${eur(C.fees.flex)} Zustellung.
+              <button type="button" class="k-link" onClick=${() => act().setDraft({ mode: 'abo' })}>Regelmäßig ansehen</button></div></div>`}
+      </div>
+
+      <aside class="k-plan-side" id="k-summary" aria-label="Zusammenfassung">
+        <${SummaryTicket} s=${s} sum=${sum} abo=${abo}
+          footer=${html`<div class="ui-stack" style="--gap:10px">
+            ${sum.count && sum.firstDelivery ? html`<div class="k-first"><span>Erste Lieferung</span><strong>${T.fmt.dayLong(sum.firstDelivery)}</strong>
+              <span>Bestellschluss</span><strong>${T.fmt.rel(sum.cutoff)} · <${Countdown} to=${sum.cutoff} /></strong></div>` : null}
+            ${tried && sum.planProblems.length ? html`<ul class="k-errs" role="alert">${sum.planProblems.map(p => html`<li key=${p}><${Icon} name="alert" size=${16} /> ${problemText(p)}</li>`)}</ul>` : null}
+            <${Btn} variant="sun" size="lg" full iconAfter=${registered ? 'check' : 'chevron-right'} onClick=${next}>${registered ? 'Verbindlich bestellen' : 'Weiter zur Adresse'}<//>
+            <${Reassure} />
+          </div>`}>
+          ${abo && saveWeek > 0 ? html`<div class="k-save"><${Icon} name="leaf" size=${16} /> Abo-Vorteil: ${eur(saveWeek)} pro Woche weniger Zustellgebühr als bei Einmallieferungen.</div>` : null}
+        <//>
+      </aside>
+
+      ${nItems > 0 ? html`<div class="k-bagbar-host"><${BagBar} count=${nItems} total=${abo ? eur(sum.perWeek) + ' pro Woche' : eur(sum.total)}
+        sub=${sum.cutoff ? html`Bestellschluss <${Countdown} to=${sum.cutoff} />` : null} cta="Weiter" onClick=${next} /></div>` : null}
+
+      <${ProductSheet} open=${!!picker} onClose=${() => setPicker(null)} s=${s} items=${pickerItems} wd=${pickerWd} mode=${d.mode}
+        title=${picker && !picker.flex ? 'Artikel für ' + WDL[picker.wd] : 'Artikel hinzufügen'}
+        onQty=${(id, n) => act().draftSetQty(picker, id, n)} />
+      <${WaitlistSheet} open=${wl != null} onClose=${() => setWl(null)} s=${s} wd=${wl} regionId=${rid} />
+    </div>`;
+  }
+
+  /* ---------- Schritt 2: Adresse ---------- */
+  const EMAIL = /^\S+@\S+\.\S+$/;
+  function addressErrors(s) {
+    const a = s.draft.address, e = {};
+    if (!a.name.trim()) e.name = 'Bitte geben Sie Ihren Namen ein.';
+    if (!a.street.trim()) e.street = 'Bitte geben Sie die Straße ein.';
+    if (!a.houseNo.trim()) e.houseNo = 'Hausnummer fehlt.';
+    if (!/^\d{4}$/.test(a.plz.trim())) e.plz = 'Vierstellige PLZ eingeben.';
+    else { const r = sel().regionForPlz(s, a.plz.trim()); if (!r || !r.region || r.region.id !== s.draft.regionId) e.plz = 'Diese PLZ liegt nicht in Ihrem Liefergebiet.'; }
+    if (!a.city.trim()) e.city = 'Bitte geben Sie den Ort ein.';
+    if (!EMAIL.test(a.email.trim())) e.email = 'Bitte geben Sie eine gültige E-Mail-Adresse ein.';
+    if (s.draft.placement === 'hinweis' && !s.draft.note.trim()) e.note = 'Bitte schreiben Sie uns, wo das Sackerl hin soll.';
+    if (!s.draft.notify.push && !s.draft.notify.email) e.notify = 'Wählen Sie mindestens einen Benachrichtigungsweg.';
+    return e;
+  }
+  function AddressStep({ s }) {
+    const d = s.draft, a = d.address;
+    const [tried, setTried] = useState(false);
+    const [touched, setTouched] = useState({});
+    const errs = addressErrors(s);
+    const sum = sel().draftSummary(s);
+    const set = (k, v) => act().setDraft({ address: Object.assign({}, a, { [k]: v }) });
+    const show = k => (tried || touched[k]) && errs[k];
+    const fld = (k, label, extra) => html`<${Field} id=${'adr-' + k} label=${label} value=${a[k]} error=${show(k)}
+      onInput=${e => set(k, e.target.value)} onBlur=${() => setTouched(Object.assign({}, touched, { [k]: true }))} ...${extra || {}} />`;
+    const submit = e => {
+      e.preventDefault(); setTried(true);
+      const keys = Object.keys(errs);
+      if (keys.length) {
+        toast('Bitte prüfen Sie die markierten Felder.', 'warn');
+        const first = keys[0] === 'notify' ? 'adr-notify-push' : keys[0] === 'note' ? 'adr-note' : 'adr-' + keys[0];
+        const el = document.getElementById(first); if (el && el.focus) el.focus();
+        return;
+      }
+      act().setDraft({ step: 'zahlung' }); scrollTop();
+    };
+    return html`<form class="k-plan k-form" onSubmit=${submit} noValidate>
+      <div class="k-plan-main ui-stack" style="--gap:22px">
+        <h2 class="k-h2">Wohin soll das Sackerl?</h2>
+        <div class="k-fgrid">
+          ${fld('name', 'Vor- und Nachname', { autocomplete: 'name', class: 'k-span2' })}
+          ${fld('street', 'Straße', { autocomplete: 'address-line1', class: 'k-span2-3' })}
+          ${fld('houseNo', 'Hausnummer', { autocomplete: 'off' })}
+          ${fld('plz', 'PLZ', { inputMode: 'numeric', maxLength: 4, autocomplete: 'postal-code' })}
+          ${fld('city', 'Ort', { autocomplete: 'address-level2', class: 'k-span2' })}
+          ${fld('email', 'E-Mail', { type: 'email', autocomplete: 'email', class: 'k-span2', hint: 'Für die Bestätigung und Rechnungen.' })}
+          ${fld('phone', 'Telefon (optional)', { type: 'tel', autocomplete: 'tel', class: 'k-span2', hint: 'Nur für Rückfragen der Fahrerin oder des Fahrers.' })}
+        </div>
+        <div><h3 class="k-h3">Wo darf das Sackerl hängen?</h3>
+          <${PlacementCards} idp="adr-pl" value=${d.placement} onChange=${v => act().setDraft({ placement: v })} /></div>
+        <${Field} id="adr-note" as="textarea" rows="3" label=${d.placement === 'hinweis' ? 'Ihr Hinweis' : 'Hinweis für die Zustellung (optional)'} value=${d.note}
+          placeholder="z. B. Hinterhof, grünes Tor, Klingel defekt" error=${show('note')} onInput=${e => act().setDraft({ note: e.target.value })}
+          onBlur=${() => setTouched(Object.assign({}, touched, { note: true }))} />
+        <div><h3 class="k-h3">Benachrichtigungen</h3>
+          <div class="k-toggles">
+            <${Toggle} id="adr-notify-push" label="Push-Nachricht" hint="„Ihr Frühstück ist da“ und Wartelisten-Meldungen" checked=${d.notify.push} onChange=${v => act().setDraft({ notify: Object.assign({}, d.notify, { push: v }) })} />
+            <${Toggle} id="adr-notify-email" label="E-Mail" hint="Bestätigungen und Rechnungen" checked=${d.notify.email} onChange=${v => act().setDraft({ notify: Object.assign({}, d.notify, { email: v }) })} />
+          </div>
+          ${errs.notify ? html`<div class="ui-error-text" role="alert"><${Icon} name="alert" size=${16} /><span>${errs.notify}</span></div>` : null}</div>
+        <div class="k-nav-row"><${Btn} variant="ghost" icon="chevron-left" onClick=${() => { act().setDraft({ step: 'plan' }); scrollTop(); }}>Zurück zum Sackerl<//>
+          <${Btn} type="submit" variant="sun" size="lg" iconAfter="chevron-right">Weiter zur Bezahlung<//></div>
+      </div>
+      <aside class="k-plan-side"><${SummaryTicket} s=${s} sum=${sum} abo=${d.mode === 'abo'} footer=${html`<${Reassure} />`} /></aside>
+    </form>`;
+  }
+
+  /* ---------- Schritt 3: Bezahlung ---------- */
+  function PaymentStep({ s }) {
+    const d = s.draft, sum = sel().draftSummary(s);
+    const [f, setF] = useState({ holder: '', iban: '', card: '', exp: '', cvc: '', mandate: false });
+    const [tried, setTried] = useState(false);
+    const upd = (k, v) => setF(Object.assign({}, f, { [k]: v }));
+    const sepa = d.payment === 'sepa';
+    const e = {};
+    if (sepa) {
+      if (!f.holder.trim()) e.holder = 'Bitte geben Sie den Kontoinhaber ein.';
+      if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(f.iban.replace(/\s/g, '').toUpperCase())) e.iban = 'Bitte geben Sie eine gültige IBAN ein, z. B. AT61 1904 3002 3457 3201.';
+      if (!f.mandate) e.mandate = 'Bitte bestätigen Sie das Lastschriftmandat.';
+    } else {
+      if (!f.holder.trim()) e.holder = 'Bitte geben Sie den Namen auf der Karte ein.';
+      if (!/^\d{16}$/.test(f.card.replace(/\s/g, ''))) e.card = 'Die Kartennummer hat 16 Ziffern.';
+      if (!/^(0[1-9]|1[0-2])\s?\/\s?\d{2}$/.test(f.exp.trim())) e.exp = 'Format MM/JJ.';
+      if (!/^\d{3}$/.test(f.cvc.trim())) e.cvc = '3 Ziffern.';
+    }
+    const demo = () => setF(sepa ? Object.assign({}, f, { holder: d.address.name || 'Maria Beispiel', iban: 'AT61 1904 3002 3457 3201', mandate: true })
+      : Object.assign({}, f, { holder: d.address.name || 'Maria Beispiel', card: '4111 1111 1111 1111', exp: '12/29', cvc: '123' }));
+    const submit = ev => {
+      ev.preventDefault(); setTried(true);
+      if (Object.keys(e).length) { toast('Bitte prüfen Sie die markierten Felder.', 'warn'); return; }
+      const r = act().placeOrder();
+      if (!r.ok) { toast(problemText(r.problems[0]), 'warn'); if (r.problems.some(p => !/address/.test(p))) act().setDraft({ step: 'plan' }); else act().setDraft({ step: 'adresse' }); scrollTop(); }
+      else scrollTop();
+    };
+    const fe = k => tried && e[k];
+    return html`<form class="k-plan k-form" onSubmit=${submit} noValidate>
+      <div class="k-plan-main ui-stack" style="--gap:22px">
+        <h2 class="k-h2">Wie möchten Sie bezahlen?</h2>
+        <div class="k-pay" role="radiogroup" aria-label="Zahlungsart">
+          ${[['sepa', 'SEPA-Lastschrift', 'Monatlich, bequem vom Konto. Empfohlen.', 'euro'], ['karte', 'Kreditkarte', 'Monatliche Abrechnung per Karte.', 'lock']].map(([v, t, x, ic]) => html`
+            <button type="button" key=${v} role="radio" aria-checked=${d.payment === v ? 'true' : 'false'} class=${cx('k-place-card', d.payment === v && 'is-on')} onClick=${() => { act().setDraft({ payment: v }); setTried(false); }}>
+              <span class="k-place-ic"><${Icon} name=${ic} size=${22} /></span><span class="k-place-t"><strong>${t}</strong><small>${x}</small></span>
+              <span class="k-place-check" aria-hidden="true">${d.payment === v ? html`<${Icon} name="check" size=${16} />` : null}</span></button>`)}
+        </div>
+        <div class="k-note k-note-info"><${Icon} name="info" size=${20} /><div><strong>Demo:</strong> Es wird nichts abgebucht. Sie können eigene Testwerte eintragen oder <button type="button" class="k-link" onClick=${demo}>Demo-Daten einfügen</button>.</div></div>
+        <div class="k-fgrid">
+          <${Field} id="pay-holder" label=${sepa ? 'Kontoinhaber' : 'Name auf der Karte'} class="k-span2" value=${f.holder} error=${fe('holder')} autocomplete="cc-name" onInput=${ev => upd('holder', ev.target.value)} />
+          ${sepa ? html`<${Field} id="pay-iban" label="IBAN" class="k-span2" value=${f.iban} error=${fe('iban')} placeholder="AT00 0000 0000 0000 0000" autocomplete="off" onInput=${ev => upd('iban', ev.target.value)} />`
+            : html`<${Field} id="pay-card" label="Kartennummer" class="k-span2" inputMode="numeric" value=${f.card} error=${fe('card')} autocomplete="cc-number" placeholder="0000 0000 0000 0000" onInput=${ev => upd('card', ev.target.value)} />
+              <${Field} id="pay-exp" label="Gültig bis" value=${f.exp} error=${fe('exp')} placeholder="MM/JJ" autocomplete="cc-exp" onInput=${ev => upd('exp', ev.target.value)} />
+              <${Field} id="pay-cvc" label="Prüfziffer" inputMode="numeric" maxLength="3" value=${f.cvc} error=${fe('cvc')} autocomplete="cc-csc" onInput=${ev => upd('cvc', ev.target.value)} />`}
+        </div>
+        ${sepa ? html`<div><${Toggle} id="pay-mandate" label="SEPA-Lastschriftmandat erteilen" hint="Wir buchen monatlich im Nachhinein ab. Widerruf jederzeit möglich." checked=${f.mandate} onChange=${v => upd('mandate', v)} />
+          ${fe('mandate') ? html`<div class="ui-error-text" role="alert"><${Icon} name="alert" size=${16} /><span>${e.mandate}</span></div>` : null}</div>` : null}
+        <div class="k-nav-row"><${Btn} variant="ghost" icon="chevron-left" onClick=${() => { act().setDraft({ step: 'adresse' }); scrollTop(); }}>Zurück zur Adresse<//>
+          <${Btn} type="submit" variant="sun" size="lg" iconAfter="check">Verbindlich bestellen<//></div>
+        <${Reassure} />
+      </div>
+      <aside class="k-plan-side"><${SummaryTicket} s=${s} sum=${sum} abo=${d.mode === 'abo'} /></aside>
+    </form>`;
+  }
+
+  /* ---------- Schritt 4: Fertig ---------- */
+  function DoneStep({ s }) {
+    const o = s.draft.lastOrder;
+    if (!o) return html`<${Empty} icon="bag" title="Noch keine Bestellung" text="Stellen Sie Ihr Sackerl zusammen." action=${html`<${Btn} variant="sun" onClick=${() => act().setDraft({ step: 'plan' })}>Zum Lieferplan<//>`} />`;
+    const abo = o.mode === 'abo';
+    const rows = o.deliveries.map(x => ({ label: (abo ? WDL[x.wd] : T.fmt.day(x.dateKey)) + ' · ' + sel().itemsText(s, x.items, 2), value: eur(x.total + x.fee) }));
+    rows.push({ label: abo ? 'Summe pro Woche' : 'Gesamtsumme', value: eur(o.total), strong: true });
+    return html`<div class="k-done">
+      <div class="k-done-head"><div class="k-done-ic"><${Icon} name="check" size=${32} /></div>
+        <h2>Danke, Ihre Bestellung ist eingegangen.</h2>
+        <p class="ui-lead">Ihre erste Lieferung: <strong>${T.fmt.dayLong(o.firstDelivery)}</strong>, bis spätestens ${T.fmt.hm(T.deadlineMin(o.firstDelivery))} Uhr an Ihrer Tür.</p></div>
+      <${Ticket} title=${'Bestellung ' + o.orderNo} stamp="bestätigt" rows=${rows}
+        footer=${html`<div class="k-first"><span>Erste Lieferung</span><strong>${T.fmt.dayLong(o.firstDelivery)}</strong><span>Änderbar bis</span><strong>${T.fmt.rel(o.cutoff)}</strong></div>`} />
+      <div class="k-note k-note-info"><${Icon} name="truck" size=${20} /><div><strong>So geht es weiter:</strong> Ihre Bestellung ist jetzt im Backoffice sichtbar und in der Tour der Fahrer-App eingeplant.
+        <div class="k-done-links"><button type="button" class="k-link" onClick=${() => act().go('backoffice')}>Im Backoffice ansehen</button> · <button type="button" class="k-link" onClick=${() => act().go('fahrer')}>In der Fahrer-App ansehen</button></div></div></div>
+      <div class="k-nav-row"><${Btn} variant="sun" size="lg" iconAfter="chevron-right" onClick=${() => { act().setUi({ customerView: 'konto' }); scrollTop(); }}>Zum Konto<//>
+        <${Btn} variant="ghost" onClick=${() => { act().setDraft({ step: 'plan', lastOrder: null }); scrollTop(); }}>Weiteres Sackerl zusammenstellen<//></div>
+    </div>`;
+  }
+
+  /* ---------- Hauptansicht ---------- */
+  function Lieferplan() {
+    const s = App.useStore();
+    const d = s.draft, cid = s.session.customerId, cust = sel().customer(s, cid);
+    const registered = !!(cust && cust.registered);
+    const hasItems = Object.keys(d.abo).length > 0 || sumQty(d.flex) > 0;
+    const stale = d.step === 'fertig' && hasItems;
+    const step = stale ? 'plan' : d.step;
+    // Region aus Konto bzw. Wartelisten-Eintrag übernehmen
+    useEffect(() => {
+      if (stale) act().setDraft({ step: 'plan' });
+      if (d.regionId) return;
+      if (registered && cust.plz) act().draftCheckPlz(cust.plz);
+      else {
+        const w = s.waitlist.find(x => x.customerId === cid && x.status === 'notified' && x.contact && x.contact.plz);
+        if (w) act().draftCheckPlz(w.contact.plz);
+      }
+    }, [d.regionId, cid, stale]);
+    const lastStep = useRef(step);
+    useEffect(() => { if (lastStep.current !== step) { lastStep.current = step; scrollTop(); } }, [step]);
+
+    const steps = registered ? [{ id: 'plan', label: 'Sackerl' }, { id: 'fertig', label: 'Fertig' }]
+      : [{ id: 'plan', label: 'Sackerl' }, { id: 'adresse', label: 'Adresse' }, { id: 'zahlung', label: 'Bezahlung' }, { id: 'fertig', label: 'Fertig' }];
+    const region = d.regionId ? sel().region(s, d.regionId) : null;
+    let body;
+    if (step === 'fertig') body = html`<${DoneStep} s=${s} />`;
+    else if (!region) body = html`<div class="k-gate"><h2>Wohin dürfen wir liefern?</h2><p class="ui-lead">Geben Sie Ihre Postleitzahl ein. Wir zeigen Ihnen sofort, an welchen Tagen noch Plätze frei sind.</p><${PlzForm} s=${s} /></div>`;
+    else if (step === 'adresse' && !registered) body = html`<${AddressStep} s=${s} />`;
+    else if (step === 'zahlung' && !registered) body = html`<${PaymentStep} s=${s} />`;
+    else body = html`<${PlanStep} s=${s} registered=${registered} />`;
+
+    return html`<div class="k-lieferplan">
+      <header class="k-lp-head"><h1>Ihr Lieferplan</h1>${region && step !== 'fertig' ? html`<${Steps} steps=${steps} current=${step} />` : null}</header>
+      ${body}
+    </div>`;
+  }
+
+  Lieferplan.shared = { ProductSheet, WaitlistSheet, PlacementCards, bookDay, reservedFor, sumQty, dateShort, scrollTop };
   App.views = App.views || {};
   App.views.customer = App.views.customer || {};
-  App.views.customer.lieferplan = function () {
-    return html`<${App.ui.Placeholder} title="Platzhalter customer/lieferplan" text="Dieser Bereich wird von V2 gebaut." />`;
-  };
+  App.views.customer.lieferplan = Lieferplan;
 })(typeof window !== 'undefined' ? window : globalThis);

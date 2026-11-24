@@ -1,1 +1,131 @@
-/* backoffice-b.css – Stub, zuständig: V4. Nur Farb-Tokens aus base.css verwenden. */
+/* backoffice-b.css – Touren und Bäcker (V4). Nur Tokens aus base.css. */
+.bo-touren, .bo-baecker { display: flex; flex-direction: column; gap: var(--s-4); min-width: 0; }
+.bo-h { font-size: 26px; letter-spacing: -.02em; }
+.bo-h3 { font-size: 19px; }
+.bo-small { font-size: 13px; }
+.bo-head { display: flex; align-items: flex-end; gap: var(--s-3); flex-wrap: wrap; }
+
+/* Datumsleiste */
+.bo-datestrip { display: flex; gap: var(--s-2); overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; max-width: 100%; }
+.bo-date { flex: 1 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 104px; padding: 8px 12px; border-radius: var(--r-ctl); border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-2); text-align: left; }
+.bo-date:hover { border-color: var(--muted); }
+.bo-date.is-on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.bo-date-d { font-weight: 700; font-size: 14px; }
+.bo-date-m { font-size: 11.5px; letter-spacing: .02em; opacity: .85; }
+.bo-date-m.is-late { color: var(--full); opacity: 1; font-weight: 600; }
+.bo-date.is-on .bo-date-m.is-late { color: var(--butter); }
+
+/* Urteil Tourende */
+.bo-verdict { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border-radius: var(--r-card); border: 2px solid var(--line); }
+.bo-verdict.is-late { background: var(--full-soft); border-color: var(--full); color: var(--full); }
+.bo-verdict.is-ok { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.bo-verdict-t { font-family: var(--font-display); font-weight: 750; font-size: 22px; letter-spacing: -.02em; line-height: 1.2; }
+.bo-verdict-s { font-size: 14px; color: var(--ink-2); margin-top: 2px; }
+
+.bo-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-2); }
+.bo-fact { display: flex; flex-direction: column; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--surface); min-width: 0; }
+.bo-fact span { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.bo-fact b { font-family: var(--font-display); font-size: 24px; font-weight: 750; letter-spacing: -.02em; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.bo-fact small { font-size: 12.5px; color: var(--muted); }
+
+/* Was-wäre-wenn */
+.bo-whatif { display: flex; flex-direction: column; gap: var(--s-3); }
+.bo-whatif-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.bo-whatif-t { font-weight: 700; font-size: 16px; }
+.bo-compare { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); }
+.bo-compare button { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: var(--r-ctl); background: var(--surface); color: var(--ink-2); text-align: left; }
+.bo-compare li.is-on button { border-color: var(--ink); background: var(--surface-2); }
+.bo-compare button:hover { border-color: var(--muted); }
+.bo-compare b { font-size: 18px; }
+.bo-compare b.is-late { color: var(--full); }
+.bo-compare b.is-ok { color: var(--ok); }
+.bo-compare small { font-size: 12px; color: var(--muted); }
+.bo-whatif-act { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.bo-whatif-act > span { flex: 1 1 200px; min-width: 0; }
+
+/* Karte + Liste */
+.bo-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); align-items: start; }
+.bo-mapcard { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-3); }
+.bo-map { width: 100%; min-width: 0; border-radius: 14px; overflow: hidden; line-height: 0; border: 1px solid var(--line); }
+.bo-map svg { display: block; max-width: none; font-family: var(--font-body); }
+.bo-map-bg { fill: var(--surface-2); }
+.bo-map-river { fill: none; stroke: var(--info-soft); stroke-width: 11; stroke-linecap: round; }
+.bo-map-area { fill: var(--tile); stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 6 5; opacity: .8; }
+.bo-map-town { fill: var(--kraft-soft); opacity: .9; }
+.bo-map-road-b { fill: none; stroke: var(--line); stroke-width: 8; stroke-linecap: round; }
+.bo-map-road-w { fill: none; stroke: var(--surface); stroke-width: 5; stroke-linecap: round; opacity: .9; }
+.bo-map-label { font-size: 11px; font-weight: 600; fill: var(--muted); letter-spacing: .02em; paint-order: stroke; stroke: var(--surface-2); stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; }
+.bo-map-route { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+.bo-map-stops { stroke: var(--surface); stroke-width: 1.4; }
+.bo-map-hit { fill: transparent; stroke: none; cursor: pointer; }
+.bo-map-oneoff { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.bo-map-stop.is-on .bo-map-oneoff { stroke-width: 2.2; }
+.bo-map-no rect { stroke: var(--surface); stroke-width: 1; }
+.bo-map-no text { font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; fill: var(--bg); }
+.bo-map-bakery rect { fill: var(--night); stroke: var(--surface); stroke-width: 2; }
+.bo-map-bakery path { fill: var(--on-night); }
+.bo-map-bakery-label rect { fill: var(--night); }
+.bo-map-bakery-label text { font-size: 11px; font-weight: 600; fill: var(--on-night); }
+.bo-map-tip rect { fill: var(--ink); }
+.bo-map-tip text { font-family: var(--font-mono); font-size: 11px; fill: var(--bg); }
+
+.bo-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px var(--s-4); font-size: 13px; color: var(--ink-2); }
+.bo-legend li { display: flex; align-items: center; gap: 6px; }
+.bo-legend svg { flex: none; }
+.bo-legend-no { display: inline-grid; place-items: center; min-width: 22px; height: 16px; border-radius: 8px; background: var(--ink); color: var(--bg); font-family: var(--font-mono); font-size: 10.5px; }
+.bo-note { margin: 0; font-size: 13px; }
+
+.bo-send { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; padding: var(--s-3) var(--s-4); }
+.bo-listcol { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
+.bo-lists { display: flex; flex-direction: column; gap: var(--s-3); }
+.bo-tour { border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface); overflow: clip; }
+.bo-tour-head { display: flex; align-items: center; gap: var(--s-3); padding: 10px var(--s-4); background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.bo-stops { list-style: none; margin: 0; padding: 0; }
+.bo-stop { display: flex; gap: var(--s-3); padding: 10px var(--s-4); border-bottom: 1px solid var(--line); cursor: pointer; }
+.bo-stop:last-child { border-bottom: 0; }
+.bo-stop:hover, .bo-stop.is-on { background: var(--surface-2); }
+.bo-stop-no { flex: none; display: grid; place-items: center; width: 34px; height: 24px; border-radius: 12px; font-size: 12.5px; border: 2px solid var(--tone, var(--ink)); color: var(--ink); background: var(--surface); }
+.bo-stop-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.bo-stop-top { display: flex; justify-content: space-between; gap: var(--s-2); }
+.bo-stop-top strong { overflow-wrap: anywhere; }
+.bo-stop-eta { color: var(--ink-2); font-size: 14px; flex: none; }
+.bo-stop-items { font-size: 14px; }
+.bo-stop-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+
+@media (min-width: 640px) {
+  .bo-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 1000px) {
+  .bo-grid { grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr); }
+  .bo-mapcol { position: sticky; top: var(--s-4); }
+  .bo-lists { max-height: 760px; overflow-y: auto; padding-right: 2px; }
+}
+
+/* Bäcker */
+.bo-deadline { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; padding: var(--s-3) var(--s-4); border-radius: var(--r-card); }
+.bo-deadline.is-open { background: var(--butter-soft); color: var(--ink); }
+.bo-deadline.is-over { background: var(--full-soft); color: var(--full); }
+.bo-deadline-t { font-weight: 700; font-size: 17px; }
+.bo-order { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.bo-sec-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.bo-ordertable .ui-table td:first-child, .bo-ordertable .ui-table th:first-child { position: sticky; left: 0; background: var(--surface); z-index: 1; }
+.bo-ordertable .ui-table tbody tr:hover td:first-child { background: var(--surface-2); }
+.bo-ordertable .ui-table tfoot td { border-top: 2px solid var(--line); border-bottom: 0; background: var(--surface-2); }
+.bo-ordertable .ui-table tfoot td:first-child { background: var(--surface-2); }
+.bo-cat-row td { background: var(--kraft-soft); color: var(--kraft-ink); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; padding: 6px 14px; }
+.bo-cat-row td:first-child { background: var(--kraft-soft) !important; }
+.bo-preview { display: flex; flex-direction: column; gap: var(--s-3); }
+.bo-pre-wrap { overflow-x: auto; max-height: 380px; overflow-y: auto; background: var(--kraft-soft); border: 1px dashed var(--kraft); border-radius: var(--r-ticket); padding: var(--s-3) var(--s-4); }
+.bo-pre { margin: 0; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; color: var(--kraft-ink); white-space: pre; }
+.bo-pack { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.bo-pack-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.bo-pack-head p { margin: 4px 0 0; max-width: 62ch; }
+.bo-pack-head .ui-seg { overflow-x: auto; }
+.bo-packtour { border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface); overflow: clip; }
+.bo-packtour-btn { width: 100%; display: flex; align-items: center; gap: var(--s-3); padding: 12px var(--s-4); background: transparent; border: 0; text-align: left; }
+.bo-packtour-btn:hover { background: var(--surface-2); }
+.bo-packwrap { border: 0; border-top: 1px solid var(--line); border-radius: 0; max-height: 460px; overflow: auto; }
+.bo-packtable td { vertical-align: top; }
+.bo-packtable td:nth-child(3) { min-width: 220px; }
+
+.bo-tour-pay { display: flex; gap: var(--s-3); flex-wrap: wrap; color: var(--ink-2); font-variant-numeric: tabular-nums; }

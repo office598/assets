@@ -1,1 +1,206 @@
-/* backoffice-a.css – Stub, zuständig: V3. Nur Farb-Tokens aus base.css verwenden. */
+/* backoffice-a.css – V3: Übersicht, Kapazität, Warteliste, Kunden, Sortiment, Marketing. Nur Tokens aus base.css. */
+
+.bo-page { display: flex; flex-direction: column; gap: var(--s-4); min-width: 0; }
+.bo-head { display: flex; align-items: flex-end; gap: var(--s-3); flex-wrap: wrap; }
+.bo-head h1 { font-size: var(--fs-28); letter-spacing: -.025em; }
+.bo-head p { margin: 4px 0 0; }
+.bo-sec { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
+.bo-sec h2 { font-size: var(--fs-22); }
+.bo-sec h3 { font-size: var(--fs-18); }
+.bo-sec-sub { margin: -6px 0 0; font-size: 14px; }
+.bo-sec-head { display: flex; align-items: flex-start; gap: var(--s-3); flex-wrap: wrap; }
+.bo-sub { margin-top: var(--s-4); }
+.bo-grid2 { display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .bo-grid2 { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+.bo-neg { color: var(--full); }
+.bo-pos { color: var(--ok); }
+.bo-note { display: flex; gap: 10px; align-items: center; }
+.bo-hint, .bo-count { margin: 0; font-size: 14px; }
+.bo-more { display: flex; justify-content: center; }
+.bo-click { cursor: pointer; }
+.bo-off td { opacity: .6; }
+
+/* ---------- KPIs ---------- */
+.bo-kpis { display: grid; gap: var(--s-3); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px) { .bo-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .bo-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.bo-kpis .ui-kpi-value { font-size: 28px; }
+
+/* ---------- Diagramm Auslastung ---------- */
+.bo-chart { display: flex; flex-direction: column; gap: 10px; }
+.bo-chart-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; grid-template-areas: "d t v" ". s s"; gap: 2px 12px; align-items: center; }
+.bo-chart-day { grid-area: d; font-family: var(--font-display); font-weight: 750; font-size: 18px; }
+.bo-chart-track { grid-area: t; position: relative; height: 26px; }
+.bo-chart-cap { position: absolute; inset: 0 auto 0 0; background: var(--surface-2); border-radius: 6px 0 0 6px; border: 1px solid var(--line); border-right: 0; }
+.bo-chart-bar { position: absolute; inset: 3px auto 3px 0; border-radius: 5px 0 0 5px; min-width: 2px; }
+.bo-chart-ok { background: var(--ok); }
+.bo-chart-warn { background: var(--warn); }
+.bo-chart-full { background: var(--full); }
+.bo-chart-over { position: absolute; inset: 3px auto 3px 0; background: var(--full); border-radius: 0 5px 5px 0; background-image: repeating-linear-gradient(135deg, transparent 0 4px, var(--full-soft) 4px 7px); outline: 1.5px solid var(--full); outline-offset: 0; }
+.bo-chart-line { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; }
+.bo-chart-val { grid-area: v; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; min-width: 74px; }
+.bo-chart-n { font-family: var(--font-mono); font-size: 15px; font-weight: 500; }
+.bo-chart-n-full { color: var(--full); }
+.bo-chart-n-warn { color: var(--warn); }
+.bo-chart-pct { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.bo-chart-st { grid-area: s; }
+.bo-chart-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); padding-top: 4px; border-top: 1px solid var(--line); }
+.bo-chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.bo-lg { display: inline-block; width: 14px; height: 10px; border-radius: 3px; }
+.bo-lg-bar { background: var(--ok); }
+.bo-lg-cap { background: var(--surface-2); border: 1px solid var(--line); border-right: 3px solid var(--ink); width: 18px; }
+.bo-lg-over { background: var(--full); }
+@media (min-width: 720px) {
+  .bo-chart-row { grid-template-columns: 34px minmax(0, 1fr) 84px 130px; grid-template-areas: "d t v s"; }
+  .bo-chart-track { height: 30px; }
+}
+
+/* ---------- Empfehlungen ---------- */
+.bo-recos { gap: var(--s-3); }
+.bo-reco { display: flex; gap: 12px; padding: var(--s-3) var(--s-4); border-radius: 14px; background: var(--surface-2); }
+.bo-reco h3 { font-size: 17px; margin-bottom: 4px; }
+.bo-reco-ic { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); }
+.bo-reco-main { min-width: 0; flex: 1; }
+.bo-reco-text { color: var(--ink-2); font-size: 15px; }
+.bo-reco-act { margin-top: 10px; }
+.bo-reco-full { background: var(--full-soft); }
+.bo-reco-full .bo-reco-ic { color: var(--full); }
+.bo-reco-warn { background: var(--warn-soft); }
+.bo-reco-warn .bo-reco-ic { color: var(--warn); }
+.bo-reco-ok { background: var(--ok-soft); }
+.bo-reco-ok .bo-reco-ic { color: var(--ok); }
+.bo-reco-info { background: var(--info-soft); }
+.bo-reco-info .bo-reco-ic { color: var(--info); }
+
+/* ---------- Heute zu tun, Bestellungen ---------- */
+.bo-todos, .bo-orders, .bo-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.bo-todo { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.bo-todo:first-child { border-top: 0; padding-top: 0; }
+.bo-todo-main { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; }
+.bo-order { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.bo-order:first-child { border-top: 0; padding-top: 0; }
+.bo-order-time { flex: none; width: 92px; font-size: 12px; color: var(--muted); }
+.bo-order-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bo-order-main .ui-muted { font-size: 14px; }
+@media (max-width: 520px) { .bo-order { flex-wrap: wrap; } .bo-order-time { width: 100%; } }
+
+/* ---------- Kapazität ---------- */
+.bo-caps { padding: 0; overflow: hidden; }
+.bo-cap-head { display: none; }
+.bo-cap-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; padding: var(--s-4); border-top: 1px solid var(--line); align-items: start; }
+.bo-cap-row:first-of-type { border-top: 0; }
+.bo-cell { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.bo-cell[data-l]::before { content: attr(data-l); font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.bo-cell-day { grid-column: 1 / -1; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px; }
+.bo-cell-day strong { font-family: var(--font-display); font-size: 20px; }
+.bo-cap-st { font-size: 13px; }
+.bo-cell-util, .bo-cell-end { grid-column: 1 / -1; }
+.bo-cell-act { grid-column: 1 / -1; }
+.bo-cell-act .ui-btn { width: 100%; }
+.bo-util-n { display: flex; gap: 8px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.bo-end { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bo-end-late strong { color: var(--full); }
+@media (min-width: 600px) { .bo-cell-n { grid-column: auto; } .bo-cap-row { grid-template-columns: repeat(4, minmax(0, 1fr)); } .bo-cell-act { grid-column: 1 / -1; } .bo-cell-act .ui-btn { width: auto; align-self: flex-start; } }
+@media (min-width: 1100px) {
+  .bo-cap-head, .bo-cap-row { display: grid; grid-template-columns: 150px minmax(130px, 1.2fr) 54px 70px 44px minmax(190px, 1.4fr) 70px 108px; gap: 12px; align-items: center; padding: 12px var(--s-4); }
+  .bo-cap-head { background: var(--surface-2); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .bo-cap-head .c { text-align: center; }
+  .bo-cell[data-l]::before { display: none; }
+  .bo-cell-day { flex-direction: column; align-items: flex-start; gap: 4px; grid-column: auto; }
+  .bo-cell-util, .bo-cell-end, .bo-cell-act { grid-column: auto; }
+  .bo-cell-n { align-items: center; text-align: center; }
+  .bo-cell-act .ui-btn { width: auto; }
+}
+.bo-rules { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); }
+
+/* Bearbeiten-Sheet */
+.bo-edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--s-4); }
+.bo-fc { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface-2); }
+.bo-fc-late { border-color: var(--full); background: var(--full-soft); }
+.bo-fc-ok { border-color: var(--ok); background: var(--ok-soft); }
+.bo-fc-row { display: flex; gap: 10px; align-items: flex-start; }
+.bo-fc-row .ui-icon { margin-top: 2px; flex: none; }
+.bo-fc-late .bo-fc-row:first-child .ui-icon, .bo-fc-late .bo-fc-row:first-child strong { color: var(--full); }
+.bo-fc-ok .bo-fc-row:first-child .ui-icon, .bo-fc-ok .bo-fc-row:first-child strong { color: var(--ok); }
+.bo-fc-tag { font-family: var(--font-mono); font-size: 12px; margin-left: 6px; }
+.bo-fc .ui-muted { font-size: 14px; }
+
+/* ---------- Warteliste ---------- */
+.bo-nocap { font-size: 14px; }
+.bo-prereg { display: flex; flex-direction: column; gap: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line); }
+.bo-prereg:first-child { border-top: 0; padding-top: 0; }
+.bo-prereg-bar { display: flex; flex-direction: column; gap: 6px; }
+.bo-details summary { cursor: pointer; font-weight: 650; padding: 6px 0; }
+.bo-wl-table td, .bo-cust-table td { white-space: nowrap; }
+.bo-wl-table .ui-pill { white-space: normal; }
+
+/* ---------- Kunden ---------- */
+.bo-filters { display: grid; gap: var(--s-3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 600px) { .bo-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .bo-filters { grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); } }
+.bo-filters-2 { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) { .bo-filters-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); } }
+.bo-chips { gap: 8px; }
+.bo-cust-table { min-width: 720px; }
+.bo-kvs { margin: 0; display: flex; flex-direction: column; }
+.bo-kv { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.bo-kv:first-child { border-top: 0; }
+.bo-kv dt { flex: none; width: 128px; color: var(--muted); font-size: 14px; }
+.bo-kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.bo-list > li { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 6px 0; border-top: 1px solid var(--line); }
+.bo-list > li:first-child { border-top: 0; }
+.bo-list > li > .ui-mono { margin-left: auto; }
+.bo-list .ui-muted { flex: 1 1 140px; min-width: 0; }
+.bo-page h4 { margin-bottom: 4px; }
+
+/* ---------- Sortiment ---------- */
+.bo-prod-table { min-width: 880px; }
+.bo-prod-table td { vertical-align: middle; position: relative; }
+.bo-prod-table .ui-input { min-height: 38px; padding: 4px 10px; }
+.bo-unit { font-size: 12.5px; }
+.bo-money { position: relative; width: 104px; }
+.bo-money .ui-input { padding-right: 26px; text-align: right; }
+.bo-money-eur { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+.bo-prod-table .ui-toggle { min-height: 36px; }
+
+/* ---------- Marketing ---------- */
+.bo-ideas { display: grid; gap: var(--s-3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 800px) { .bo-ideas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bo-idea { display: flex; flex-direction: column; gap: 8px; padding: var(--s-4); border-radius: 14px; background: var(--surface-2); }
+.bo-idea h3 { font-size: 17px; }
+.bo-idea p { margin: 0; font-size: 14.5px; }
+.bo-composer { display: grid; gap: var(--s-5); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) { .bo-composer { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+.bo-preview { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4); border-radius: 14px; background: var(--surface-2); align-items: flex-start; }
+.bo-pushprev { width: 100%; max-width: 380px; }
+.bo-pushprev .ui-push { position: static; }
+.bo-mail { width: 100%; max-width: 480px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.bo-mail-head { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+.bo-mail-body { padding: 14px; font-size: 15px; }
+.bo-mail-body p { margin: 0 0 8px; }
+
+.bo-offers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.bo-offer { display: flex; gap: var(--s-3); align-items: center; flex-wrap: wrap; padding: var(--s-3) 0; border-top: 1px solid var(--line); }
+.bo-offer:first-child { border-top: 0; }
+.bo-offer.is-off .bo-offer-main strong { color: var(--muted); }
+.bo-offer-main { flex: 1 1 320px; min-width: 0; }
+.bo-offer-pills { margin-top: 6px; gap: 6px; }
+.bo-offer-act { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.bo-fs { border: 1px solid var(--line); border-radius: 14px; padding: var(--s-3) var(--s-4) var(--s-4); margin: 0; display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
+.bo-fs legend { padding: 0 6px; font-weight: 700; }
+.bo-fs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--s-3); align-items: end; }
+.bo-calc { border-radius: 14px; padding: var(--s-4); border: 1.5px solid var(--line); background: var(--surface-2); display: flex; flex-direction: column; gap: 8px; }
+.bo-calc p { margin: 0; }
+.bo-calc-head { display: flex; align-items: center; gap: 8px; }
+.bo-calc-ok { background: var(--ok-soft); border-color: var(--ok); }
+.bo-calc-ok .bo-calc-head { color: var(--ok); }
+.bo-calc.bo-calc-warn { background: var(--warn-soft); border-color: var(--warn); }
+.bo-calc-warn .bo-calc-head { color: var(--warn); }
+.bo-calc-full { background: var(--full-soft); border-color: var(--full); }
+.bo-calc-full .bo-calc-head, .bo-calc-loss { color: var(--full); font-weight: 650; }
+.bo-calc-t { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.bo-calc-t th, .bo-calc-t td { padding: 4px 0; text-align: left; font-weight: 500; }
+.bo-calc-t .num { text-align: right; }
+.bo-calc-t thead th { color: var(--muted); font-size: 12px; }
+.bo-calc-note { font-size: 13px; }
+.bo-season { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }

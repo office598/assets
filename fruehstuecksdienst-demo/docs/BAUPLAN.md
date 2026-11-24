@@ -235,7 +235,7 @@ Persistenz: `localStorage['fd-demo-v1'] = { seedDay, state }`, entprellt. Beim S
 
 ## 5. Gestaltung
 
-**Idee „Frühstückstisch“.** Warm, hell, appetitlich und modern: mehlweißer Grund, Espresso-Braun als Schrift, Marille als Aktionsfarbe, Buttergelb als Glanzlicht, Packpapier für Zettel und Etiketten. Die Wärme tragen große, echte Fotos von Gebäck und Frühstück. Produkte werden nie als Icon oder Zeichnung gezeigt, wenn ein Foto vorhanden ist; Illustrationen aus `App.art` sind nur Rückfallebene und Beiwerk (Leerzustände, kleine Erklärgrafiken). Modern heißt hier: große Bildflächen mit weichen Ecken, kräftige Überschriften, viel Luft, durchscheinende sticky Leisten (`backdrop-filter`), horizontale Karussells mit Snap, kleine Bewegungen beim Hinzufügen. Nicht verspielt und nicht künstlerisch: Es geht um Frühstück. Signatur-Element ist die **Wochenleiste aus Türanhängern**: sieben Anhänger (Loch oben, unten rund) mit Wochentag, Status und Lieferzeit. Zweites Motiv: der **Lieferzettel** (Packpapier-Fläche, Mono-Schrift, gestrichelte Abrisskante) für Bestätigungen, Stopps und Zusammenfassungen. Bewusst nicht: kühle Blau- oder Grautöne als Grundfarbe, Serifenschrift, alles zentriert, überall gleiche Karten, Akzentbalken an Karten, Verlaufs-Hero in Lila/Blau.
+**Idee „Frühstückstisch“.** Warm, hell, appetitlich und modern: mehlweißer Grund, Espresso-Braun als Schrift, Honiggold als Aktionsfarbe (bewusst kein Orange), helles Buttergelb als Glanzlicht, Packpapier für Zettel und Etiketten. Die Wärme tragen große, echte Fotos von Gebäck und Frühstück. Produkte werden nie als Icon oder Zeichnung gezeigt, wenn ein Foto vorhanden ist; Illustrationen aus `App.art` sind nur Rückfallebene und Beiwerk (Leerzustände, kleine Erklärgrafiken). Modern heißt hier: große Bildflächen mit weichen Ecken, kräftige Überschriften, viel Luft, durchscheinende sticky Leisten (`backdrop-filter`), horizontale Karussells mit Snap, kleine Bewegungen beim Hinzufügen. Nicht verspielt und nicht künstlerisch: Es geht um Frühstück. Signatur-Element ist die **Wochenleiste aus Türanhängern**: sieben Anhänger (Loch oben, unten rund) mit Wochentag, Status und Lieferzeit. Zweites Motiv: der **Lieferzettel** (Packpapier-Fläche, Mono-Schrift, gestrichelte Abrisskante) für Bestätigungen, Stopps und Zusammenfassungen. Bewusst nicht: kühle Blau- oder Grautöne als Grundfarbe, Serifenschrift, alles zentriert, überall gleiche Karten, Akzentbalken an Karten, Verlaufs-Hero in Lila/Blau.
 
 Tokens (K2 übernimmt sie wörtlich nach `css/base.css`; `:root` hell, dann `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { … color-scheme: dark } }` und identisch `:root[data-theme="dark"] { … color-scheme: dark }`):
 
@@ -251,11 +251,11 @@ Token            hell        dunkel
 --night          #2A1B12     #0F0A07      dunkle Bänder (Röstkaffee): Demo-Leiste, Footer
 --on-night       #FFF4E3     #FBF1E3
 --night-2        #432E20     #221912
---sun            #FF8A3D     #FF9550      Akzentfläche (Haupt-CTA)
---sun-ink        #3B1A05     #2B1203      Text auf --sun
---sun-text       #B8480B     #FFAB73      Akzent als Text/Link
---butter         #FFD15C     #FFD15C
---butter-soft    #FFF0C2     #3A2F12
+--sun            #FFB81C     #FFC247      Akzentfläche (Haupt-CTA), Honiggold
+--sun-ink        #2A1B12     #2A1B12      Text auf --sun
+--sun-text       #8A5A00     #FFCF70      Akzent als Text/Link
+--butter         #FFE08A     #FFE08A
+--butter-soft    #FFF4D1     #3A3012
 --kraft          #C7A67A     #B8976B      Packpapier
 --kraft-soft     #F3E7D3     #2E2416
 --kraft-ink      #5F4526     #E9D3B0
@@ -386,3 +386,38 @@ Oberfläche (V1, V2): sticky Sackerl-Leiste mit Summe und Bestellschluss-Countdo
 
 ### 8.5 Gestaltung: warm, modern, mit Fotos
 Die Token-Tabelle und die Gestaltungsidee in Abschnitt 5 sind auf „Frühstückstisch“ umgestellt (warme Neutrale statt kühler Blautöne). K2 übernimmt die neuen Werte. Fotos kommen über `App.photos` (Manifest in `js/core/photos.js`): Produktfotos quadratisch unter der Produkt-ID, Szenen `hero`, `baecker`, `hofladen`, `buero`, `geschenk`, `fruehstueck`. Jede Ansicht muss mit und ohne Foto gut aussehen, weil `Photo` ohne Eintrag auf die Illustration zurückfällt. Die Startseite beginnt mit dem Foto `hero` als großer Bildfläche (Text gut lesbar über einem dunklen Verlauf aus `--night`), nicht mit einer Zeichnung. Unter den Fotos im Fuß: „Bildnachweise“ öffnet ein Sheet mit `App.photoCredits`.
+
+### 8.6 Echte Kostenstruktur (Angaben des Auftraggebers, ersetzt widersprechende Werte oben)
+- **Zustellgebühr je Lieferung:** € 1,60 werktags (Mo–Fr), € 2,60 an Wochenenden (Sa, So) und Feiertagen. Sie ist die wichtigste Ertragsquelle; die Gebäckpreise liegen nur rund 10 % über dem Ladenpreis des Bäckers. Feiertage bildet die Demo nicht ab.
+- **Fahrer** sind Subunternehmer und bekommen € 0,36 netto je ausgeliefertem Stück. Ein Stück ist jede gelieferte Einheit eines Artikels (auch Extras und Boxen zählen je 1).
+- **Folgen:** Eine Gratis-Zustellung ab Bestellwert ist standardmäßig aus. Jede Gratis-Zugabe kostet Einkaufspreis plus € 0,36 – Aktionen müssen deshalb mit der Fahrervergütung gerechnet werden. Ein zweiter Fahrer kostet das Unternehmen nichts extra (Bezahlung je Stück), er muss aber genug Stück bekommen, damit sich die Tour für ihn lohnt.
+
+Konfiguration:
+```js
+fees: { abo: 1.75, aboWeekend: 2.75, flex: 2.50, flexWeekend: 3.50, flexMinOrder: 6.00, freeDeliveryFrom: null },   // Kundenpreise inkl. USt (netto rund 1,60 / 2,50)
+economics: { driverPerPiece: 0.36 }
+```
+`feeFor` nimmt für Sa/So die Wochenend-Werte (bei Einmallieferungen nach dem Wochentag des Datums). Mit `freeDeliveryFrom: null` ist `freeDeliveryMissing` immer 0; die Oberfläche zeigt den Fortschritt zur Gratis-Zustellung nur, wenn ein Schwellenwert gesetzt ist.
+
+Selektoren:
+- `pieces(items)` → Summe der Mengen.
+- `tourEconomics(s, regionId, dateKey, driversOverride)` → `{ stops, pieces, productRevenue, fees, goodsCost, driverPay, margin, perDriver:[ { driver, stops, pieces, pay } ] }`.
+- `kpis` zusätzlich `weeklyProductRevenue`, `weeklyFees`, `weeklyGoodsCost`, `weeklyDriverPay`, `weeklyMargin`.
+- `offerCalc(s, offer)` rechnet je Stück `driverPerPiece` mit und liefert `{ normalRevenue, normalCost, normalMargin, offerRevenue, offerCost, offerMargin, deltaPerBundle, giftUnitMargin /* Ertrag je Zugabe-Stück zum Aktionspreis nach Einkauf und Fahrer */, discountPerUnit /* Nachlass je Zugabe-Stück */, driverPerPiece, verdict: 'gain'|'neutral'|'loss', breakEvenUpliftPct }`. `verdict` ist `loss`, wenn `giftUnitMargin < 0` (jede Zugabe kostet mehr, als sie bringt), `gain`, wenn `giftUnitMargin > 0` (lohnt sich, sobald der Artikel zusätzlich gekauft wird). `breakEvenUpliftPct` nur, wenn `normalMargin > 0`, `offerMargin > 0` und `deltaPerBundle < 0`, sonst `null`.
+
+Aktionen im Seed (ersetzen die Liste in 8.2):
+- `brot-dazu` „Ab 4 Semmeln & Weckerl: Bauernbrot −10 %“ (buy Kategorie `gebaeck` × 4 → get `bauernbrot` × 1 mit 10 %; aktiv, alle Tage)
+- `butter-marmelade` „Zur Teebutter: Marillenmarmelade −10 %“ (buy `teebutter` × 1 → get `marillenmarmelade` × 1 mit 10 %; aktiv)
+- `semmel-5-1` „5 Kaisersemmeln + 1 gratis“ (inaktiv, Vorlage – die Kalkulation zeigt den Verlust)
+- `croissant-2-1` „2 Buttercroissants + 1 gratis“ (inaktiv, nur Di–Fr, Vorlage)
+
+Oberfläche:
+- V1, V2: Zustellgebühr für Werktag und Wochenende getrennt nennen (aus `config.fees`, nichts fest eintippen); Fortschritt zur Gratis-Zustellung nur bei gesetztem Schwellenwert.
+- V3: Übersicht mit „Deckungsbeitrag pro Woche“ samt Aufschlüsselung (Warenumsatz, Zustellgebühren, Wareneinsatz, Fahrervergütung). Kapazität-Sheet: zur gewählten Fahrerzahl „Vergütung je Fahrer“ aus `tourEconomics(...).perDriver` mit dem Satz, dass ein zweiter Fahrer das Unternehmen nichts extra kostet, sich für ihn aber erst ab genug Stück lohnt. Marketing-Kalkulation in Klartext mit den neuen Feldern; Verlust-Aktionen klar markieren („Jede Gratis-Semmel kostet € 0,69: € 0,33 Einkauf + € 0,36 Fahrer“).
+- V4: Touren-Kopf je Fahrer mit „Stück“ und „Vergütung“; Fahrer-App zeigt dezent „Ihr Verdienst heute“ (zugestellte Stück × Vergütung).
+
+### 8.7 Erkenntnisse aus dem bisherigen Portal (Preisniveau, Katalog)
+- **Preisniveau:** Die Beispielpreise werden auf das reale Niveau der Region gehoben: `kaisersemmel` 0,65 · `handsemmel` 1,30 · `kornweckerl` 1,50 · `salzstangerl` 1,40 · `mohnflesserl` 1,45 · `laugenbreze` 1,50 · `dinkelweckerl` 1,60 · `buttercroissant` 2,20 · `topfengolatsche` 2,60 · `nussschnecke` 2,80 · `marillenkrapfen` 2,40 · `briochestriezel` 6,90 · `bauernbrot` 3,20 · `dinkelbrot` 4,00 · `nussbrot` 4,60 · `box-sonntag` 16,90 · `box-familie` 27,90 · `box-buero` 69,00 · `box-nikolo` 13,90. Extras bleiben. `cost` beim Gebäck, Süßen und Brot rund 55–60 % vom Preis.
+- **Allergene:** Jeder Artikel bekommt `allergens` mit den österreichischen Buchstabencodes (A Gluten, C Eier, F Soja, G Milch, H Schalenfrüchte, N Sesam, O Sulfite …) und `config.labels.allergens` als Legende. Plausible Zuordnung genügt (Demo).
+- **Sortiment (V1):** Suchfeld über dem Raster (filtert nach Name) und eine Produkt-Detailansicht als Sheet (großes Foto, Beschreibung, Allergene mit Legende, Etiketten, Menge). Das bisherige Portal zeigt rund 90 Artikel als lange Liste ohne Suche und ohne Wochenübersicht – genau das machen wir besser.
+- **Zustellgebühr und Mindestbestellwert** stehen sichtbar dort, wo der Kunde das Sackerl füllt, nicht erst am Ende.
