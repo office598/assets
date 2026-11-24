@@ -64,7 +64,7 @@
           <div class="ui-field"><span class="ui-label">Stopps je Fahrer</span><${Stepper} label="Stopps je Fahrer" value=${d.stopsPerDriver} min=${10} max=${150} onChange=${v => set({ stopsPerDriver: v })} /></div>
           <div class="ui-field"><span class="ui-label">Flex-Kontingent</span><${Stepper} label="Flex-Kontingent" value=${d.flexQuota} min=${0} max=${30} onChange=${v => set({ flexQuota: v })} /></div>
         </div>
-        <${Toggle} id="cap-auto" label="Warteliste automatisch benachrichtigen" hint="Wird der Tag offen und ist Platz frei, bekommen die ersten Wartenden 24 Stunden lang den Vorrang."
+        <${Toggle} id="cap-auto" label="Warteliste automatisch benachrichtigen" hint=${"Wird der Tag offen und ist Platz frei, bekommen die ersten Wartenden " + App.config.reserveHours + " Stunden lang den Vorrang."}
           checked=${d.autoNotify} onChange=${v => set({ autoNotify: v })} />
         <${Forecast} s=${s} region=${region} wd=${wd} draft=${d} cur=${cur} />
         <${Pay} s=${s} region=${region} wd=${wd} drivers=${d.drivers} dateKey=${App.sel.forecastEnd(s, region.id, wd, d.drivers).dateKey} />
