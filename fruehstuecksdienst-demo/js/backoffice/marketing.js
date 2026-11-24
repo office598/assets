@@ -84,7 +84,7 @@
   function CalcBox({ s, o }) {
     const c = App.sel.offerCalc(s, o);
     const gp = App.sel.product(s, o.get.productId) || { name: 'Artikel', cost: 0, price: 0 };
-    const rate = c.driverPerPiece != null ? c.driverPerPiece : (App.config.economics || {}).driverPerPiece || 0;
+    const rate = c.driverPerPiece != null ? c.driverPerPiece : B().eco().driverPerPiece || 0;
     const verdict = c.verdict || (c.offerMargin <= 0 ? 'loss' : 'gain');
     const gm = c.giftUnitMargin != null ? c.giftUnitMargin : null;
     const up = c.breakEvenUpliftPct;
@@ -197,7 +197,7 @@
     const [d, setD] = useState({ productId: ws.productId, title: ws.title, text: ws.text, pct: ws.pct || 0 });
     const set = p => setD(Object.assign({}, d, p));
     const p = App.sel.product(s, d.productId);
-    const vat = (App.config.economics || {}).vatRate || 0;
+    const vat = B().eco().vatRate || 0;
     const base = p ? App.sel.unitMargin(s, p) : 0;
     const disc = p ? p.price * d.pct / 100 / (1 + vat) : 0;
     const at = Math.round((base - disc) * 100) / 100;

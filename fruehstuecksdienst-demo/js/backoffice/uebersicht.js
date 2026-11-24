@@ -10,9 +10,10 @@
   B.regionOf = s => s.regions.find(r => r.id === s.ui.boRegion) || s.regions[0];
   B.go = (view, patch) => App.actions.setUi(Object.assign({ backofficeView: view }, patch || {}));
   B.head = (title, sub, right) => html`<div class="bo-hd"><div class="ui-grow"><h1>${title}</h1>${sub ? html`<p class="ui-muted">${sub}</p>` : null}</div>${right || null}</div>`;
+  B.eco = () => App.store.getState().economics || App.config.economics || {};
   B.minus = s => String(s).replace('-', '−');
   B.estimateNote = () => {
-    const e = App.config.economics || {}, d = e.purchaseDiscount != null ? e.purchaseDiscount : 0.10;
+    const e = B.eco(), d = e.purchaseDiscount != null ? e.purchaseDiscount : 0.10;
     return 'Schätzwerte: Einkauf = Ladenpreis −' + Math.round(d * 100) + ' %, Fahrer ' + F.eur(e.driverPerPiece || 0) + ' je Stück, alle Beträge netto';
   };
   B.plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
@@ -86,7 +87,9 @@
       const stops = mid.reduce((a, u) => a + u.abo, 0), max = mid.reduce((a, u) => a + u.max, 0);
       const freeSlots = mid.reduce((a, u) => a + Math.max(0, u.freeAbo), 0);
       const avg = Math.round(stops / max * 100);
-      const eco = App.sel.weekdayEconomics(s, rid).filter(e => mid.some(u => u.wd === e.wd) && e.hours > 0).sort((a, b) => a.perHour - b.perHour)[0];
+      const wde = App.sel.weekdayEconomics(s, rid).map(e => Object.assign({ minApplied: App.sel.tourEconomics(s, rid, e.dateKey).perDriver.some(d => d.minApplied) }, e));
+      const eco = wde.filter(e => mid.some(u => u.wd === e.wd) && e.hours > 0).sort((a, b) => a.perHour - b.perHour)[0];
+      const minD = eco ? eco : null;
       const ecoText = eco ? ' Am schwächsten Tag (' + T.WD_LONG[eco.wd] + ', ' + eco.stops + ' Stopps, ' + Math.round(eco.km) + ' km) bleiben dem Fahrer nach Fahrzeugkosten ' + F.eur(eco.afterKm) + ', rund ' + F.eur(eco.perHour) + ' je Stunde.' : '';
       out.push(html`<${Reco} key="mid" tone="warn" icon="megaphone" title=${T.WD[mid[0].wd] + '–' + T.WD[mid[mid.length - 1].wd] + ' sind nur zu ' + avg + ' % ausgelastet'}
         actions=${[html`<${Btn} key="m" size="sm" variant="sun" icon="megaphone" onClick=${() => B.go('marketing')}>Aktion vorbereiten<//>`]}>
@@ -176,7 +179,7 @@
     if (k.weeklyMargin == null) return null;
     const rows = [
       ['Warenumsatz (netto)', k.weeklyProductRevenue, 1], ['Zustellgebühren (netto)', k.weeklyFees, 1],
-      ['Wareneinsatz (netto)', -k.weeklyGoodsCost, -1], ['Fahrervergütung (' + F.eur(App.config.economics.driverPerPiece) + ' je Stück, netto)', -k.weeklyDriverPay, -1]
+      ['Wareneinsatz (netto)', -k.weeklyGoodsCost, -1], ['Fahrervergütung (' + F.eur(B.eco().driverPerPiece) + ' je Stück, netto)', -k.weeklyDriverPay, -1]
     ];
     return html`<section class="ui-card bo-sec bo-margin" aria-labelledby="bo-h-m"><div class="bo-margin-top"><div><h2 id="bo-h-m">Deckungsbeitrag pro Woche (netto)</h2>
         <p class="ui-muted bo-sec-sub">aus den Abos dieses Gebiets, nach Ware und Fahrern</p></div>
@@ -189,9 +192,9 @@
   /* ---------- Was die Tour je Wochentag bringt ---------- */
   function TourEco({ s, region, util }) {
     if (region.planned || !App.sel.weekdayEconomics) return null;
-    const rows = App.sel.weekdayEconomics(s, region.id);
+    const rows = App.sel.weekdayEconomics(s, region.id).map(r => Object.assign({ minApplied: App.sel.tourEconomics(s, region.id, r.dateKey).perDriver.some(d => d.minApplied) }, r));
     const m = App.sel.marginalStop(s, region.id);
-    const e = App.config.economics || {};
+    const e = B.eco();
     const weak = wd => { const u = util[wd]; return u.effective === 'free' && u.pct <= App.config.promo.weakBelowPct; };
     const neg = n => B.minus(F.eur(n));
     return html`<section class="ui-card bo-sec" aria-labelledby="bo-h-eco"><h2 id="bo-h-eco">Was die Tour je Wochentag bringt</h2>
@@ -199,11 +202,11 @@
       <div class="ui-tablewrap"><table class="ui-table bo-eco"><thead><tr><th>Tag</th><th class="num">Stopps</th><th class="num">km</th><th class="num">Deckungsbeitrag Unternehmen</th>
         <th class="num">Fahrer: Vergütung</th><th class="num">nach Fahrzeugkosten</th><th class="num">je Stunde</th><th>Einschätzung</th></tr></thead>
         <tbody>${rows.map(r => html`<tr key=${r.wd} class=${weak(r.wd) ? 'bo-eco-weak' : ''}><td><strong>${T.WD[r.wd]}</strong><span class="ui-muted"> ${T.fmt.day(r.dateKey).split(' ')[1] || ''}</span></td>
-          <td class="num">${r.stops}</td><td class="num">${Math.round(r.km)}</td><td class="num">${neg(r.businessMargin)}</td><td class="num">${F.eur(r.driverPay)}</td>
+          <td class="num">${r.stops}</td><td class="num">${Math.round(r.km)}</td><td class=${'num' + (r.businessMargin < 0 ? ' bo-neg' : '')}><strong>${neg(r.businessMargin)}</strong></td><td class="num">${F.eur(r.driverPay)}${r.minApplied ? html`<div><${Pill} tone="warn">Mindestvergütung<//></div>` : null}</td>
           <td class=${'num' + (r.afterKm < 0 ? ' bo-neg' : '')}>${neg(r.afterKm)}</td><td class=${'num' + (r.perHour < 0 ? ' bo-neg' : '')}><strong>${neg(r.perHour)}</strong></td>
           <td>${weak(r.wd) ? html`<${Pill} tone="warn" icon="alert">schwacher Tag<//>` : util[r.wd].effective === 'full' ? html`<${Pill} tone="full">ausgebucht<//>` : html`<${Pill} tone="ok" icon="check">gut gefüllt<//>`}</td></tr>`)}</tbody></table></div>
       <p class="bo-eco-sentence">Jeder zusätzliche Stopp bringt dem Unternehmen rund <strong>${F.eur(m.business)}</strong> und dem Fahrer rund <strong>${F.eur(m.driver)}</strong>.</p>
-      <p class="ui-muted bo-sec-sub">Annahmen: Fahrer ${F.eur(e.driverPerPiece || 0)} je Stück, Fahrzeugkosten ${F.eur(e.kmCost || 0)} je km, alle Beträge netto, Einkaufspreise geschätzt. Größere und dichtere Touren machen schwache Tage für den Fahrer lohnender.</p></section>`;
+      <p class="ui-muted bo-sec-sub">Annahmen: Fahrer ${F.eur(e.driverPerPiece || 0)} je Stück, mindestens ${F.eur(e.driverMinPerTour || 0)} je Tour, Fahrzeugkosten ${F.eur(e.kmCost || 0)} je km, alle Beträge netto, Einkaufspreise geschätzt. Größere und dichtere Touren machen schwache Tage für den Fahrer lohnender.</p></section>`;
   }
 
   /* ---------- Seite ---------- */
