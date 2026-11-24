@@ -191,6 +191,37 @@
     </section>`;
   }
 
+  /* ---------- Brot der Woche ---------- */
+  function WeeklySpecial({ s }) {
+    const ws = s.weeklySpecial || { productId: '', title: '', text: '', pct: 0 };
+    const [d, setD] = useState({ productId: ws.productId, title: ws.title, text: ws.text, pct: ws.pct || 0 });
+    const set = p => setD(Object.assign({}, d, p));
+    const p = App.sel.product(s, d.productId);
+    const vat = (App.config.economics || {}).vatRate || 0;
+    const base = p ? App.sel.unitMargin(s, p) : 0;
+    const disc = p ? p.price * d.pct / 100 / (1 + vat) : 0;
+    const at = Math.round((base - disc) * 100) / 100;
+    const loss = at < 0;
+    const dirty = d.productId !== ws.productId || d.title !== ws.title || d.text !== ws.text || d.pct !== (ws.pct || 0);
+    const save = () => { App.actions.setWeeklySpecial({ productId: d.productId, title: d.title.trim(), text: d.text.trim(), pct: d.pct }); toast('„' + d.title.trim() + '“ gespeichert', 'ok'); };
+    return html`<section class="ui-card bo-sec" aria-labelledby="mk-h-ws"><h2 id="mk-h-ws">${ws.title || 'Brot der Woche'}</h2>
+      <p class="ui-muted bo-sec-sub">Dieser Artikel steht in der Kunden-App auf der Startseite. Brot bringt viel Deckungsbeitrag je Stück.</p>
+      <div class="bo-composer"><div class="ui-stack">
+        <${Field} id="ws-prod" label="Artikel" as="select" value=${d.productId} onChange=${e => set({ productId: e.target.value })}
+          options=${s.products.filter(x => x.active !== false || x.id === d.productId).map(x => ({ value: x.id, label: x.name + ' · ' + F.eur(x.price) }))} />
+        <${Field} id="ws-title" label="Titel" value=${d.title} onInput=${e => set({ title: e.target.value })} />
+        <${Field} id="ws-text" label="Text" as="textarea" rows="3" value=${d.text} onInput=${e => set({ text: e.target.value })} />
+        <${Field} id="ws-pct" label="Rabatt (optional)" type="number" min="0" max="50" suffix="%" value=${d.pct} onInput=${e => set({ pct: Math.max(0, Math.min(50, Number(e.target.value) || 0)) })} />
+      </div>
+      <div class="bo-prev"><div class="ui-eyebrow">Deckungsbeitrag je Stück (netto)</div>
+        ${p ? html`<div class=${'bo-calc bo-calc-' + (loss ? 'full' : at < base * 0.5 ? 'warn' : 'ok')} aria-live="polite">
+          <div class="bo-calc-head"><${Icon} name=${loss ? 'alert' : 'check'} size=${20} /><strong>${loss ? 'Achtung: Verlust je Stück' : d.pct ? 'Bleibt positiv' : 'Ohne Rabatt'}</strong></div>
+          <p>${p.name}: <strong>${B().minus(F.eur(at))}</strong> je Stück${d.pct ? ' bei ' + d.pct + ' % Rabatt (statt ' + B().minus(F.eur(base)) + ' ohne Rabatt)' : ''}.</p>
+          ${loss ? html`<p class="bo-calc-loss">Jedes verkaufte Stück kostet Sie Geld. Senken Sie den Rabatt.</p>` : null}
+          <p class="ui-muted bo-calc-note">${B().estimateNote()}.</p></div>` : null}
+        <${Btn} variant="sun" icon="check" disabled=${!dirty || !d.title.trim() || !d.productId} onClick=${save}>Speichern<//></div></div></section>`;
+  }
+
   /* ---------- Gutscheine, Empfehlungen, Saison ---------- */
   function Vouchers() {
     const rows = [
@@ -236,6 +267,7 @@
       <section class="ui-card bo-sec" aria-labelledby="mk-h-comp"><h2 id="mk-h-comp">Kampagne schreiben</h2><${Composer} s=${s} draft=${draft} setDraft=${setDraft} />
         <h3 class="bo-sub">Protokoll</h3><${Log} s=${s} /></section>
       <${Offers} s=${s} region=${region} />
+      <${WeeklySpecial} s=${s} />
       <div class="bo-grid2">
         <section class="ui-card bo-sec" aria-labelledby="mk-h-v"><h2 id="mk-h-v">Gutscheincodes</h2><p class="ui-muted bo-sec-sub">Beispieldaten</p><${Vouchers} /></section>
         <section class="ui-card bo-sec" aria-labelledby="mk-h-r"><h2 id="mk-h-r">Empfehlungen</h2><p class="ui-muted bo-sec-sub">Beispieldaten · Guthaben ${F.eur(App.config.promo.referralCredit)} je Empfehlung</p><${Referrals} s=${s} region=${region} /></section>
