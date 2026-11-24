@@ -45,3 +45,7 @@ tools/         serve, smoke, shot, test-core
 ## Hinweise
 
 Alle Kunden, Adressen, Zahlen, Preise und Gebiete sind Beispieldaten. Push-Nachrichten und E-Mails werden nur simuliert, der Zustand liegt im Browser (`localStorage`) und lässt sich in der Demo-Leiste zurücksetzen. `index.html` ist ein Seitenfragment ohne `<html>`, `<head>` und `<body>`; `tools/serve.mjs` wickelt es für die lokale Vorschau in ein vollständiges Dokument.
+
+## Einzelne Datei zum Weitergeben
+
+`node tools/build-single.mjs` baut `dist/semmelengel-demo.html`: alle Styles, Skripte und Fotos stecken in dieser einen Datei. Sie läuft ohne Server per Doppelklick in jedem aktuellen Browser (Chrome, Edge, Safari, Firefox am Computer). Ohne Internet fehlen nur die Webschriften; dann wird eine Systemschrift verwendet. Nach Änderungen an der Demo die Datei neu bauen.
