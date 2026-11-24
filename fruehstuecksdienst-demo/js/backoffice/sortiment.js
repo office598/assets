@@ -2,7 +2,7 @@
 (function (root) {
   const App = root.App = root.App || {};
   const { html, useState, useEffect } = App.lib;
-  const { Pill, Toggle, Field, Chip } = App.ui;
+  const { Pill, Toggle, Field, Chip, Btn, Sheet, toast } = App.ui;
   const F = App.fmt;
 
   const B = () => App.boA;
@@ -33,10 +33,10 @@
         onBlur=${() => { const v = txt.trim(); if (v && v !== value) onCommit(v); else setTxt(value || ''); }} onKeyDown=${e => { if (e.key === 'Enter') e.target.blur(); }} /></div>`;
   }
 
-  function Row({ p }) {
+  function Row({ s, p }) {
     const cats = App.config.labels.cat;
     const eco = App.config.economics || {}, rate = eco.driverPerPiece || 0, net = p.price / (1 + (eco.vatRate || 0));
-    const margin = net - (p.cost || 0) - rate, mp = net ? margin / net : 0;
+    const margin = App.sel.unitMargin(s, p), mp = net ? margin / net : 0;
     const tone = margin < 0 ? 'full' : mp < 0.3 ? 'warn' : 'ok';
     const up = patch => App.actions.updateProduct(p.id, patch);
     return html`<tr class=${p.active === false ? 'bo-off' : ''}>
@@ -49,6 +49,7 @@
       <td><${MoneyInput} id=${'pk-' + p.id} label=${'Einkaufspreis ' + p.name + ' in Euro'} value=${p.cost || 0} onCommit=${v => up({ cost: v })} /></td>
       <td class="num ui-mono">${F.eur(rate)}</td>
       <td class="num"><${Pill} tone=${tone} mono>${B().minus(F.eur(margin))} · ${B().minus(Math.round(mp * 100) + ' %')}<//></td>
+      <td><${Toggle} id=${'pf-' + p.id} label=${(p.focus ? 'im Fokus: ' : 'nicht im Fokus: ') + p.name} checked=${!!p.focus} onChange=${v => up({ focus: v })} /></td>
       <td><${Toggle} id=${'pa-' + p.id} label=${(p.active === false ? 'inaktiv: ' : 'aktiv: ') + p.name} checked=${p.active !== false} onChange=${v => up({ active: v })} /></td>
     </tr>`;
   }
@@ -57,13 +58,20 @@
     const s = App.useStore();
     const [cat, setCat] = useState('');
     const [q, setQ] = useState('');
+    const [dir, setDir] = useState(-1);
+    const [prop, setProp] = useState(null);
     const cats = App.config.labels.cat;
     const term = q.trim().toLowerCase();
-    const list = s.products.filter(p => (!cat || p.cat === cat) && (!term || p.name.toLowerCase().includes(term)));
+    const list = s.products.filter(p => (!cat || p.cat === cat) && (!term || p.name.toLowerCase().includes(term)))
+      .sort((a, b) => dir * (App.sel.unitMargin(s, a) - App.sel.unitMargin(s, b)));
+    const nFocus = s.products.filter(p => p.focus).length;
     const act = s.products.filter(p => p.active !== false);
     const avg = act.length ? act.reduce((a, p) => a + (p.price ? (p.price / (1 + ((App.config.economics || {}).vatRate || 0)) - (p.cost || 0) - ((App.config.economics || {}).driverPerPiece || 0)) / (p.price / (1 + ((App.config.economics || {}).vatRate || 0))) : 0), 0) / act.length : 0;
     return html`<div class="bo-page">
       ${App.boA.head('Sortiment', act.length + ' von ' + s.products.length + ' Artikeln aktiv · durchschnittliche Marge ' + B().minus(F.pct(avg)))}
+      <div class="ui-card bo-focus"><div class="ui-grow"><strong>${nFocus} Artikel im Fokus</strong>
+        <p class="ui-muted">Fokus-Artikel zeigt die Kunden-App zuerst und in „Dazu passt“. Ziel: teurere Stücke statt mehr Stücke, denn jedes Stück kostet Fahrervergütung.</p></div>
+        <${Btn} variant="sun" icon="star" onClick=${() => setProp(App.sel.focusProposal(s, Math.max(nFocus, 5)))}>Fokus vorschlagen<//></div>
       <div class="ui-card bo-filters bo-filters-2">
         <${Field} id="so-q" label="Suche" type="search" placeholder="Artikel suchen" value=${q} onInput=${e => setQ(e.target.value)} />
         <div class="ui-field"><span class="ui-label">Kategorie</span><div class="ui-row bo-chips" role="group" aria-label="Kategorie">
@@ -71,8 +79,15 @@
           ${Object.keys(cats).map(k => html`<${Chip} key=${k} selected=${cat === k} onClick=${() => setCat(k)}>${cats[k]}<//>`)}</div></div>
       </div>
       <p class="ui-muted bo-hint">Verkaufspreis brutto (inkl. USt), alle anderen Beträge netto. Marge je Stück = Verkaufspreis netto − Einkauf − Fahrervergütung; negative Werte sind rot und bedeuten: Dieses Stück trägt die Fahrervergütung nicht, die Zustellgebühr gleicht es aus. ${B().estimateNote()}.</p>
-      <div class="ui-tablewrap"><table class="ui-table bo-prod-table"><thead><tr><th>Artikel</th><th>Kategorie</th><th>Partner</th><th>Verkauf (brutto)</th><th>Einkauf (netto)</th><th class="num">Fahrer (netto)</th><th class="num">Marge je Stück (netto)</th><th>Status</th></tr></thead>
-        <tbody>${list.map(p => html`<${Row} key=${p.id} p=${p} />`)}</tbody></table></div>
+      <div class="ui-tablewrap"><table class="ui-table bo-prod-table"><thead><tr><th>Artikel</th><th>Kategorie</th><th>Partner</th><th>Verkauf (brutto)</th><th>Einkauf (netto)</th><th class="num">Fahrer (netto)</th><th class="num" aria-sort=${dir > 0 ? 'ascending' : 'descending'}><button type="button" class="bo-sortbtn" onClick=${() => setDir(-dir)}>Deckungsbeitrag je Stück (netto) ${dir > 0 ? '↑' : '↓'}</button></th><th>Im Fokus</th><th>Status</th></tr></thead>
+        <tbody>${list.map(p => html`<${Row} key=${p.id} s=${s} p=${p} />`)}</tbody></table></div>
+      ${prop ? html`<${Sheet} open=${true} onClose=${() => setProp(null)} title="Fokus vorschlagen"
+        footer=${[html`<${Btn} key="c" variant="ghost" onClick=${() => setProp(null)}>Abbrechen<//>`, html`<${Btn} key="o" variant="sun" icon="check" onClick=${() => {
+          const ids = prop.map(x => x.id);
+          s.products.forEach(p => { const want = ids.includes(p.id); if (!!p.focus !== want) App.actions.updateProduct(p.id, { focus: want }); });
+          toast('Fokus gesetzt: ' + prop.length + ' Artikel', 'ok'); setProp(null); }}>Übernehmen<//>`]}>
+        <p>Diese ${prop.length} Artikel bringen aktuell den höchsten Deckungsbeitrag je Stück. Mit „Übernehmen“ ersetzen sie die bisherige Auswahl.</p>
+        <ul class="bo-list">${prop.map(p => html`<li key=${p.id}><strong>${p.name}</strong><span class="ui-muted">${p.focus ? 'schon im Fokus' : 'neu im Fokus'}</span><span class="ui-mono">${B().minus(F.eur(App.sel.unitMargin(s, p)))}</span></li>`)}</ul><//>` : null}
       ${!list.length ? html`<p class="ui-muted">Kein Artikel gefunden.</p>` : null}
     </div>`;
   }

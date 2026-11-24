@@ -225,7 +225,7 @@
 
     const cardFor = (p) => html`<div key=${p.id} class=${cx('k-bumpwrap', bump === p.id && 'is-bumped')}>
       <button type="button" class="k-detailbtn" aria-label=${'Details zu ' + p.name} onClick=${() => setDetail(p.id)}></button>
-      ${p.focus ? html`<span class="k-focus-tag">Empfehlung des Bäckers</span>` : null}
+      ${p.focus ? html`<span class="k-focus-tag"><span>Empfehlung des Bäckers</span></span>` : null}
       <${ProductCard} product=${p} qty=${items[p.id] || 0} badge=${offerBadge(p)} onQty=${(n) => setQty(p, n)} /></div>`;
 
     const q = query.trim().toLowerCase();

@@ -272,8 +272,8 @@ button.k-flag:hover { filter: brightness(.97); }
 .ui-bagbar-sub .ui-countdown { font-family: inherit; font-weight: 700; }
 
 /* Lenkung: Empfohlen, Brot der Woche, Beliebt */
-.k-focus-tag { position: absolute; z-index: 2; left: 10px; top: calc(100% * 0); margin-top: 10px; padding: 2px 10px; border-radius: var(--r-pill); background: var(--ink); color: var(--bg); font-size: 11.5px; font-weight: 700; pointer-events: none; max-width: calc(100% - 20px); }
-.k-bumpwrap:has(.ui-product-badges) .k-focus-tag { top: auto; margin-top: 0; bottom: auto; }
+.k-focus-tag { position: absolute; z-index: 2; top: 0; left: 0; right: 0; aspect-ratio: 1 / 1; display: flex; align-items: flex-end; padding: 10px; pointer-events: none; }
+.k-focus-tag span { padding: 2px 10px; border-radius: var(--r-pill); background: var(--ink); color: var(--bg); font-size: 11.5px; font-weight: 700; }
 .k-focus-lead { margin: 0 0 var(--s-3); color: var(--ink-2); }
 .k-wspecial { padding: 8px 0 44px; }
 .k-ws-card { background: var(--kraft-soft); }
