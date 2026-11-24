@@ -24,9 +24,13 @@
    WeekStrip({ days:[{wd,dateLabel,effective,sub,promo,selected,disabled,time}], onPick(day), label })   Sieben Türanhänger; mobil scrollbar mit Snap.
    Ticket({ title, rows:[{label,value,strong}|[label,value]], footer, stamp, children })   Lieferzettel (Packpapier, Mono).
    Photo({ id, alt, ratio='4/3' })   Foto aus App.photos[id] bzw. config.photos[id] (bei Ladefehler/ohne Eintrag: App.art.Product({id}) bzw. Hero (id 'hero'), sonst Platzhalter). Produkte quadratisch (ratio 1/1), Szenen hero/baecker/hofladen/buero/geschenk/fruehstueck quer (z. B. 3/2).
-   ProductCard({ product, qty=0, onQty(n), compact, badge })   Kachel mit „+“ bzw. Stepper; compact = Zeile für Listen/Sheets; badge = kurzer Text (z. B. „5 + 1 gratis“) als Sonnen-Pille auf dem Bild.
+   ProductCard({ product, qty=0, onQty(n), compact, badge, hideTags })   Kachel mit „+“ bzw. Stepper; compact = Zeile für Listen/Sheets; Foto füllt die Kachel oben randlos (quadratisch); badge = kurzer Text (z. B. „5 + 1 gratis“) als Sonnen-Pille, dazu Etiketten (Bestseller, Neu, Bio, gekühlt …) auf dem Foto; hideTags blendet Etiketten aus.
    Bar({ value, max=1, tone='auto'|'ok'|'warn'|'full'|'info'|'sun', label })   Fortschritts-/Auslastungsbalken (auto: >100 % rot, ≥90 % gelb).
    Kpi({ label, value, sub, tone })   Kennzahl-Kachel.
+   Progress({ value, max, label, tone })   Beschrifteter Fortschrittsbalken („Noch € 3,20 bis zur Gratis-Zustellung“); ab value ≥ max grün mit Haken.
+   BagBar({ count, total, sub, cta='Zum Lieferplan', onClick, tone:'night'|'sun'|'light' })   Sackerl-Leiste: mobil fest über der Tab-Leiste, ab 900 px
+        am Ende der Spalte klebend. Erste Zeile „5 Artikel · € 6,90“ (total: Zahl oder Text), zweite Zeile sub (z. B. Countdown, ein vnode ist erlaubt).
+        Reserviert beim Einhängen automatisch Platz (Klasse has-bagbar am body). Als letztes Element der View rendern.
    PushBanner({ notification, onOpen, onClose })   Benachrichtigung im Handy-Stil; Position setzt der Aufrufer.
    Empty({ icon, title, text, action })   Leerzustand; action = fertiger Knopf (vnode).
    Countdown({ to })   „noch 2 Std 13 Min“ bis Date/ms/ISO-String; aktualisiert sich selbst.
@@ -328,6 +332,8 @@
   const TAG_LABELS = { bio: 'Bio', vegan: 'vegan', vegetarisch: 'vegetarisch', regional: 'regional', wochenende: 'Wochenende', gekuehlt: 'gekühlt', hofladen: 'vom Hofladen', saison: 'Saison', neu: 'neu' };
   function productTags(p) {
     const out = [];
+    if (p.bestseller) out.push('Bestseller');
+    if (p.isNew) out.push('Neu');
     (p.tags || []).forEach(t => { const l = TAG_LABELS[t] || t; if (l && out.indexOf(l) < 0) out.push(l); });
     if (p.weekendOnly && out.indexOf('Wochenende') < 0) out.push('Wochenende');
     if (p.chilled && out.indexOf('gekühlt') < 0) out.push('gekühlt');
@@ -337,7 +343,7 @@
   }
   const eur = (n) => (App.fmt && App.fmt.eur ? App.fmt.eur(n) : '€ ' + Number(n).toFixed(2).replace('.', ','));
 
-  function ProductCard({ product: p, qty = 0, onQty, compact, badge }) {
+  function ProductCard({ product: p, qty = 0, onQty, compact, badge, hideTags }) {
     if (!p) return null;
     const tags = productTags(p);
     const ctl = onQty ? (qty > 0
@@ -351,12 +357,13 @@
         <div class="ui-product-foot">${ctl}</div>
       </div>`;
     }
+    const shown = hideTags ? [] : tags.slice(0, badge ? 2 : 3);
     return html`<article class="ui-product">
-      <div class="ui-product-img"><${Photo} id=${p.id} alt=${p.name} ratio="1/1" />${badge ? html`<span class="ui-pill ui-pill-sun ui-product-badge">${badge}</span>` : null}</div>
+      <div class="ui-product-img"><${Photo} id=${p.id} alt=${p.name} ratio="1/1" />
+        ${badge || shown.length ? html`<div class="ui-product-badges">${badge ? html`<${Pill} tone="sun">${badge}<//>` : null}${shown.map(t => html`<${Pill} key=${t} tone="glass">${t}<//>`)}</div>` : null}</div>
       <div class="ui-product-body">
         <h4 class="ui-product-name">${p.name}</h4>
         ${p.desc ? html`<div class="ui-product-desc">${p.desc}</div>` : null}
-        ${tags.length ? html`<div class="ui-product-tags">${tags.map(t => html`<${Pill} key=${t} tone=${t === 'Bio' ? 'ok' : t === 'gekühlt' ? 'info' : 'kraft'}>${t}<//>`)}</div>` : null}
       </div>
       <div class="ui-product-foot">${price}${ctl}</div>
     </article>`;
@@ -375,6 +382,30 @@
     return html`<div class=${cx('ui-kpi', tone && 'ui-kpi-' + tone)}>
       <div class="ui-kpi-label">${label}</div><div class="ui-kpi-value">${value}</div>${sub ? html`<div class="ui-kpi-sub">${sub}</div>` : null}
     </div>`;
+  }
+
+  function Progress({ value = 0, max = 1, label, tone = 'auto' }) {
+    const done = max > 0 && value >= max;
+    const t = tone === 'auto' ? (done ? 'ok' : 'sun') : tone;
+    return html`<div class=${cx('ui-progress', done && 'is-done')}>
+      ${label ? html`<div class="ui-progress-label">${done ? html`<${Icon} name="check" size=${16} />` : null}<span>${label}</span></div>` : null}
+      <${Bar} value=${value} max=${max} tone=${t} label=${typeof label === 'string' ? label : undefined} />
+    </div>`;
+  }
+
+  function BagBar({ count = 0, total, sub, cta = 'Zum Lieferplan', onClick, tone = 'night' }) {
+    useEffect(() => {
+      document.body.classList.add('has-bagbar');
+      return () => document.body.classList.remove('has-bagbar');
+    }, []);
+    const tt = typeof total === 'number' ? eur(total) : total;
+    return html`<div class=${cx('ui-bagbar', 'ui-bagbar-' + tone)}><div class="ui-bagbar-in">
+      <div class="ui-bagbar-main">
+        <div class="ui-bagbar-title">${count} Artikel${tt ? ' · ' + tt : ''}</div>
+        ${sub ? html`<div class="ui-bagbar-sub">${sub}</div>` : null}
+      </div>
+      <${Btn} variant="sun" iconAfter="chevron-right" onClick=${onClick}>${cta}<//>
+    </div></div>`;
   }
 
   /* ---------- Push ---------- */
@@ -461,7 +492,7 @@
 
   App.ui = {
     cx, Icon, Btn, Pill, StatusPill, Chip, Sheet, ConfirmSheet, toast, ToastHost, Stepper, Segmented, Tabs, Field, Toggle,
-    DayTag, WeekStrip, Ticket, Photo, ProductCard, Bar, Kpi, PushBanner, Empty, Countdown, Logo, Accordion, ErrorBoundary, Placeholder,
+    DayTag, WeekStrip, Ticket, Photo, ProductCard, Bar, Kpi, Progress, BagBar, PushBanner, Empty, Countdown, Logo, Accordion, ErrorBoundary, Placeholder,
     ICON_NAMES: Object.keys(ICONS)
   };
 })(typeof window !== 'undefined' ? window : globalThis);
