@@ -122,7 +122,7 @@
       <div class="k-result-head"><div>
         <div class="ui-eyebrow">PLZ ${plz} · ${region.name}</div>
         <h2>${region.name} ist in Planung</h2>
-        <p class="ui-lead">Sobald ${need} Haushalte vorgemerkt sind, beginnen wir mit der Belieferung. Sie liefern keine Daten über das Vormerken hinaus.</p>
+        <p class="ui-lead">Sobald ${need} Haushalte vorgemerkt sind, beginnen wir mit der Belieferung. Das Vormerken kostet nichts und verpflichtet zu nichts.</p>
       </div></div>
       <div class="k-prog"><div class="k-prog-top"><strong>${have} von ${need} Haushalten vorgemerkt</strong><span class="ui-muted">noch ${Math.max(0, need - have)}</span></div>
         <${Bar} value=${have} max=${need} tone="sun" label="Vormerkungen" /></div>
