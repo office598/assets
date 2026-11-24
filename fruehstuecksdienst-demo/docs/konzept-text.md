@@ -69,9 +69,11 @@ Die Kalkulation der Demo beruht auf Schätzwerten: Verkaufspreise brutto inklusi
 
 Daraus folgt: Es zählen mehr Lieferungen und mehr Haushalte pro Tour, nicht mehr Stück pro Sackerl. Aktionen wie „5 Semmeln + 1 gratis“ rechnen sich mit diesen Werten nicht. Sinnvoll sind Nachlässe auf teurere Artikel und auf Extras vom Hofladen. Das Backoffice rechnet jede Aktion durch.
 
-Für die Fahrer zählt die Stückzahl: Jedes Stück bringt 36 Cent, egal ob Semmel oder Brot. Für das Unternehmen zählt der Wert je Stück. Gemeinsam ist beiden das Interesse an mehr Stopps pro Tour.
+Für die Fahrer zählt die Stückzahl: Jedes Stück bringt 36 Cent, egal ob Semmel oder Brot, mindestens aber € 50 je Tour. Für das Unternehmen zählt der Wert je Stück. An schwachen Tagen greift die Mindestvergütung, dann zahlt das Unternehmen drauf. Gemeinsam ist beiden das Interesse an größeren und dichteren Touren.
 
-Ein zweiter Fahrer kostet das Unternehmen nichts extra, weil je Stück bezahlt wird. Für den Fahrer lohnt er sich aber erst mit genug Stück. Die Warteliste zeigt, wann es so weit ist.
+Ein zweiter Fahrer kostet zusätzlich, solange nicht beide über der Mindestvergütung liegen. Die Warteliste zeigt, wann genug Nachfrage dafür da ist.
+
+Alle Kalkulationswerte sind Annahmen und im Backoffice einstellbar: Einkaufspreise je Artikel, Vergütung, Mindestvergütung und Fahrzeugkosten.
 
 ## 7. Was andere Anbieter machen
 
