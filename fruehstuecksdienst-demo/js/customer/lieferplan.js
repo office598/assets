@@ -197,7 +197,7 @@
     return pool.slice(0, 4);
   }
 
-  function BagCard({ s, target, del, tried, onAdd, copySrc, onRemove, status }) {
+  function BagCard({ s, target, del, tried, onAdd, onCopy, onRemove, status, days }) {
     const flex = !!target.flex, wd = flex ? (s.draft.flexDate ? T.weekday(s.draft.flexDate) : null) : target.wd;
     const items = flex ? s.draft.flex : (s.draft.abo[target.wd] || {});
     const bag = sel().priceBag(s, items, { wd });
@@ -211,7 +211,8 @@
     const feeFree = d.fee === 0 && count > 0;
     const byThreshold = from && d.total >= from - 1e-9;
     const minMissing = flex ? Math.max(0, Math.round((C.fees.flexMinOrder - d.total) * 100) / 100) : 0;
-    const title = flex ? 'Ihr Sackerl' + (s.draft.flexDate ? ' für ' + WDL[T.weekday(s.draft.flexDate)] : '') : WDL[target.wd];
+    const shared = !flex && days && days.length > 1;
+    const title = flex ? 'Ihr Sackerl' + (s.draft.flexDate ? ' für ' + WDL[T.weekday(s.draft.flexDate)] : '') : shared ? 'Ihr Sackerl für ' + days.map(w => WD[w]).join(' · ') : WDL[target.wd];
     const dateK = flex ? s.draft.flexDate : T.nextDateForWeekday(target.wd);
     const empty = tried && !count;
 
@@ -224,19 +225,20 @@
       const wsOk = wsP && wsP.active !== false && !(items[wsP.id] > 0) && (!wsP.weekendOnly || (wd != null && wd >= 5));
       const hint = d.hints.find(h => !gone[key('h' + h.offerId)]);
       const sg = sel().suggestions ? sel().suggestions(s, items, 1)[0] : null;
-      if (trade) tip = { k: key(trade.fromId + trade.toId), icon: 'star', photo: trade.toId, text: trade.text, cta: 'Tauschen', run: () => act().draftSwap(target, trade.fromId, trade.toId) };
+      if (trade) tip = { k: key(trade.fromId + trade.toId), icon: 'star', photo: trade.toId, text: trade.text, cta: 'Tauschen', run: () => (shared ? days : [target.wd]).forEach(w => act().draftSwap(flex ? target : { wd: w }, trade.fromId, trade.toId)) };
       else if (wsOk && wd != null && wd >= 5 && !gone[key('ws')]) tip = { k: key('ws'), photo: wsP.id, text: (ws.title || 'Brot der Woche') + ': ' + wsP.name + ' · ' + (ws.pct > 0 ? eur(Math.round(wsP.price * (100 - ws.pct)) / 100) + ' statt ' + eur(wsP.price) : eur(wsP.price)), cta: 'Dazulegen', run: () => setQty(wsP.id, 1) };
       else if (hint) tip = { k: key('h' + hint.offerId), icon: 'gift', text: hint.text, cta: 'Hinzufügen', run: () => addHintToBag(s, target, hint, onAdd) };
       else if (sg && !gone[key('sg')]) tip = { k: key('sg'), photo: sg.id, text: 'Dazu passt: ' + sg.name + ' · ' + eur(sg.price), cta: 'Hinzufügen', run: () => setQty(sg.id, (items[sg.id] || 0) + 1) };
     }
     const picks = !count ? quickPicks(s, items, wd) : [];
+    if (shared) del = del || null;
 
     return html`<section class=${cx('k-sack', empty && 'has-error')} id=${'k-sack-' + (flex ? 'flex' : target.wd)} aria-label=${title}>
       <header class="k-sack-head">
         <div class="ui-grow"><h3>${title}</h3>
-          <div class="k-sack-sub">${dateK ? T.fmt.dayLong(dateK).replace(/^[^,]+,\s*/, '') + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : 'Tag wählen'}
+          <div class="k-sack-sub">${shared ? html`<${DayChips} wds=${days} /> ` : null}${!shared && dateK ? T.fmt.dayLong(dateK).replace(/^[^,]+,\s*/, '') + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : !shared ? 'Tag wählen' : 'jeweils bis 06:30 bzw. 08:30 Uhr'}
             ${status === 'reserved' ? html` <${Pill} tone="info">für Sie reserviert<//>` : null}</div></div>
-        ${onRemove ? html`<${Btn} variant="quiet" size="sm" icon="x" aria-label=${WDL[target.wd] + ' entfernen'} onClick=${onRemove}>Entfernen<//>` : null}
+        ${onRemove && !shared ? html`<${Btn} variant="quiet" size="sm" icon="x" aria-label=${WDL[target.wd] + ' entfernen'} onClick=${onRemove}>Entfernen<//>` : null}
       </header>
 
       ${count ? html`<ul class="k-lines">${bag.lines.map(l => html`<li class="k-line" key=${l.product.id}>
@@ -263,8 +265,8 @@
 
       ${count ? html`<div class="k-bag-actions">
         <${Btn} variant="ghost" icon="plus" onClick=${onAdd}>Artikel hinzufügen<//>
-        ${copySrc != null ? html`<${Btn} variant="quiet" icon="refresh" onClick=${() => act().draftCopyDay(copySrc, target.wd)}>wie ${WDL[copySrc]}<//>` : null}
-      </div>` : copySrc != null ? html`<div class="k-bag-actions"><${Btn} variant="quiet" icon="refresh" onClick=${() => act().draftCopyDay(copySrc, target.wd)}>wie ${WDL[copySrc]} übernehmen<//></div>` : null}
+        ${onCopy ? html`<${Btn} variant="quiet" icon="refresh" onClick=${onCopy}>Auf andere Tage übernehmen<//>` : null}
+      </div>` : null}
 
       ${count ? html`<div class="k-bag-foot">
         ${flex && minMissing > 0 ? html`<div class=${cx('k-hint', tried && 'is-err')}><${Icon} name="info" size=${20} /><span>Mindestbestellwert ${eur(C.fees.flexMinOrder)}: noch ${eur(minMissing)}.</span></div>` : null}
@@ -316,32 +318,65 @@
     })}</div>`;
   }
 
-  /* ---------- Zusammenfassung (Lieferzettel) ---------- */
-  function SummaryTicket({ s, sum, abo, children, footer }) {
+  /* ---------- Zusammenfassung „Ihre Woche“ ---------- */
+  const DayChips = ({ wds }) => html`<span class="k-dchips">${wds.map(w => html`<span class="k-dchip" key=${w}>${WD[w]}</span>`)}</span>`;
+
+  function WeekSummary({ s, sum, abo, tried }) {
     const live = sum.deliveries.filter(x => sumQty(x.items) > 0);
-    const rows = live.map(x => ({
-      label: (abo ? WDL[x.wd] : (x.dateKey ? T.fmt.day(x.dateKey) : 'Liefertag')) + ' · ' + artikel(sumQty(x.items)),
-      value: eur(x.total + x.fee)
-    }));
-    const goods = live.reduce((a, x) => a + (x.subtotal != null ? x.subtotal : x.total), 0);
-    const disc = sum.deliveries.reduce((a, x) => a + (x.discounts || []).reduce((b, y) => b + y.amount, 0), 0);
-    const fees = sum.deliveries.reduce((a, x) => a + x.fee, 0);
-    const more = [];
-    if (abo) more.push({ label: 'Lieferungen pro Woche', value: String(live.length) });
-    if (live.length) {
-      more.push({ label: 'Warenwert', value: eur(goods) });
-      if (disc > 0.004) more.push({ label: 'Aktionen', value: '− ' + eur(disc) });
-      more.push({ label: 'Zustellung', value: fees > 0 ? eur(fees) : 'gratis' });
-      more.push({ label: abo ? 'Summe pro Woche' : 'Gesamtsumme', value: eur(sum.total), strong: true });
-    }
-    return html`<${Ticket} title="Ihr Lieferzettel" stamp=${abo ? 'Abo' : 'einmalig'} rows=${live.length ? rows.concat(more) : []} footer=${footer}>
-      ${!live.length ? html`<p class="ui-muted" style="margin:0">Ihre Bestellung erscheint hier.</p>` : null}
-      ${children}
-    <//>`;
+    const groups = abo && Array.isArray(sum.groups) ? sum.groups
+      : live.map(x => ({ wds: x.wd != null ? [x.wd] : [], dateKey: x.dateKey, items: x.items, total: x.total, fee: x.fee }));
+    const fees = live.reduce((a, x) => a + x.fee, 0);
+    const empties = sum.planProblems.filter(p => p.indexOf('empty-day:') === 0).map(p => Number(p.split(':')[1]));
+    const others = sum.planProblems.filter(p => p.indexOf('empty-day:') !== 0);
+    const sv = sum.saving && sum.saving.perWeek > 0 ? sum.saving : null;
+    return html`<section class="k-week" aria-label=${abo ? 'Ihre Woche' : 'Ihre Lieferung'}>
+      <h3>${abo ? 'Ihre Woche' : 'Ihre Lieferung'}</h3>
+      ${!live.length ? html`<p class="k-week-empty">Sobald Sie Artikel gewählt haben, sehen Sie hier Ihre Bestellung.</p>` : html`
+        <ul class="k-week-rows">${groups.map((g, i) => html`<li key=${i}>
+          <div class="k-week-who">${g.wds && g.wds.length ? html`<${DayChips} wds=${g.wds} />` : html`<span class="k-dchip">${g.dateKey ? T.fmt.day(g.dateKey) : ''}</span>`}
+            <span class="k-week-txt">${sel().itemsText(s, g.items, 3)}</span></div>
+          <div class="k-week-price">${eur(g.total)}<small>${abo ? 'je Lieferung' : 'Waren'}</small></div></li>`)}</ul>
+        <div class="k-week-fee"><span>Zustellung</span><strong>${fees > 0 ? eur(fees) + (abo && live.length > 1 ? ' pro Woche' : '') : 'gratis (Aktion)'}</strong></div>
+        <div class="k-week-total"><div><span class="k-week-lab">${abo ? 'Pro Woche' : 'Gesamt'}</span>
+          <span class="k-week-n">${abo ? live.length + (live.length === 1 ? ' Lieferung' : ' Lieferungen') : 'einmalig'}</span></div>
+          <strong>${eur(sum.total)}</strong></div>
+        ${abo && sv ? html`<div class="k-week-save"><${Icon} name="leaf" size=${16} /> ${typeof sv.text === 'string' && sv.text ? sv.text : 'Abo-Vorteil: ' + eur(sv.perWeek) + ' pro Woche'}</div>` : null}
+        ${sum.firstDelivery ? html`<ul class="k-week-when">
+          <li><${Icon} name="truck" size=${18} /><span>Erste Lieferung: <strong>${T.fmt.dayLong(sum.firstDelivery)}</strong>, bis ${T.fmt.hm(T.deadlineMin(sum.firstDelivery))} Uhr</span></li>
+          <li><${Icon} name="clock" size=${18} /><span>Änderbar bis ${T.fmt.rel(sum.cutoff)} (<${Countdown} to=${sum.cutoff} />)</span></li></ul>` : null}`}
+      ${empties.length ? html`<ul class="k-week-warn">${empties.map(w => html`<li key=${w}><${Icon} name="info" size=${16} /><span>${WDL[w]} ist noch leer. Artikel hinzufügen oder
+        <button type="button" class="k-link" onClick=${() => act().draftToggleDay(w)}>abwählen</button>.</span></li>`)}</ul>` : null}
+      ${tried && others.length ? html`<ul class="k-errs" role="alert">${others.map(p => html`<li key=${p}><${Icon} name="alert" size=${16} /> ${problemText(p)}</li>`)}</ul>` : null}
+      <${Reassure} />
+    </section>`;
   }
 
   function Reassure() {
     return html`<p class="k-reassure"><${Icon} name="lock" size=${16} /> Keine Bindung · jederzeit pausieren · bis 16:30 am Vortag änderbar</p>`;
+  }
+
+  /* ---------- Sheet: Sackerl auf andere Tage übernehmen ---------- */
+  function CopySheet({ open, onClose, s, from }) {
+    const [pick, setPick] = useState({});
+    useEffect(() => { setPick({}); }, [open, from]);
+    if (!open || from == null) return null;
+    const cid = s.session.customerId, rid = s.draft.regionId;
+    const days = [0, 1, 2, 3, 4, 5, 6].filter(w => w !== from).map(w => {
+      const eff = sel().dayStatusFor(s, rid, w, cid);
+      return { wd: w, eff, off: eff === 'full' || eff === 'closed' || eff === 'planned' || eff === 'booked' };
+    });
+    const chosen = days.filter(x => pick[x.wd] && !x.off).map(x => x.wd);
+    const go = () => {
+      const r = act().draftCopyToDays(from, chosen) || { copied: chosen, skipped: [] };
+      const names = a => a.map(w => WD[w]).join(', ');
+      toast('Übernommen für ' + (r.copied.length ? names(r.copied) : 'keinen Tag') + (r.skipped.length ? ' · übersprungen: ' + names(r.skipped) : ''), r.skipped.length ? 'warn' : 'ok');
+      onClose();
+    };
+    return html`<${Sheet} open=${open} onClose=${onClose} title=${'Sackerl von ' + WDL[from] + ' übernehmen'}
+      footer=${html`<${Btn} variant="ghost" onClick=${onClose}>Abbrechen<//><${Btn} variant="sun" disabled=${!chosen.length} onClick=${go}>Auf ${chosen.length || ''} ${chosen.length === 1 ? 'Tag' : 'Tage'} übernehmen<//>`}>
+      <div class="k-copylist">${days.map(x => html`<${Toggle} key=${x.wd} id=${'copy-' + x.wd} label=${WDL[x.wd]} hint=${C.labels.effective[x.eff] + (x.eff === 'booked' ? ' (Wochenplan)' : '')}
+        checked=${!!pick[x.wd] && !x.off} disabled=${x.off} onChange=${v => setPick(Object.assign({}, pick, { [x.wd]: v }))} />`)}</div>
+    <//>`;
   }
 
   /* ---------- Schritt 1: Sackerl ---------- */
@@ -352,13 +387,18 @@
     const [wl, setWl] = useState(null);
     const [fullPick, setFullPick] = useState(null);
     const [editPlz, setEditPlz] = useState(false);
+    const [copyFrom, setCopyFrom] = useState(null);
+    const [askSame, setAskSame] = useState(false);
     const abo = d.mode === 'abo';
     const sum = sel().draftSummary(s);
     const stats = sel().regionStats ? sel().regionStats(s, rid) : null;
     const reserved = reservedFor(s, cid, rid);
     const wds = Object.keys(d.abo).map(Number).sort((a, b) => a - b);
     const nItems = abo ? wds.reduce((a, w) => a + sumQty(d.abo[w]), 0) : sumQty(d.flex);
-    const saveWeek = abo ? Math.round(sum.deliveries.reduce((a, x) => a + (feeStd('flex', x.wd) - x.fee), 0) * 100) / 100 : 0;
+    const same = d.sameForAll !== false;
+    const firstFilled = wds.find(w => sumQty(d.abo[w]) > 0);
+    const differ = new Set(wds.filter(w => sumQty(d.abo[w]) > 0).map(w => JSON.stringify(Object.keys(d.abo[w]).sort().map(k => [k, d.abo[w][k]])))).size > 1;
+    const makeSame = () => { act().draftSetSameForAll(true); setAskSame(false); };
 
     const pick = day => {
       const wd = day.wd;
@@ -382,7 +422,6 @@
       } else act().setDraft({ step: 'adresse' });
       scrollTop();
     };
-    const copySrcFor = wd => wds.find(w => w !== wd && sumQty(d.abo[w]) > 0);
     const pickerItems = picker ? (picker.flex ? d.flex : d.abo[picker.wd] || {}) : {};
     const pickerWd = picker ? (picker.flex ? (d.flexDate ? T.weekday(d.flexDate) : null) : picker.wd) : null;
 
@@ -391,7 +430,7 @@
         action=${html`<${Btn} variant="sun" onClick=${() => act().setUi({ customerView: 'start' })}>Zur Startseite<//>`} />`;
     }
     const unfitFlex = !abo && !d.flexDate;
-    return html`<div class="k-plan">
+    return html`<div class="k-planwrap"><div class="k-plan">
       <div class="k-plan-main">
         <div class="k-region">
           <div class="k-region-t"><${Icon} name="pin" size=${18} /><span><strong>${region ? region.name : ''}</strong> · ${d.plz}</span>
@@ -429,34 +468,31 @@
         })() : null}
 
         ${abo ? html`${!wds.length ? html`<div class="k-sack-empty k-sack-first"><${Icon} name="door" size=${28} /><p><strong>Noch kein Liefertag gewählt.</strong><br />Tippen Sie oben auf die Tage, an denen Ihr Sackerl an der Tür hängen soll.</p></div>` : null}
-          ${wds.map(wd => html`<${BagCard} key=${wd} s=${s} target=${{ wd }} tried=${tried} del=${sum.deliveries.find(x => x.wd === wd)} status=${sel().dayStatusFor(s, rid, wd, cid)}
-            onAdd=${() => setPicker({ wd })} copySrc=${copySrcFor(wd)} onRemove=${() => act().draftToggleDay(wd)} />`)}`
+          ${abo && wds.length > 1 && !same ? html`<div class="k-samebar">${askSame
+            ? html`<div class="k-lnote k-lnote-warn"><${Icon} name="info" size=${20} /><div><strong>Die Sackerl unterscheiden sich.</strong> Das Sackerl von ${WDL[firstFilled != null ? firstFilled : wds[0]]} gilt dann für alle gewählten Tage.
+              <div class="k-samebar-b"><${Btn} variant="sun" onClick=${makeSame}>Für alle gleich<//><${Btn} variant="ghost" onClick=${() => setAskSame(false)}>Abbrechen<//></div></div></div>`
+            : html`<button type="button" class="k-link k-link-lg" onClick=${() => (differ ? setAskSame(true) : makeSame())}>Für alle Tage gleich</button>`}</div>` : null}
+          ${same && wds.length ? html`<${BagCard} key="shared" s=${s} target=${{ wd: wds[0] }} days=${wds} tried=${tried} del=${sum.deliveries.find(x => x.wd === wds[0])} status=${wds.length === 1 ? sel().dayStatusFor(s, rid, wds[0], cid) : null}
+              onAdd=${() => setPicker({ wd: wds[0] })} onCopy=${wds.length === 1 ? () => setCopyFrom(wds[0]) : null} onRemove=${() => act().draftToggleDay(wds[0])} />
+            ${wds.length > 1 ? html`<button type="button" class="k-link k-link-lg" onClick=${() => act().draftSetSameForAll(false)}>Jeden Tag anders zusammenstellen</button>` : null}`
+            : wds.map(wd => html`<${BagCard} key=${wd} s=${s} target=${{ wd }} days=${[wd]} tried=${tried} del=${sum.deliveries.find(x => x.wd === wd)} status=${sel().dayStatusFor(s, rid, wd, cid)}
+              onAdd=${() => setPicker({ wd })} onCopy=${() => setCopyFrom(wd)} onRemove=${() => act().draftToggleDay(wd)} />`)}`
           : html`${unfitFlex ? html`<div class="k-sack-empty k-sack-first"><${Icon} name="calendar" size=${28} /><p><strong>Wählen Sie einen Liefertag.</strong><br />Danach packen Sie Ihr Sackerl.</p></div>`
             : html`<${BagCard} s=${s} target=${{ flex: true }} tried=${tried} del=${sum.deliveries[0]} onAdd=${() => setPicker({ flex: true })} />`}
             <div class="k-lnote k-lnote-info"><${Icon} name="leaf" size=${20} /><div>Regelmäßig ist günstiger: Zustellung ab ${eur(feeStd('abo', 0))}.
               <button type="button" class="k-link" onClick=${() => act().setDraft({ mode: 'abo' })}>Regelmäßig ansehen</button></div></div>`}
       </div>
 
-      <aside class="k-plan-side" id="k-summary" aria-label="Zusammenfassung">
-        <${SummaryTicket} s=${s} sum=${sum} abo=${abo}
-          footer=${html`<div class="ui-stack" style="--gap:10px">
-            ${sum.count && sum.firstDelivery ? html`<div class="k-first"><span>Erste Lieferung</span><strong>${T.fmt.dayLong(sum.firstDelivery)}</strong>
-              <span>Bestellschluss</span><strong>${T.fmt.rel(sum.cutoff)} · <${Countdown} to=${sum.cutoff} /></strong></div>` : null}
-            ${tried && sum.planProblems.length ? html`<ul class="k-errs" role="alert">${sum.planProblems.map(p => html`<li key=${p}><${Icon} name="alert" size=${16} /> ${problemText(p)}</li>`)}</ul>` : null}
-            <${Btn} variant="sun" size="lg" full iconAfter=${registered ? 'check' : 'chevron-right'} onClick=${next}>${registered ? 'Verbindlich bestellen' : 'Weiter zur Adresse'}<//>
-            <${Reassure} />
-          </div>`}>
-          ${abo && saveWeek > 0 && nItems > 0 ? html`<div class="k-save"><${Icon} name="leaf" size=${16} /> Abo-Vorteil: ${eur(saveWeek)} pro Woche weniger Zustellgebühr als bei Einmallieferungen.</div>` : null}
-        <//>
-      </aside>
-
-      ${nItems > 0 ? html`<div class="k-sackbar-host"><${BagBar} count=${nItems} total=${abo ? eur(sum.perWeek) + ' / Woche' : eur(sum.total)}
-        sub=${sum.cutoff ? html`Bestellschluss <${Countdown} to=${sum.cutoff} />` : null} cta="Weiter" onClick=${next} /></div>` : null}
-
+      <aside class="k-plan-side" id="k-summary" aria-label="Zusammenfassung"><${WeekSummary} s=${s} sum=${sum} abo=${abo} tried=${tried} /></aside>
+    </div>
+    ${sum.deliveries.length && nItems > 0 ? html`<${BagBar} count=${nItems} total=${abo ? eur(sum.perWeek) + ' / Woche' : eur(sum.total)}
+      sub=${sum.cutoff ? html`${sum.deliveries.length} ${sum.deliveries.length === 1 ? 'Lieferung' : 'Lieferungen'} · Bestellschluss <${Countdown} to=${sum.cutoff} />` : null}
+      cta=${registered ? 'Bestellen' : 'Weiter'} onClick=${next} />` : null}
       <${ProductSheet} open=${!!picker} onClose=${() => setPicker(null)} s=${s} items=${pickerItems} wd=${pickerWd} mode=${d.mode}
         title=${picker && !picker.flex ? 'Artikel für ' + WDL[picker.wd] : 'Artikel hinzufügen'}
         onQty=${(id, n) => act().draftSetQty(picker, id, n)} />
       <${WaitlistSheet} open=${wl != null} onClose=${() => setWl(null)} s=${s} wd=${wl} regionId=${rid} />
+      <${CopySheet} open=${copyFrom != null} onClose=${() => setCopyFrom(null)} s=${s} from=${copyFrom} />
     </div>`;
   }
 
@@ -522,7 +558,7 @@
         <div class="k-nav-row"><${Btn} variant="ghost" icon="chevron-left" onClick=${() => { act().setDraft({ step: 'plan' }); scrollTop(); }}>Zurück zum Sackerl<//>
           <${Btn} type="submit" variant="sun" size="lg" iconAfter="chevron-right">Weiter zur Bezahlung<//></div>
       </div>
-      <aside class="k-plan-side"><${SummaryTicket} s=${s} sum=${sum} abo=${d.mode === 'abo'} footer=${html`<${Reassure} />`} /></aside>
+      <aside class="k-plan-side"><${WeekSummary} s=${s} sum=${sum} abo=${d.mode === 'abo'} /></aside>
     </form>`;
   }
 
@@ -577,7 +613,7 @@
           <${Btn} type="submit" variant="sun" size="lg" iconAfter="check">Verbindlich bestellen<//></div>
         <${Reassure} />
       </div>
-      <aside class="k-plan-side"><${SummaryTicket} s=${s} sum=${sum} abo=${d.mode === 'abo'} /></aside>
+      <aside class="k-plan-side"><${WeekSummary} s=${s} sum=${sum} abo=${d.mode === 'abo'} /></aside>
     </form>`;
   }
 
