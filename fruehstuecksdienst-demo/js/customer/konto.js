@@ -115,9 +115,9 @@
     const bag = sel().priceBag(s, p.items, { wd: p.wd });
     const disc = bag.discounts.reduce((a, x) => a + x.amount, 0);
     const fee = sel().feeFor(s, { mode: 'abo', wd: p.wd, regionId: cust.regionId, customerId: cust.id, total: bag.total });
-    return html`<section class="k-bag k-bag-plain" aria-label=${WDL[p.wd]}>
-      <header class="k-bag-head"><div class="k-bag-ic"><${Icon} name="bag" size=${22} /></div>
-        <div class="ui-grow"><h3>${WDL[p.wd]}</h3><div class="k-bag-sub">bis ${T.fmt.hm(T.deadlineMin(T.nextDateForWeekday(p.wd)))} Uhr · ${eur(bag.total + fee)} je Lieferung</div></div>
+    return html`<section class="k-sack k-sack-plain" aria-label=${WDL[p.wd]}>
+      <header class="k-sack-head"><div class="k-sack-ic"><${Icon} name="bag" size=${22} /></div>
+        <div class="ui-grow"><h3>${WDL[p.wd]}</h3><div class="k-sack-sub">bis ${T.fmt.hm(T.deadlineMin(T.nextDateForWeekday(p.wd)))} Uhr · ${eur(bag.total + fee)} je Lieferung</div></div>
         <${Btn} variant="quiet" size="sm" icon="trash" onClick=${onRemove}>Tag entfernen<//></header>
       <ul class="k-lines">${bag.lines.map(l => html`<li class="k-line" key=${l.product.id}>
         <div class="k-line-ph"><${Photo} id=${l.product.id} alt=${l.product.name} ratio="1/1" /></div>
@@ -127,7 +127,7 @@
         ${bag.discounts.map(x => html`<li class="k-line k-line-disc" key=${x.offerId}><div class="k-line-ph"><${Icon} name="gift" size=${22} /></div>
           <div class="k-line-main"><div class="k-line-name">${x.title}</div><div class="k-line-sub">Aktion</div></div><div class="k-line-sum">− ${eur(x.amount)}</div></li>`)}
       </ul>
-      <div class="k-bag-actions"><${Btn} variant="ghost" size="sm" icon="plus" onClick=${onAdd}>Artikel hinzufügen<//>
+      <div class="k-sack-actions"><${Btn} variant="ghost" size="sm" icon="plus" onClick=${onAdd}>Artikel hinzufügen<//>
         <span class="ui-hint">${disc > 0 ? 'Ersparnis durch Aktionen: ' + eur(disc) : ''}</span></div>
     </section>`;
   }
@@ -198,7 +198,7 @@
     return html`<div class="k-settings">
       <section class="k-card"><h3 class="k-h3">Ablageort</h3>
         <${Sh.PlacementCards} idp="konto-pl" value=${cust.placement} onChange=${v => { act().updateCustomer(cust.id, { placement: v }); toast('Ablageort gespeichert.', 'ok'); }} />
-        <div class="k-note-row"><${Field} id="konto-note" as="textarea" rows="2" label="Hinweis für die Zustellung" value=${note} onInput=${e => setNote(e.target.value)} placeholder="z. B. Hinterhof, grünes Tor" />
+        <div class="k-lnote-row"><${Field} id="konto-note" as="textarea" rows="2" label="Hinweis für die Zustellung" value=${note} onInput=${e => setNote(e.target.value)} placeholder="z. B. Hinterhof, grünes Tor" />
           <${Btn} variant="ghost" size="sm" disabled=${note === (cust.note || '')} onClick=${() => { act().updateCustomer(cust.id, { note }); toast('Hinweis gespeichert.', 'ok'); }}>Hinweis speichern<//></div></section>
 
       <section class="k-card"><h3 class="k-h3">Benachrichtigungen</h3>

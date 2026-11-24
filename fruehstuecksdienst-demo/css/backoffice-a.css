@@ -216,3 +216,6 @@
 .bo-margin-total dt { color: var(--ink); }
 .bo-pay { display: flex; flex-direction: column; gap: 8px; }
 .bo-pay p { margin: 0; font-size: 14px; }
+.bo-fs-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.bo-fs-grid .ui-seg { display: flex; width: 100%; }
+.bo-fs-grid .ui-seg button { flex: 1 1 0; padding-left: 8px; padding-right: 8px; white-space: nowrap; }

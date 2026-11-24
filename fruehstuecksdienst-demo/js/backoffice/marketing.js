@@ -112,7 +112,7 @@
 
   function OfferSheet({ s, region, offer, onClose }) {
     const fresh = !offer.id;
-    const [o, setO] = useState(offer);
+    const [o, setO] = useState(fresh ? Object.assign({}, offer, { title: autoTitle(s, offer) }) : offer);
     const [auto, setAuto] = useState(fresh);
     const upd = p => {
       const n = Object.assign({}, o, p);

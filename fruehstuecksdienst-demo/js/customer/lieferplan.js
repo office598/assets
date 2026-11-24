@@ -130,7 +130,7 @@
       : html`<${Btn} variant="ghost" onClick=${onClose}>Abbrechen<//><${Btn} variant="sun" icon="bell" onClick=${join}>Auf die Warteliste<//>`;
     return html`<${Sheet} open=${open} onClose=${onClose} title=${WDL[wd] + ' ist ausgebucht'} footer=${foot}>
       ${entry ? html`<div class="ui-stack" style="--gap:12px">
-        <div class="k-note k-note-ok"><${Icon} name="check" size=${20} /><div><strong>Sie stehen auf Platz ${pos} für ${WDL[wd]}.</strong>
+        <div class="k-lnote k-lnote-ok"><${Icon} name="check" size=${20} /><div><strong>Sie stehen auf Platz ${pos} für ${WDL[wd]}.</strong>
           <div>${entry.status === 'notified' ? 'Der Tag ist frei geworden. Buchen Sie ihn im Lieferplan.' : 'Wir melden uns per ' + (entry.channel === 'push' ? 'Push-Nachricht' : 'E-Mail') + ', sobald ein Platz frei wird.'}</div></div></div>
       </div>` : html`<div class="ui-stack" style="--gap:14px">
         <p class="ui-muted" style="margin:0">${region ? region.name : 'Ihr Gebiet'}: Alle Abo-Plätze am ${WDL[wd]} sind vergeben. Setzen Sie sich auf die Warteliste. Wird ein Platz frei, reservieren wir ihn ${C.reserveHours} Stunden für Sie.</p>
@@ -154,14 +154,14 @@
       setRes(r === null ? { bad: true } : r);
       if (r && r.region && onDone) onDone(r);
     };
-    return html`<form class=${cx('k-plz', compact && 'is-compact')} onSubmit=${submit} noValidate>
+    return html`<form class=${cx('k-lplz', compact && 'is-compact')} onSubmit=${submit} noValidate>
       <${Field} id=${compact ? 'plz-edit' : 'plz-in'} label="Ihre Postleitzahl" inputMode="numeric" maxLength="4" autocomplete="postal-code" placeholder="z. B. 5303"
         value=${v} onInput=${e => setV(e.target.value.replace(/\D/g, '').slice(0, 4))}
         error=${res && res.bad ? 'Bitte geben Sie eine vierstellige Postleitzahl ein.' : null} />
       <${Btn} type="submit" variant="sun" iconAfter="chevron-right">Liefertage prüfen<//>
-      ${res && res.outside ? html`<div class="k-note k-note-warn"><${Icon} name="info" size=${20} /><div><strong>Für diese PLZ liefern wir noch nicht.</strong>
+      ${res && res.outside ? html`<div class="k-lnote k-lnote-warn"><${Icon} name="info" size=${20} /><div><strong>Für diese PLZ liefern wir noch nicht.</strong>
         <div>Auf der Startseite können Sie Ihre PLZ vormerken.</div></div></div>` : null}
-      <div class="k-plz-ex"><span class="ui-muted">Demo:</span>
+      <div class="k-lplz-ex"><span class="ui-muted">Demo:</span>
         ${['5303', '5310', '5330'].map(p => html`<button type="button" class="ui-chip" key=${p} onClick=${() => { setV(p); const r = act().draftCheckPlz(p); setRes(r); if (r && r.region && onDone) onDone(r); }}>${p}</button>`)}</div>
     </form>`;
   }
@@ -169,7 +169,7 @@
   /* ---------- Schrittleiste ---------- */
   function Steps({ steps, current }) {
     const cur = steps.findIndex(x => x.id === current);
-    return html`<ol class="k-steps" aria-label="Bestellschritte">${steps.map((t, i) => html`<li key=${t.id} class=${cx(i < cur && 'is-done', i === cur && 'is-now')} aria-current=${i === cur ? 'step' : undefined}>
+    return html`<ol class="k-lsteps" aria-label="Bestellschritte">${steps.map((t, i) => html`<li key=${t.id} class=${cx(i < cur && 'is-done', i === cur && 'is-now')} aria-current=${i === cur ? 'step' : undefined}>
       <span class="k-step-n">${i < cur ? html`<${Icon} name="check" size=${14} />` : i + 1}</span><span class="k-step-t">${t.label}</span></li>`)}</ol>`;
   }
 
@@ -203,16 +203,16 @@
     const title = flex ? 'Ihr Sackerl' + (s.draft.flexDate ? ' für ' + WDL[T.weekday(s.draft.flexDate)] : '') : 'Sackerl für ' + WDL[target.wd];
     const dateK = flex ? s.draft.flexDate : T.nextDateForWeekday(target.wd);
     const empty = tried && !count;
-    return html`<section class=${cx('k-bag', empty && 'has-error')} id=${'k-bag-' + (flex ? 'flex' : target.wd)} aria-label=${title}>
-      <header class="k-bag-head">
-        <div class="k-bag-ic"><${Icon} name="bag" size=${22} /></div>
+    return html`<section class=${cx('k-sack', empty && 'has-error')} id=${'k-sack-' + (flex ? 'flex' : target.wd)} aria-label=${title}>
+      <header class="k-sack-head">
+        <div class="k-sack-ic"><${Icon} name="bag" size=${22} /></div>
         <div class="ui-grow"><h3>${title}</h3>
-          <div class="k-bag-sub">${dateK ? (flex ? 'am ' : 'ab ') + T.fmt.dayLong(dateK) + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : 'Tag wählen'}
+          <div class="k-sack-sub">${dateK ? (flex ? 'am ' : 'ab ') + T.fmt.dayLong(dateK) + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : 'Tag wählen'}
             ${status === 'reserved' ? html` <${Pill} tone="info">für Sie reserviert<//>` : null}</div></div>
         ${onRemove ? html`<${Btn} variant="quiet" size="sm" icon="x" aria-label=${WDL[target.wd] + ' entfernen'} onClick=${onRemove}>Entfernen<//>` : null}
       </header>
 
-      <div class="k-feeline"><${Icon} name="truck" size=${16} /><span>Zustellung ${eur(stdFee)} je Lieferung${flex ? ' · Mindestbestellwert ' + eur(C.fees.flexMinOrder) : ''}${from ? ' · gratis ab ' + eur(from) : ''}</span></div>
+      <div class="k-lfee"><${Icon} name="truck" size=${16} /><span>Zustellung ${eur(stdFee)} je Lieferung${flex ? ' · Mindestbestellwert ' + eur(C.fees.flexMinOrder) : ''}${from ? ' · gratis ab ' + eur(from) : ''}</span></div>
 
       ${count ? html`<ul class="k-lines">${bag.lines.map(l => html`<li class="k-line" key=${l.product.id}>
         <div class="k-line-ph"><${Photo} id=${l.product.id} alt=${l.product.name} ratio="1/1" /></div>
@@ -225,7 +225,7 @@
           <div class="k-line-ph"><${Icon} name="gift" size=${22} /></div>
           <div class="k-line-main"><div class="k-line-name">${x.title}</div><div class="k-line-sub">${x.freeQty} ${x.freeQty === 1 ? p.name : p.plural} gratis</div></div>
           <div class="k-line-sum">− ${eur(x.amount)}</div></li>`; })}
-      </ul>` : html`<div class="k-bag-empty">
+      </ul>` : html`<div class="k-sack-empty">
         <p>${empty ? 'Dieses Sackerl ist noch leer. Wählen Sie ein Schnellstart-Sackerl oder legen Sie Artikel hinein.' : 'Noch leer. Starten Sie mit einem Vorschlag oder legen Sie selbst Artikel hinein.'}</p>
         ${starters.length ? html`<div class="k-starters">${starters.map(b => html`<button type="button" key=${b.id} class="k-starter" onClick=${() => act().draftApplyBag(target, b.items)}>
           <strong>${b.title}</strong><span class="k-starter-t">${sel().itemsText(s, b.items, 3)}</span>
@@ -235,7 +235,7 @@
       ${d.hints.length ? html`<div class="k-hints">${d.hints.map(hn => html`<div class="k-hint" key=${hn.offerId}><${Icon} name="gift" size=${20} />
         <span>${hn.text}</span><${Btn} size="sm" variant="ghost" icon="plus" onClick=${() => addHintToBag(s, target, hn, onAdd)}>Hinzufügen<//></div>`)}</div>` : null}
 
-      <div class="k-bag-actions">
+      <div class="k-sack-actions">
         <${Btn} variant="ghost" size="sm" icon="plus" onClick=${onAdd}>Artikel hinzufügen<//>
         ${copySrc != null ? html`<${Btn} variant="quiet" size="sm" icon="refresh" onClick=${() => act().draftCopyDay(copySrc, target.wd)}>wie ${WDL[copySrc]} übernehmen<//>` : null}
       </div>
@@ -245,7 +245,7 @@
         <span class="k-sugg-ph"><${Photo} id=${p.id} alt="" ratio="1/1" /></span><span class="k-sugg-n">${p.name}<small>${eur(p.price)}</small></span>
         <span class="k-sugg-plus"><${Icon} name="plus" size=${18} /></span></button>`)}</div></div>` : null}
 
-      ${count ? html`<div class="k-bag-foot">
+      ${count ? html`<div class="k-sack-foot">
         ${flex && minMissing > 0 ? html`<div class=${cx('k-hint', tried && 'is-err')}><${Icon} name="info" size=${20} /><span>Mindestbestellwert ${eur(C.fees.flexMinOrder)}: noch ${eur(minMissing)}.</span></div>` : null}
         ${!feeFree && d.freeDeliveryMissing > 0 && from ? html`<${Progress} value=${d.total} max=${from} label=${'Noch ' + eur(d.freeDeliveryMissing) + ' bis zur Gratis-Zustellung'} />` : null}
         ${byThreshold ? html`<${Progress} value=${d.total} max=${from} label=${'Gratis-Zustellung ab ' + eur(from) + ' erreicht'} />` : null}
@@ -254,7 +254,7 @@
           <div><dt>Zustellung</dt><dd>${feeFree ? html`<s>${eur(stdFee)}</s> <strong class="k-free">gratis</strong>` : eur(d.fee)}</dd></div>
           <div class="is-total"><dt>${flex ? 'Summe' : 'Je Lieferung'}</dt><dd>${eur(d.total + d.fee)}</dd></div>
         </dl>
-        ${feeFree && !byThreshold && !flex ? html`<div class="k-promo"><${Icon} name="gift" size=${16} /> Aktionstag: Zustellung für Neukunden ${C.promo.weakDayFreeWeeks} Wochen gratis.</div>` : null}
+        ${feeFree && !byThreshold && !flex ? html`<div class="k-lpromo"><${Icon} name="gift" size=${16} /> Aktionstag: Zustellung für Neukunden ${C.promo.weakDayFreeWeeks} Wochen gratis.</div>` : null}
       </div>` : null}
     </section>`;
   }
@@ -346,14 +346,14 @@
       if (day.effective === 'booked') { toast(WDL[wd] + ' ist schon in Ihrem Wochenplan. Änderungen finden Sie im Konto.', 'info'); return; }
       const had = d.abo[wd] != null;
       act().draftToggleDay(wd);
-      if (!had) scrollToId('k-bag-' + wd);
+      if (!had) scrollToId('k-sack-' + wd);
     };
     const next = () => {
       setTried(true);
       if (!sum.planValid) {
         toast(problemText(sum.planProblems[0]), 'warn');
         const p = sum.planProblems[0].split(':');
-        if (p[0] === 'empty-day') scrollToId('k-bag-' + p[1]); else scrollToId('k-summary');
+        if (p[0] === 'empty-day') scrollToId('k-sack-' + p[1]); else scrollToId('k-summary');
         return;
       }
       if (registered) {
@@ -380,10 +380,10 @@
           ${editPlz ? html`<${PlzForm} s=${s} compact onDone=${() => setEditPlz(false)} />` : null}
         </div>
 
-        <div class="k-mode">
+        <div class="k-lmode">
           <${Segmented} label="Lieferart" full value=${d.mode} onChange=${m => act().setDraft({ mode: m })}
             options=${[{ value: 'abo', label: html`Regelmäßig <span class="k-reco">Empfohlen</span>` }, { value: 'flex', label: 'Einmalig' }]} />
-          <p class="k-mode-t">${abo
+          <p class="k-lmode-t">${abo
             ? html`Fester Platz auf der Tour, Zustellung nur <strong>${feeRange('abo')}</strong> statt ${feeRange('flex')}. Pausieren oder aussetzen jederzeit.`
             : html`Einmal liefern, solange noch Platz ist: Zustellung ${feeRange('flex')}, Mindestbestellwert ${eur(C.fees.flexMinOrder)}.`}</p>
         </div>
@@ -395,26 +395,26 @@
             <div class="ui-grow"><strong>${WDL[w.weekday]} ist frei und für Sie reserviert.</strong>
               <div>Reserviert bis ${T.fmt.rel(w.reservedUntil)} · <${Countdown} to=${w.reservedUntil} /></div></div>
             ${have ? html`<${Btn} variant="primary" onClick=${() => scrollToId('k-summary')}>Weiter zum Bestellen<//>`
-              : html`<${Btn} variant="sun" icon="check" onClick=${() => { bookDay(w.weekday); scrollToId('k-bag-' + w.weekday); }}>${WDL[w.weekday]} buchen<//>`}
+              : html`<${Btn} variant="sun" icon="check" onClick=${() => { bookDay(w.weekday); scrollToId('k-sack-' + w.weekday); }}>${WDL[w.weekday]} buchen<//>`}
           </div>`;
         })}
 
         <h2 class="k-h2">${abo ? 'An welchen Tagen sollen wir liefern?' : 'Für welchen Tag?'}</h2>
         ${abo ? html`<${WeekPicker} s=${s} onPick=${pick} />` : html`<${FlexPicker} s=${s} onFull=${setFullPick} />`}
-        ${abo ? html`<p class="ui-hint k-strip-hint">Tippen Sie auf einen Anhänger. Ausgebuchte Tage: Warteliste.</p>` : null}
+        ${abo ? html`<p class="ui-hint k-lstrip-hint">Tippen Sie auf einen Anhänger. Ausgebuchte Tage: Warteliste.</p>` : null}
 
         ${!abo && fullPick ? (() => {
           const nk = T.nextDates(14, fullPick).find(k => { const f = sel().flexInfo(s, rid, k, cid).state; return f === 'free' || f === 'few'; });
-          return html`<div class="k-note k-note-warn"><${Icon} name="info" size=${20} /><div><strong>${WDL[T.weekday(fullPick)]}, ${dateShort(fullPick)} ist für Einmallieferungen ausgebucht.</strong>
+          return html`<div class="k-lnote k-lnote-warn"><${Icon} name="info" size=${20} /><div><strong>${WDL[T.weekday(fullPick)]}, ${dateShort(fullPick)} ist für Einmallieferungen ausgebucht.</strong>
             ${nk ? html`<div>Nächster freier Tag: ${T.fmt.dayLong(nk)}. <button type="button" class="k-link" onClick=${() => { act().draftSetFlexDate(nk); setFullPick(null); }}>Diesen Tag wählen</button></div>` : null}</div></div>`;
         })() : null}
 
-        ${abo ? html`${!wds.length ? html`<div class="k-bag-empty k-bag-first"><${Icon} name="door" size=${28} /><p><strong>Noch kein Liefertag gewählt.</strong><br />Tippen Sie oben auf die Tage, an denen Ihr Sackerl an der Tür hängen soll.</p></div>` : null}
+        ${abo ? html`${!wds.length ? html`<div class="k-sack-empty k-sack-first"><${Icon} name="door" size=${28} /><p><strong>Noch kein Liefertag gewählt.</strong><br />Tippen Sie oben auf die Tage, an denen Ihr Sackerl an der Tür hängen soll.</p></div>` : null}
           ${wds.map(wd => html`<${BagCard} key=${wd} s=${s} target=${{ wd }} tried=${tried} del=${sum.deliveries.find(x => x.wd === wd)} status=${sel().dayStatusFor(s, rid, wd, cid)}
             onAdd=${() => setPicker({ wd })} copySrc=${copySrcFor(wd)} onRemove=${() => act().draftToggleDay(wd)} />`)}`
-          : html`${unfitFlex ? html`<div class="k-bag-empty k-bag-first"><${Icon} name="calendar" size=${28} /><p><strong>Wählen Sie einen Liefertag.</strong><br />Danach packen Sie Ihr Sackerl.</p></div>`
+          : html`${unfitFlex ? html`<div class="k-sack-empty k-sack-first"><${Icon} name="calendar" size=${28} /><p><strong>Wählen Sie einen Liefertag.</strong><br />Danach packen Sie Ihr Sackerl.</p></div>`
             : html`<${BagCard} s=${s} target=${{ flex: true }} tried=${tried} del=${sum.deliveries[0]} onAdd=${() => setPicker({ flex: true })} />`}
-            <div class="k-note k-note-info"><${Icon} name="leaf" size=${20} /><div>Bei regelmäßiger Lieferung zahlen Sie ${feeRange('abo')} statt ${feeRange('flex')} Zustellung.
+            <div class="k-lnote k-lnote-info"><${Icon} name="leaf" size=${20} /><div>Bei regelmäßiger Lieferung zahlen Sie ${feeRange('abo')} statt ${feeRange('flex')} Zustellung.
               <button type="button" class="k-link" onClick=${() => act().setDraft({ mode: 'abo' })}>Regelmäßig ansehen</button></div></div>`}
       </div>
 
@@ -431,7 +431,7 @@
         <//>
       </aside>
 
-      ${nItems > 0 ? html`<div class="k-bagbar-host"><${BagBar} count=${nItems} total=${abo ? eur(sum.perWeek) + ' pro Woche' : eur(sum.total)}
+      ${nItems > 0 ? html`<div class="k-sackbar-host"><${BagBar} count=${nItems} total=${abo ? eur(sum.perWeek) + ' / Woche' : eur(sum.total)}
         sub=${sum.cutoff ? html`Bestellschluss <${Countdown} to=${sum.cutoff} />` : null} cta="Weiter" onClick=${next} /></div>` : null}
 
       <${ProductSheet} open=${!!picker} onClose=${() => setPicker(null)} s=${s} items=${pickerItems} wd=${pickerWd} mode=${d.mode}
@@ -544,7 +544,7 @@
               <span class="k-place-ic"><${Icon} name=${ic} size=${22} /></span><span class="k-place-t"><strong>${t}</strong><small>${x}</small></span>
               <span class="k-place-check" aria-hidden="true">${d.payment === v ? html`<${Icon} name="check" size=${16} />` : null}</span></button>`)}
         </div>
-        <div class="k-note k-note-info"><${Icon} name="info" size=${20} /><div><strong>Demo:</strong> Es wird nichts abgebucht. Sie können eigene Testwerte eintragen oder <button type="button" class="k-link" onClick=${demo}>Demo-Daten einfügen</button>.</div></div>
+        <div class="k-lnote k-lnote-info"><${Icon} name="info" size=${20} /><div><strong>Demo:</strong> Es wird nichts abgebucht. Sie können eigene Testwerte eintragen oder <button type="button" class="k-link" onClick=${demo}>Demo-Daten einfügen</button>.</div></div>
         <div class="k-fgrid">
           <${Field} id="pay-holder" label=${sepa ? 'Kontoinhaber' : 'Name auf der Karte'} class="k-span2" value=${f.holder} error=${fe('holder')} autocomplete="cc-name" onInput=${ev => upd('holder', ev.target.value)} />
           ${sepa ? html`<${Field} id="pay-iban" label="IBAN" class="k-span2" value=${f.iban} error=${fe('iban')} placeholder="AT00 0000 0000 0000 0000" autocomplete="off" onInput=${ev => upd('iban', ev.target.value)} />`
@@ -575,7 +575,7 @@
         <p class="ui-lead">Ihre erste Lieferung: <strong>${T.fmt.dayLong(o.firstDelivery)}</strong>, bis spätestens ${T.fmt.hm(T.deadlineMin(o.firstDelivery))} Uhr an Ihrer Tür.</p></div>
       <${Ticket} title=${'Bestellung ' + o.orderNo} stamp="bestätigt" rows=${rows}
         footer=${html`<div class="k-first"><span>Erste Lieferung</span><strong>${T.fmt.dayLong(o.firstDelivery)}</strong><span>Änderbar bis</span><strong>${T.fmt.rel(o.cutoff)}</strong></div>`} />
-      <div class="k-note k-note-info"><${Icon} name="truck" size=${20} /><div><strong>So geht es weiter:</strong> Ihre Bestellung ist jetzt im Backoffice sichtbar und in der Tour der Fahrer-App eingeplant.
+      <div class="k-lnote k-lnote-info"><${Icon} name="truck" size=${20} /><div><strong>So geht es weiter:</strong> Ihre Bestellung ist jetzt im Backoffice sichtbar und in der Tour der Fahrer-App eingeplant.
         <div class="k-done-links"><button type="button" class="k-link" onClick=${() => act().go('backoffice')}>Im Backoffice ansehen</button> · <button type="button" class="k-link" onClick=${() => act().go('fahrer')}>In der Fahrer-App ansehen</button></div></div></div>
       <div class="k-nav-row"><${Btn} variant="sun" size="lg" iconAfter="chevron-right" onClick=${() => { act().setUi({ customerView: 'konto' }); scrollTop(); }}>Zum Konto<//>
         <${Btn} variant="ghost" onClick=${() => { act().setDraft({ step: 'plan', lastOrder: null }); scrollTop(); }}>Weiteres Sackerl zusammenstellen<//></div>

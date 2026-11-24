@@ -421,3 +421,13 @@ Oberfläche:
 - **Allergene:** Jeder Artikel bekommt `allergens` mit den österreichischen Buchstabencodes (A Gluten, C Eier, F Soja, G Milch, H Schalenfrüchte, N Sesam, O Sulfite …) und `config.labels.allergens` als Legende. Plausible Zuordnung genügt (Demo).
 - **Sortiment (V1):** Suchfeld über dem Raster (filtert nach Name) und eine Produkt-Detailansicht als Sheet (großes Foto, Beschreibung, Allergene mit Legende, Etiketten, Menge). Das bisherige Portal zeigt rund 90 Artikel als lange Liste ohne Suche und ohne Wochenübersicht – genau das machen wir besser.
 - **Zustellgebühr und Mindestbestellwert** stehen sichtbar dort, wo der Kunde das Sackerl füllt, nicht erst am Ende.
+
+### 8.8 Kalkulationsannahmen (Schätzung des Auftraggebers, ersetzt die Kostenannahmen in 8.2, 8.6 und 8.7)
+- Verkaufspreise sind brutto inkl. 10 % USt. Die Wirtschaftlichkeit wird netto gerechnet.
+- Der Dienst ist rund 10 % teurer als das Bäckergeschäft, der Einkauf liegt geschätzt 10 % unter dem Ladenpreis. Das sind Schätzwerte, die an einer Stelle änderbar sein müssen.
+- Konfiguration: `economics: { driverPerPiece: 0.36, vatRate: 0.10, shopMarkup: 0.10, purchaseDiscount: 0.10, extrasCostShare: 0.70 }`.
+- Einkaufspreis netto je Artikel, aus der Konfiguration berechnet (`costOf(s, product)`; `products[i].cost` trägt denselben Wert): Gebäck, Süßes, Brot und Boxen `price / (1 + vatRate) / (1 + shopMarkup) × (1 − purchaseDiscount)`; Extras vom Hofladen `price / (1 + vatRate) × extrasCostShare`.
+- Alle Wirtschaftlichkeits-Selektoren (`kpis`-Felder `weekly…`, `tourEconomics`, `offerCalc`) liefern Netto-Beträge: Warenumsatz und Zustellgebühren = Brutto / (1 + vatRate); Einkauf und Fahrervergütung sind netto. Feldnamen bleiben. Kundenpreise, Sackerl-Summen und Zustellgebühren in der Kunden-App bleiben brutto.
+- Sackerl-Größen im Seed realistischer: je Abo-Liefertag meist 3–6 Stück (Mittel rund 4,5, am Wochenende rund 5,5). Die Stopp-Zahlen je Wochentag bleiben exakt.
+- Aktionen im Seed: `butter-marmelade` „Zur Teebutter: Marillenmarmelade −10 %“ (aktiv) · `striezel-wochenende` „Am Wochenende ab 4 Semmeln & Weckerl: Briochestriezel −10 %“ (buy Kategorie `gebaeck` × 4 → get `briochestriezel` × 1 mit 10 %, nur Sa/So = `[5,6]`; aktiv) · `semmel-5-1` und `croissant-2-1` als inaktive Vorlagen. `brot-dazu` entfällt.
+- Oberfläche: Wo Einkaufspreise oder Deckungsbeiträge stehen, steht der Hinweis „Schätzwerte: Einkauf = Ladenpreis −10 %, Fahrer € 0,36 je Stück, alle Beträge netto“.
