@@ -234,7 +234,7 @@
     return html`<section class=${cx('k-sack', empty && 'has-error')} id=${'k-sack-' + (flex ? 'flex' : target.wd)} aria-label=${title}>
       <header class="k-sack-head">
         <div class="ui-grow"><h3>${title}</h3>
-          <div class="k-sack-sub">${dateK ? T.fmt.dayLong(dateK) + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : 'Tag wählen'}
+          <div class="k-sack-sub">${dateK ? T.fmt.dayLong(dateK).replace(/^[^,]+,\s*/, '') + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : 'Tag wählen'}
             ${status === 'reserved' ? html` <${Pill} tone="info">für Sie reserviert<//>` : null}</div></div>
         ${onRemove ? html`<${Btn} variant="quiet" size="sm" icon="x" aria-label=${WDL[target.wd] + ' entfernen'} onClick=${onRemove}>Entfernen<//>` : null}
       </header>
@@ -318,23 +318,24 @@
 
   /* ---------- Zusammenfassung (Lieferzettel) ---------- */
   function SummaryTicket({ s, sum, abo, children, footer }) {
-    const rows = sum.deliveries.map(x => ({
+    const live = sum.deliveries.filter(x => sumQty(x.items) > 0);
+    const rows = live.map(x => ({
       label: (abo ? WDL[x.wd] : (x.dateKey ? T.fmt.day(x.dateKey) : 'Liefertag')) + ' · ' + artikel(sumQty(x.items)),
       value: eur(x.total + x.fee)
     }));
-    const goods = sum.deliveries.reduce((a, x) => a + (x.subtotal != null ? x.subtotal : x.total), 0);
+    const goods = live.reduce((a, x) => a + (x.subtotal != null ? x.subtotal : x.total), 0);
     const disc = sum.deliveries.reduce((a, x) => a + (x.discounts || []).reduce((b, y) => b + y.amount, 0), 0);
     const fees = sum.deliveries.reduce((a, x) => a + x.fee, 0);
     const more = [];
-    if (abo) more.push({ label: 'Lieferungen pro Woche', value: String(sum.count) });
-    if (sum.count) {
+    if (abo) more.push({ label: 'Lieferungen pro Woche', value: String(live.length) });
+    if (live.length) {
       more.push({ label: 'Warenwert', value: eur(goods) });
       if (disc > 0.004) more.push({ label: 'Aktionen', value: '− ' + eur(disc) });
       more.push({ label: 'Zustellung', value: fees > 0 ? eur(fees) : 'gratis' });
       more.push({ label: abo ? 'Summe pro Woche' : 'Gesamtsumme', value: eur(sum.total), strong: true });
     }
-    return html`<${Ticket} title="Ihr Lieferzettel" stamp=${abo ? 'Abo' : 'einmalig'} rows=${sum.count ? rows.concat(more) : []} footer=${footer}>
-      ${!sum.count ? html`<p class="ui-muted" style="margin:0">Hier erscheint Ihre Bestellung, sobald Sie Tage und Artikel gewählt haben.</p>` : null}
+    return html`<${Ticket} title="Ihr Lieferzettel" stamp=${abo ? 'Abo' : 'einmalig'} rows=${live.length ? rows.concat(more) : []} footer=${footer}>
+      ${!live.length ? html`<p class="ui-muted" style="margin:0">Ihre Bestellung erscheint hier.</p>` : null}
       ${children}
     <//>`;
   }
@@ -445,7 +446,7 @@
             <${Btn} variant="sun" size="lg" full iconAfter=${registered ? 'check' : 'chevron-right'} onClick=${next}>${registered ? 'Verbindlich bestellen' : 'Weiter zur Adresse'}<//>
             <${Reassure} />
           </div>`}>
-          ${abo && saveWeek > 0 ? html`<div class="k-save"><${Icon} name="leaf" size=${16} /> Abo-Vorteil: ${eur(saveWeek)} pro Woche weniger Zustellgebühr als bei Einmallieferungen.</div>` : null}
+          ${abo && saveWeek > 0 && nItems > 0 ? html`<div class="k-save"><${Icon} name="leaf" size=${16} /> Abo-Vorteil: ${eur(saveWeek)} pro Woche weniger Zustellgebühr als bei Einmallieferungen.</div>` : null}
         <//>
       </aside>
 
