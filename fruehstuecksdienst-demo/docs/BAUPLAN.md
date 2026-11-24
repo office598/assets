@@ -489,3 +489,18 @@ Entfallen: Schnellstart-Sackerl, eigener Aktionen-Block, Sortiments-Karussell, e
 - Keine Schnellstart-Sackerl mehr. Ein leerer Tag zeigt groß „Artikel hinzufügen“ und darunter vier Foto-Chips zum Schnell-Hinzufügen (Fokus- bzw. Bestseller-Artikel).
 - Je Sackerl-Karte höchstens **ein** Vorschlag, Reihenfolge: Tausch-Hinweis → Brot der Woche (am Wochenende) → Mengenaktion → „Dazu passt“. Eine kompakte Zeile mit Foto, Text und Knopf, ausblendbar. Die Liste „Dazu passt“ wandert an den Anfang des Sheets „Artikel hinzufügen“.
 - Erklärtexte kürzen (je höchstens ein Satz). Klare Schritt-Überschriften, größere Knöpfe, ruhige Abstände.
+
+### 8.14 Gleiches Sackerl für mehrere Tage, schönere Zusammenfassung
+Rückmeldung: Wer Mo, Mi und Fr dasselbe will, soll nicht jeden Tag einzeln füllen müssen. Die Zusammenfassung („Lieferzettel“) wirkt wie eine Kassenrolle. Fehler im Screenshot: ein leerer, angetippter Tag zählte bei „erste Lieferung“ und beim Abo-Vorteil mit.
+
+**Logik (K1).**
+- `draft.sameForAll` (Standard `true`). Solange `true`, gibt es ein gemeinsames Sackerl für alle gewählten Wochentage: `draftSetQty({ wd }, …)` wirkt auf alle gewählten Tage; ein neu gewählter Tag übernimmt das gemeinsame Sackerl. Artikel mit `weekendOnly` werden dabei nur für Sa/So übernommen.
+- `draftSetSameForAll(bool)`: auf `false` bleiben die Kopien je Tag bestehen; auf `true` wird das Sackerl des ersten gefüllten Tages (Mo→So) auf alle gewählten Tage gelegt.
+- `draftCopyToDays(fromWd, wds)`: legt das Sackerl von `fromWd` auf die Tage `wds` (wählt sie dabei aus, sofern buchbar; volle Tage überspringen und im Rückgabewert melden: `{ copied:[…], skipped:[…] }`).
+- `evalDraft`/`draftSummary`: `deliveries`, `firstDelivery`, `cutoff` und alle Summen nur aus Tagen mit Artikeln. Leere gewählte Tage stehen weiter als Problem `empty-day:<wd>` drin. Neu: `draftSummary().groups` = Tage mit identischem Inhalt zusammengefasst `[ { wds:[…], items, total, fee, discounts } ]` und `draftSummary().saving = { perWeek, text }` (Abo gegen Einmalpreis der Zustellung, nur gefüllte Tage; 0 bei Einmallieferung).
+- Tests: Fall aus dem Screenshot (Di gefüllt, Do leer gewählt) → `firstDelivery` ist ein Dienstag, `deliveries.length === 1`, `saving.perWeek` gleich Einmal- minus Abo-Gebühr für einen Tag; `sameForAll` setzt Mengen auf allen Tagen; `draftCopyToDays` überspringt den vollen Montag.
+
+**Oberfläche (V2).**
+- Gemeinsames Sackerl (Standard): eine Karte „Ihr Sackerl für Mo · Mi · Fr“ mit den Tagen als Chips und einem schlichten Link „Jeden Tag anders zusammenstellen“. Getrennte Sackerl: je Tag eine Karte, darin „Auf andere Tage übernehmen“ (Sheet mit Tages-Auswahl, Status je Tag, volle Tage gesperrt) und oben der Link „Für alle Tage gleich“ (mit Rückfrage, wenn sich die Sackerl unterscheiden).
+- Zusammenfassung „Ihre Woche“ neu gestalten: ruhige Karte statt Kassenrolle; Fließtext-Schrift, Mono nur für kleine Etiketten; keine Punktlinien. Inhalt: je Gruppe eine Zeile mit Tages-Chips, kurzem Inhalt („4 Kaisersemmeln, 1 Laugenbreze“) und Preis je Lieferung; Zustellung mit Betrag bzw. „gratis (Aktion)“; groß „Pro Woche € …“ mit Anzahl Lieferungen; Abo-Vorteil aus `saving` als kleine grüne Zeile, nur wenn > 0; darunter mit Icons „Erste Lieferung: Mittwoch, 25. November, bis 06:30“ und „Änderbar bis heute 16:30 (noch …)“; Vertrauenszeile. Leere gewählte Tage als freundlicher Hinweis („Mittwoch ist noch leer – Artikel hinzufügen oder abwählen“).
+- Nur ein Weiter-Knopf je Ansicht: die Sackerl-Leiste unten bleibt, der doppelte Knopf in der Zusammenfassung entfällt.
