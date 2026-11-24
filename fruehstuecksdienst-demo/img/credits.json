@@ -34,23 +34,5 @@
   "license": "CC BY-SA 3.0 de",
   "source": "https://commons.wikimedia.org/wiki/File:Aprikosenkonfit%C3%BCre.jpg",
   "standIn": true
- },
- {
-  "id": "buttercroissant",
-  "file": "img/p-buttercroissant.jpg",
-  "title": "MediasLunasenMardelPlata",
-  "author": "siehe Quelle",
-  "license": "CC BY-SA 4.0",
-  "source": "https://commons.wikimedia.org/wiki/File:MediasLunasenMardelPlata.jpg",
-  "standIn": true
- },
- {
-  "id": "laugenbreze",
-  "file": "img/p-laugenbreze.jpg",
-  "title": "Pretzel Knot",
-  "author": "siehe Quelle",
-  "license": "CC BY-SA 3.0",
-  "source": "https://commons.wikimedia.org/wiki/File:Pretzel_Knot.jpg",
-  "standIn": false
  }
 ]

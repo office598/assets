@@ -97,5 +97,77 @@
   "license": "Public domain",
   "source": "https://commons.wikimedia.org/wiki/File:Roasted_coffee_beans.jpg",
   "standIn": false
+ },
+ {
+  "id": "briochestriezel",
+  "file": "p-briochestriezel.jpg",
+  "title": "Hefezopf.JPG",
+  "author": "Solkawage",
+  "license": "CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Hefezopf.JPG",
+  "standIn": false
+ },
+ {
+  "id": "marillenkrapfen",
+  "file": "p-marillenkrapfen.jpg",
+  "title": "Wiener Krapfen 1.JPG",
+  "author": "Brücke-Osteuropa",
+  "license": "CC0",
+  "source": "https://commons.wikimedia.org/wiki/File:Wiener_Krapfen_1.JPG",
+  "standIn": false
+ },
+ {
+  "id": "topfengolatsche",
+  "file": "p-topfengolatsche.jpg",
+  "title": "Topfengolatschen1.jpg",
+  "author": "00overtime",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Topfengolatschen1.jpg",
+  "standIn": false
+ },
+ {
+  "id": "nussschnecke",
+  "file": "p-nussschnecke.jpg",
+  "title": "Mehlspeisen2.jpg",
+  "author": "00overtime",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Mehlspeisen2.jpg",
+  "standIn": false
+ },
+ {
+  "id": "box-familie",
+  "file": "p-box-familie.jpg",
+  "title": "Bread in basket.jpg",
+  "author": "Adnergje",
+  "license": "CC BY-SA 2.5",
+  "source": "https://commons.wikimedia.org/wiki/File:Bread_in_basket.jpg",
+  "standIn": false
+ },
+ {
+  "id": "frischmilch",
+  "file": "p-frischmilch.jpg",
+  "title": "Milk bottle and two doughnuts.jpg",
+  "author": "www.Pixel.la Free Stock Photos",
+  "license": "CC0",
+  "source": "https://commons.wikimedia.org/wiki/File:Milk_bottle_and_two_doughnuts.jpg",
+  "standIn": false
+ },
+ {
+  "id": "buttercroissant",
+  "file": "img/p-buttercroissant.jpg",
+  "title": "MediasLunasenMardelPlata.jpg",
+  "author": "Ezarate",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:MediasLunasenMardelPlata.jpg",
+  "standIn": true
+ },
+ {
+  "id": "laugenbreze",
+  "file": "img/p-laugenbreze.jpg",
+  "title": "Pretzel Knot.jpg",
+  "author": "Fadkins",
+  "license": "CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Pretzel_Knot.jpg",
+  "standIn": false
  }
 ]

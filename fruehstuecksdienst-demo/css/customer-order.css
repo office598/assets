@@ -30,7 +30,6 @@
 @media (min-width: 960px) {
   .k-plan { display: grid; grid-template-columns: minmax(0, 1fr) 380px; align-items: start; gap: var(--s-6); }
   .k-plan-side { position: sticky; top: calc(var(--demobar-h) + 58px + 16px); }
-  .k-plan .ui-bagbar { display: none; }
 }
 .k-gate { max-width: 520px; display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-5) 0; }
 
@@ -124,8 +123,6 @@
 /* ---------- Zusammenfassung ---------- */
 .k-first { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; font-size: 13px; }
 .k-first span { color: var(--muted); } .k-first strong { font-weight: 500; text-align: right; }
-.k-save { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; margin-bottom: 8px; border-radius: 6px; background: var(--ok-soft); color: var(--ok); font-family: var(--font-body); font-size: 13px; font-weight: 650; }
-.k-save > .ui-icon { margin-top: 1px; flex: none; }
 .k-reassure { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-family: var(--font-body); font-size: 13px; color: var(--ink-2); font-weight: 550; }
 .k-reassure > .ui-icon { margin-top: 2px; flex: none; color: var(--ok); }
 .k-errs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-family: var(--font-body); font-size: 13px; font-weight: 650; color: var(--full); }
@@ -256,3 +253,39 @@
 .k-card { padding: var(--s-5); }
 .k-card .k-h3 { font-size: var(--fs-22); margin-bottom: var(--s-4); }
 .k-up { padding: 18px 0; }
+
+/* ---------- 8.14: Ihre Woche, gemeinsames Sackerl ---------- */
+.k-dchips { display: inline-flex; flex-wrap: wrap; gap: 4px; vertical-align: middle; }
+.k-dchip { display: inline-flex; align-items: center; min-height: 26px; padding: 0 10px; border-radius: var(--r-pill); background: var(--butter-soft); color: var(--ink); font-size: 13px; font-weight: 700; border: 1px solid var(--line); }
+.k-sack-sub .k-dchips { margin-right: 4px; }
+.k-link-lg { font-size: var(--fs-16); align-self: flex-start; min-height: 44px; }
+.k-samebar { display: flex; flex-direction: column; gap: var(--s-2); }
+.k-samebar-b { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+.k-copylist { display: flex; flex-direction: column; gap: var(--s-1); }
+.k-copylist .ui-toggle { padding: 4px 0; border-bottom: 1px solid var(--line); }
+.k-week { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); padding: var(--s-5); display: flex; flex-direction: column; gap: var(--s-4); font-family: var(--font-body); }
+.k-week h3 { font-size: var(--fs-22); }
+.k-week-empty { margin: 0; color: var(--muted); }
+.k-week-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
+.k-week-rows li { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s-3); }
+.k-week-who { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.k-week-txt { font-size: var(--fs-14); color: var(--ink-2); }
+.k-week-price { flex: none; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; display: flex; flex-direction: column; }
+.k-week-price small { font-weight: 500; color: var(--muted); font-size: 12px; }
+.k-week-fee { display: flex; justify-content: space-between; gap: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line); font-size: var(--fs-14); color: var(--ink-2); }
+.k-week-fee strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.k-week-total { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--s-3); }
+.k-week-total > div { display: flex; flex-direction: column; }
+.k-week-lab { font-family: var(--font-display); font-size: var(--fs-22); font-weight: 750; }
+.k-week-n { font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.k-week-total strong { font-family: var(--font-display); font-size: 36px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+.k-week-save { display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; border-radius: var(--r-ctl); background: var(--ok-soft); color: var(--ok); font-size: var(--fs-14); font-weight: 650; }
+.k-week-save > .ui-icon { margin-top: 2px; flex: none; }
+.k-week-when { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: var(--fs-14); }
+.k-week-when li { display: flex; gap: 10px; align-items: flex-start; }
+.k-week-when .ui-icon { flex: none; margin-top: 1px; color: var(--sun-text); }
+.k-week-warn { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-14); }
+.k-week-warn li { display: flex; gap: 8px; align-items: flex-start; padding: 8px 12px; border-radius: var(--r-ctl); background: var(--warn-soft); color: var(--ink); }
+.k-week-warn .ui-icon { margin-top: 2px; flex: none; color: var(--warn); }
+.k-week .k-errs { font-size: 14px; }
+.k-week .ui-countdown { font-family: inherit; font-weight: 650; }

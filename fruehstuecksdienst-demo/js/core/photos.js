@@ -11,23 +11,29 @@
     "beinschinken": "img/p-beinschinken.jpg",
     "bergkaese": "img/p-bergkaese.jpg",
     "box-buero": "img/p-box-buero.jpg",
+    "box-familie": "img/p-box-familie.jpg",
     "box-nikolo": "img/p-box-nikolo.jpg",
     "box-sonntag": "img/p-box-sonntag.jpg",
+    "briochestriezel": "img/p-briochestriezel.jpg",
     "buttercroissant": "img/p-buttercroissant.jpg",
     "dinkelbrot": "img/p-dinkelbrot.jpg",
     "freilandeier": "img/p-freilandeier.jpg",
+    "frischmilch": "img/p-frischmilch.jpg",
     "handsemmel": "img/p-handsemmel.jpg",
     "kaisersemmel": "img/p-kaisersemmel.jpg",
     "kornweckerl": "img/p-kornweckerl.jpg",
     "laugenbreze": "img/p-laugenbreze.jpg",
     "liptauer": "img/p-liptauer.jpg",
+    "marillenkrapfen": "img/p-marillenkrapfen.jpg",
     "marillenmarmelade": "img/p-marillenmarmelade.jpg",
     "mohnflesserl": "img/p-mohnflesserl.jpg",
     "nussbrot": "img/p-nussbrot.jpg",
+    "nussschnecke": "img/p-nussschnecke.jpg",
     "orangensaft": "img/p-orangensaft.jpg",
     "roestkaffee": "img/p-roestkaffee.jpg",
     "salzstangerl": "img/p-salzstangerl.jpg",
-    "teebutter": "img/p-teebutter.jpg"
+    "teebutter": "img/p-teebutter.jpg",
+    "topfengolatsche": "img/p-topfengolatsche.jpg"
   };
   App.photoCredits = [
     {
@@ -94,6 +100,13 @@
       "source": "https://commons.wikimedia.org/wiki/File:Home_made_sour_dough_bread.jpg"
     },
     {
+      "id": "box-familie",
+      "title": "Bread in basket.jpg",
+      "author": "Adnergje",
+      "license": "CC BY-SA 2.5",
+      "source": "https://commons.wikimedia.org/wiki/File:Bread_in_basket.jpg"
+    },
+    {
       "id": "box-nikolo",
       "title": "Lebkuchen supermarkt 2",
       "author": "Viceskeeni2",
@@ -108,9 +121,16 @@
       "source": "https://commons.wikimedia.org/wiki/File:Panes_y_mermelada.jpg"
     },
     {
+      "id": "briochestriezel",
+      "title": "Hefezopf.JPG",
+      "author": "Solkawage",
+      "license": "CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Hefezopf.JPG"
+    },
+    {
       "id": "buttercroissant",
-      "title": "MediasLunasenMardelPlata",
-      "author": "siehe Quelle",
+      "title": "MediasLunasenMardelPlata.jpg",
+      "author": "Ezarate",
       "license": "CC BY-SA 4.0",
       "source": "https://commons.wikimedia.org/wiki/File:MediasLunasenMardelPlata.jpg"
     },
@@ -127,6 +147,13 @@
       "author": "Evan-Amos",
       "license": "Public domain",
       "source": "https://commons.wikimedia.org/wiki/File:6-Pack-Chicken-Eggs.jpg"
+    },
+    {
+      "id": "frischmilch",
+      "title": "Milk bottle and two doughnuts.jpg",
+      "author": "www.Pixel.la Free Stock Photos",
+      "license": "CC0",
+      "source": "https://commons.wikimedia.org/wiki/File:Milk_bottle_and_two_doughnuts.jpg"
     },
     {
       "id": "handsemmel",
@@ -151,8 +178,8 @@
     },
     {
       "id": "laugenbreze",
-      "title": "Pretzel Knot",
-      "author": "siehe Quelle",
+      "title": "Pretzel Knot.jpg",
+      "author": "Fadkins",
       "license": "CC BY-SA 3.0",
       "source": "https://commons.wikimedia.org/wiki/File:Pretzel_Knot.jpg"
     },
@@ -162,6 +189,13 @@
       "author": "FakirNL",
       "license": "CC BY-SA 4.0",
       "source": "https://commons.wikimedia.org/wiki/File:Liptauer_on_bread_in_Austria.jpg"
+    },
+    {
+      "id": "marillenkrapfen",
+      "title": "Wiener Krapfen 1.JPG",
+      "author": "Brücke-Osteuropa",
+      "license": "CC0",
+      "source": "https://commons.wikimedia.org/wiki/File:Wiener_Krapfen_1.JPG"
     },
     {
       "id": "marillenmarmelade",
@@ -183,6 +217,13 @@
       "author": "lazy fri13th",
       "license": "CC BY 2.0",
       "source": "https://commons.wikimedia.org/wiki/File:Walnut_baguette_1.jpg"
+    },
+    {
+      "id": "nussschnecke",
+      "title": "Mehlspeisen2.jpg",
+      "author": "00overtime",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Mehlspeisen2.jpg"
     },
     {
       "id": "orangensaft",
@@ -211,6 +252,13 @@
       "author": "Jacek Halicki",
       "license": "CC BY-SA 4.0",
       "source": "https://commons.wikimedia.org/wiki/File:2023_Mas%C5%82o_w_maselniczce.jpg"
+    },
+    {
+      "id": "topfengolatsche",
+      "title": "Topfengolatschen1.jpg",
+      "author": "00overtime",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Topfengolatschen1.jpg"
     }
   ];
 })(typeof window !== 'undefined' ? window : globalThis);
