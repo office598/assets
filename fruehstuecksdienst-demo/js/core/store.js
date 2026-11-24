@@ -311,7 +311,7 @@
     const drivers = driversOverride || sel.cap(s, regionId, wd).drivers;
     const stops = sel.stopsOn(s, regionId, dateKey);
     const dRef = s.deliveries[dateKey];
-    const ck = regionId + '|' + dateKey + '|' + drivers;
+    const ck = regionId + '|' + dateKey + '|' + drivers + '|' + C.tour.serviceMin;
     const hit = caches.tours && caches.tours.get(ck);
     if (hit && hit.stops === stops && hit.dRef === dRef) return hit.value;
     const wk = T.isWeekend(dateKey);

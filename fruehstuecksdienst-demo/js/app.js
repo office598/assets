@@ -23,25 +23,28 @@
   function DemoBar({ s }) {
     const [clockOpen, setClockOpen] = useState(false);
     const [resetOpen, setResetOpen] = useState(false);
+    useEffect(() => {
+      const el = document.querySelector('.fd-demo-roles [aria-pressed="true"]');
+      if (el && el.scrollIntoView) { try { el.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) { /* egal */ } }
+    }, [s.ui.role]);
     const shifted = s.clockPreset && s.clockPreset !== 'echt';
     const pick = (id) => {
       App.actions.setClock(id); setClockOpen(false);
       toast(id === 'echt' ? 'Echtzeit' : 'Demo-Zeit: ' + clockText(), 'ok');
     };
     const doReset = () => { App.actions.resetDemo(); setResetOpen(false); toast('Demo zurückgesetzt', 'ok'); };
-    return html`<div class="fd-demobar"><div class="ui-wrap ui-wrap-wide fd-demobar-in">
+    const bar = html`<div class="fd-demobar"><div class="ui-wrap ui-wrap-wide fd-demobar-in">
       <span class="fd-demo-tag">DEMO</span>
       <div class="fd-demo-roles"><${Segmented} tone="night" label="Bereich wählen" options=${ROLES} value=${s.ui.role} onChange=${(r) => App.actions.go(r)} /></div>
       <button type="button" class=${'fd-demo-btn' + (shifted ? ' is-shifted' : '')} aria-label=${'Demo-Uhr: ' + clockText() + ', ändern'} onClick=${() => setClockOpen(true)}><${Icon} name="clock" size=${15} />${clockText()}</button>
       <button type="button" class="fd-demo-btn fd-demo-reset" aria-label="Demo zurücksetzen" onClick=${() => setResetOpen(true)}><${Icon} name="refresh" size=${16} /></button>
-    </div>
-    <${Sheet} open=${clockOpen} onClose=${() => setClockOpen(false)} title="Demo-Uhr">
+    </div></div>`;
+    return [bar, html`<${Sheet} key="clock" open=${clockOpen} onClose=${() => setClockOpen(false)} title="Demo-Uhr">
       <p class="ui-muted">Springen Sie zu einem Zeitpunkt, an dem die Geschichte spielt. Jetzt: <strong>${App.time.fmt.dateTime(App.time.now())}</strong></p>
       <div class="fd-clock-list">${App.time.presets.map(p => html`<button type="button" key=${p.id} class=${'fd-clock-opt' + ((s.clockPreset || 'echt') === p.id ? ' is-on' : '')} onClick=${() => pick(p.id)}>
         <span>${p.label}</span>${(s.clockPreset || 'echt') === p.id ? html`<${Icon} name="check" size=${18} />` : null}</button>`)}</div>
-    <//>
-    <${ConfirmSheet} open=${resetOpen} onClose=${() => setResetOpen(false)} title="Demo zurücksetzen?" danger confirmLabel="Zurücksetzen"
-      text="Alle Eingaben, Bestellungen und Einstellungen dieser Demo werden gelöscht. Die Beispieldaten werden neu geladen." onConfirm=${doReset} /></div>`;
+    <//>`, html`<${ConfirmSheet} key="reset" open=${resetOpen} onClose=${() => setResetOpen(false)} title="Demo zurücksetzen?" danger confirmLabel="Zurücksetzen"
+      text="Alle Eingaben, Bestellungen und Einstellungen dieser Demo werden gelöscht. Die Beispieldaten werden neu geladen." onConfirm=${doReset} />`];
   }
 
   function Area({ s }) {
