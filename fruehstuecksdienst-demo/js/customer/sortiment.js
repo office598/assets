@@ -71,6 +71,20 @@
     return 'Sackerl für ' + t.weekdays.map(w => T.WD[w]).join(' & ');
   }
 
+  /* Für die Startseite: legt ein Stück ins aktive Ziel; false, wenn noch kein Ziel gewählt ist. */
+  App.nav.addToTarget = function (pid, n) {
+    const d = App.store.getState().draft, t = effTarget(d);
+    if (!t) return false;
+    const have = targetItems(d, t)[pid] || 0;
+    const patch = {};
+    if (d.mode !== (t.type === 'flex' ? 'flex' : 'abo')) patch.mode = t.type === 'flex' ? 'flex' : 'abo';
+    if (!d.target || JSON.stringify(d.target) !== JSON.stringify(t)) patch.target = t;
+    if (Object.keys(patch).length) App.actions.setDraft(patch);
+    if (t.type === 'flex') App.actions.draftSetQty({ flex: true }, pid, have + n);
+    else t.weekdays.forEach(wd => App.actions.draftSetQty({ wd }, pid, have + n));
+    return true;
+  };
+
   /* ---------- Ziel-Sheet ---------- */
   function TargetSheet({ s, open, onClose, onConfirm, current }) {
     const d = s.draft;
@@ -147,7 +161,7 @@
     const target = effTarget(d);
     const season = C.season, seasonOpen = !!(season && T.isOpenFor(season.dateKey));
 
-    const initial = App.nav.sortimentCat || 'alle';
+    const initial = App.nav.sortimentCat || 'empfohlen';
     const [tab, setTab] = useState(initial);
     const [sheet, setSheet] = useState(false);
     const [pending, setPending] = useState(null);
@@ -157,7 +171,10 @@
     const [detail, setDetail] = useState(null);
     const gridRef = useRef(null);
     const timer = useRef(null);
-    useEffect(() => { App.nav.sortimentCat = null; return () => clearTimeout(timer.current); }, []);
+    useEffect(() => {
+      App.nav.sortimentCat = null;
+      if (App.nav.pendingAdd) { const pa = App.nav.pendingAdd; App.nav.pendingAdd = null; if (!effTarget(App.store.getState().draft)) { setPending(pa); setSheet(true); } else App.nav.addToTarget(pa.pid, pa.n); }
+      return () => clearTimeout(timer.current); }, []);
 
     const items = targetItems(d, target);
     const wdOffer = target && target.type === 'abo' && target.weekdays.length === 1 ? target.weekdays[0] : (target && target.type === 'flex' ? targetWd(d, target) : null);
@@ -165,10 +182,11 @@
     const offerBadge = (p) => { const o = sel().offersForProduct(s, p.id, wdOffer)[0]; return o ? o.badge : undefined; };
     const hasOffers = products.some(p => sel().offersForProduct(s, p.id, null).length);
 
-    const tabs = [{ id: 'alle', label: 'Alle' }]
+    const focusList = products.filter(p => p.focus);
+    const tabs = (focusList.length ? [{ id: 'empfohlen', label: 'Empfohlen' }] : []).concat([{ id: 'alle', label: 'Alle' }])
       .concat(hasOffers ? [{ id: 'aktionen', label: 'Aktionen' }] : [])
       .concat(Object.keys(C.labels.cat).filter(c => products.some(p => p.cat === c)).map(c => ({ id: c, label: C.labels.cat[c] })));
-    const activeTab = tabs.some(t => t.id === tab) ? tab : 'alle';
+    const activeTab = tabs.some(t => t.id === tab) ? tab : tabs[0].id;
     const changeTab = (id) => {
       setTab(id);
       const el = gridRef.current;
@@ -207,6 +225,7 @@
 
     const cardFor = (p) => html`<div key=${p.id} class=${cx('k-bumpwrap', bump === p.id && 'is-bumped')}>
       <button type="button" class="k-detailbtn" aria-label=${'Details zu ' + p.name} onClick=${() => setDetail(p.id)}></button>
+      ${p.focus ? html`<span class="k-focus-tag">Empfehlung des Bäckers</span>` : null}
       <${ProductCard} product=${p} qty=${items[p.id] || 0} badge=${offerBadge(p)} onQty=${(n) => setQty(p, n)} /></div>`;
 
     const q = query.trim().toLowerCase();
@@ -215,6 +234,8 @@
       const list = products.filter(p => p.name.toLowerCase().includes(q));
       content = list.length ? html`<section class="k-sort-sec"><div class="k-grid">${list.map(cardFor)}</div></section>`
         : html`<div class="k-empty-grid"><${Empty} icon="search" title=${'Nichts gefunden für „' + query.trim() + '“'} text="Probieren Sie einen kürzeren Suchbegriff, zum Beispiel „Semmel“ oder „Brot“." /></div>`;
+    } else if (activeTab === 'empfohlen') {
+      content = html`<section class="k-sort-sec"><p class="k-focus-lead">Das backt unser Partnerbäcker am liebsten. Echte Handarbeit, die man schmeckt.</p><div class="k-grid">${focusList.map(cardFor)}</div></section>`;
     } else if (activeTab === 'alle') {
       content = Object.keys(C.labels.cat).map(c => {
         const list = products.filter(p => p.cat === c);

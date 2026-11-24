@@ -32,8 +32,8 @@
   ];
 
   const RULES = [
-    ['Kapazität je Tour und Tag.', 'Fahrer mal Stopps je Fahrer. In der Demo schafft ein Fahrer werktags 60 Stopps bis 06:30 Uhr und am Wochenende 95, weil bis 08:30 Uhr Zeit ist. Das sind Beispielwerte.'],
-    ['Flex-Kontingent.', 'Abo-Plätze werden nur bis Kapazität minus Kontingent verkauft, in der Demo 6 Plätze. Dieser Rest gehört den Einmallieferungen.'],
+    ['Kapazität je Tour und Tag.', 'Fahrer mal Stopps je Fahrer. In der Demo schafft ein Fahrer auf der ländlichen Tour werktags 38 Stopps bis 06:30 Uhr und am Wochenende 55, weil bis 08:30 Uhr Zeit ist. Das sind Beispielwerte.'],
+    ['Flex-Kontingent.', 'Abo-Plätze werden nur bis Kapazität minus Kontingent verkauft, in der Demo 3 Plätze. Dieser Rest gehört den Einmallieferungen.'],
     ['Freie Plätze am konkreten Datum.', 'Eine Einmallieferung darf jeden Platz nutzen, der an genau diesem Tag frei ist, auch den eines Kunden im Urlaub. An schwachen Tagen sind das viele, am vollen Montag keiner.'],
     ['Der Bestellschluss bleibt.', '16:30 Uhr am Vortag, freitags für Samstag, Sonntag und Montag. Der Bäcker bekommt eine Zahl, die sich nicht mehr ändert.'],
     ['Der Preis lenkt.', 'Die Einmallieferung kostet mehr Zustellung als das Abo (in der Demo werktags € 2,50 statt € 1,75) und hat einen Mindestbestellwert. Wer oft spontan bestellt, wechselt von selbst ins Abo.'],
@@ -189,6 +189,7 @@
           <li>Die Zustellgebühr (€ 1,75 werktags, € 2,75 am Wochenende) ist damit die eigentliche Ertragsquelle.</li>
         </ul>
         <p>Daraus folgt: Es zählen mehr Lieferungen und mehr Haushalte pro Tour, nicht mehr Stück pro Sackerl. Aktionen wie „5 Semmeln + 1 gratis“ rechnen sich mit diesen Werten nicht. Sinnvoll sind Nachlässe auf teurere Artikel und auf Extras vom Hofladen. Das Backoffice rechnet jede Aktion durch.</p>
+        <p>Für die Fahrer zählt die Stückzahl: Jedes Stück bringt 36 Cent, egal ob Semmel oder Brot. Für das Unternehmen zählt der Wert je Stück. Gemeinsam ist beiden das Interesse an mehr Stopps pro Tour.</p>
         <p>Ein zweiter Fahrer kostet das Unternehmen nichts extra, weil je Stück bezahlt wird. Für den Fahrer lohnt er sich aber erst mit genug Stück. Die Warteliste zeigt, wann es so weit ist.</p>
       </section>
 

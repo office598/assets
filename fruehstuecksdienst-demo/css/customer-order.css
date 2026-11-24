@@ -231,3 +231,16 @@
 @media (prefers-reduced-motion: reduce) { .k-sack, .k-reserved, .k-done-ic { animation: none; } .k-starter { transition: none; } }
 
 .k-konto .ui-btn, .k-lieferplan .ui-btn { white-space: normal; text-align: center; }
+
+.k-starter { position: relative; }
+.k-starter-flag { position: absolute; top: -9px; right: 12px; padding: 1px 10px; border-radius: var(--r-pill); background: var(--butter); color: var(--sun-ink); font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.k-trade { background: var(--kraft-soft); }
+.k-trade > .ui-icon { color: var(--kraft-ink); }
+.k-x { flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); display: grid; place-items: center; }
+.k-x:hover { background: var(--surface-2); }
+.k-special { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1.5px solid var(--sun); border-radius: var(--r-ctl); background: var(--butter-soft); flex-wrap: wrap; }
+.k-special-ph { width: 56px; flex: none; }
+.k-special .ui-grow { min-width: 140px; }
+.k-special-p { font-variant-numeric: tabular-nums; font-size: var(--fs-14); }
+.k-special-p s { color: var(--muted); } .k-special-p em { font-style: normal; color: var(--ok); font-weight: 700; }
+.k-special .ui-btn { flex: none; }

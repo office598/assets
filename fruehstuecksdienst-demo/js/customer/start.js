@@ -253,7 +253,8 @@
       <div class="k-bags">
         ${bags.map(b => {
           const ids = Object.keys(b.items).slice(0, 3);
-          return html`<article class="k-bag" key=${b.id}>
+          return html`<article class=${cx('k-bag', b.popular && 'k-bag-pop', b.anchor && 'k-bag-anchor')} key=${b.id}>
+            ${b.popular ? html`<span class="k-bag-flag"><${Pill} tone="sun" icon="star">Beliebt<//></span>` : b.anchor ? html`<span class="k-bag-flag"><${Pill} tone="kraft">Das große Sackerl<//></span>` : null}
             <div class=${'k-mosaic k-mosaic-' + ids.length} aria-hidden="true">${ids.map(id => html`<div class="k-mosaic-cell" key=${id}><${Photo} id=${id} ratio="1/1" /></div>`)}</div>
             <div class="k-bag-body">
               <h3>${b.title}</h3>
@@ -261,7 +262,7 @@
               <p class="k-bag-items">${sel().itemsText(s, b.items, 4)}</p>
               <div class="k-bag-price"><strong>${eur(b.total)}</strong>${b.saving > 0 ? html`<${Pill} tone="ok">spart ${eur(b.saving)}<//>` : null}</div>
             </div>
-            <${Btn} variant="sun" full icon="bag" onClick=${() => apply(b)}>In den Lieferplan<//>
+            <${Btn} variant=${b.popular ? 'sun' : 'ghost'} full icon="bag" onClick=${() => apply(b)}>In den Lieferplan<//>
           </article>`;
         })}
       </div>
@@ -272,7 +273,7 @@
   function HowItWorks() {
     const steps = [
       { t: 'bis ' + cutoffText(), h: 'Sie bestellen am Vortag', p: 'Bis ' + cutoffText() + ' am Vortag stellen Sie Ihr Sackerl zusammen. Für Samstag, Sonntag und Montag gilt der Freitag.' },
-      { t: 'ab 03:30', h: 'Wir holen frisch vom Bäcker', p: 'In der Nacht backt die Partnerbäckerei, ab 03:30 holen wir Ihr Gebäck ab und packen die Sackerl.' },
+      { t: 'ab ' + hm(C.tour.startMin.weekday), h: 'Wir holen frisch vom Bäcker', p: 'In der Nacht backt die Partnerbäckerei, ab ' + hm(C.tour.startMin.weekday) + ' holen wir Ihr Gebäck ab und packen die Sackerl.' },
       { t: 'bis ' + hm(C.deadlineMin.weekday), h: 'Das Sackerl hängt an der Tür', p: 'Werktags bis ' + hm(C.deadlineMin.weekday) + ', am Wochenende bis ' + hm(C.deadlineMin.weekend) + '. Ablageort Ihrer Wahl, ohne Klingeln.' }
     ];
     return html`<${Section} id="k-ablauf" eyebrow="Ablauf" title="So funktioniert’s">
@@ -369,6 +370,30 @@
         ${cats.map(c => html`<button type="button" class="k-catpill" key=${c} onClick=${() => goSortiment(c)}>${C.labels.cat[c]}<${Icon} name="chevron-right" size=${16} /></button>`)}
       </div>
     <//>`;
+  }
+
+  function WeeklySpecial({ s }) {
+    const ws = s.weeklySpecial;
+    const p = ws && sel().product(s, ws.productId);
+    if (!p || p.active === false) return null;
+    const pct = ws.pct > 0 ? ws.pct : 0;
+    const price = Math.round(p.price * (100 - pct)) / 100;
+    const add = () => {
+      if (App.nav.addToTarget && App.nav.addToTarget(p.id, 1)) toast(p.name + ' liegt im Sackerl.', 'ok');
+      else { App.nav.pendingAdd = { pid: p.id, n: 1 }; goSortiment('empfohlen'); }
+    };
+    return html`<section class="k-sec k-wspecial" id="k-woche"><div class="ui-wrap">
+      <div class="k-season-card k-ws-card">
+        <div class="k-season-photo"><${Photo} id=${p.id} alt=${p.name} ratio="1/1" /></div>
+        <div class="k-season-body">
+          <div class="ui-eyebrow">${ws.title || 'Brot der Woche'}</div>
+          <h2>${p.name}</h2>
+          <p>${ws.text || p.desc}</p>
+          <p class="k-ws-price"><strong class="ui-num">${eur(price)}</strong>${pct ? html` <s class="ui-muted ui-num">${eur(p.price)}</s> <${Pill} tone="ok">−${pct} %<//>` : null}${p.unit ? html` <span class="ui-muted">· ${p.unit}</span>` : null}</p>
+          <${Btn} variant="sun" size="lg" icon="bag" onClick=${add}>Zum Sackerl<//>
+        </div>
+      </div>
+    </div></section>`;
   }
 
   function SeasonBlock({ s }) {
@@ -562,6 +587,7 @@
       <${HowItWorks} />
       <${Modes} s=${s} />
       <${Assortment} s=${s} />
+      <${WeeklySpecial} s=${s} />
       <${SeasonBlock} s=${s} />
       <${Partners} s=${s} />
       <${Referral} s=${s} />

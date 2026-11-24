@@ -65,7 +65,7 @@
       const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2, dx = q.x - p.x, dy = q.y - p.y;
       return `M${X(p.x)} ${Y(p.y)}Q${X(mx - dy * k)} ${Y(my + dx * k)} ${X(q.x)} ${Y(q.y)}`;
     };
-    region.clusters.forEach((c, i) => roads.push(curve(bk, c, i % 2 ? 0.14 : -0.14)));
+    region.clusters.slice().sort((p, q) => Math.hypot(p.x - bk.x, p.y - bk.y) - Math.hypot(q.x - bk.x, q.y - bk.y)).slice(0, 4).forEach((c, i) => roads.push(curve(bk, c, i % 2 ? 0.14 : -0.14)));
     const byX = region.clusters.slice().sort((p, q) => p.x - q.x);
     for (let i = 0; i < byX.length - 1; i++) roads.push(curve(byX[i], byX[i + 1], i % 2 ? -0.1 : 0.1));
     roads.push(`M${X(a.x0 - 0.3)} ${Y(bk.y + 0.7)}C${X(a.x0 + 1.4)} ${Y(bk.y + 0.1)} ${X(a.x1 - 1.4)} ${Y(bk.y + 1.3)} ${X(a.x1 + 0.3)} ${Y(bk.y + 0.6)}`);

@@ -88,7 +88,7 @@
       const avg = Math.round(stops / max * 100);
       out.push(html`<${Reco} key="mid" tone="warn" icon="megaphone" title=${T.WD[mid[0].wd] + '–' + T.WD[mid[mid.length - 1].wd] + ' sind nur zu ' + avg + ' % ausgelastet'}
         actions=${[html`<${Btn} key="m" size="sm" variant="sun" icon="megaphone" onClick=${() => B.go('marketing')}>Aktion vorbereiten<//>`]}>
-        ${freeSlots} Abo-Plätze sind frei (${stops} von ${max} belegt). Eine Aktion „Zustellung ${App.config.promo.weakDayFreeWeeks} Wochen gratis“ füllt diese Tage, ohne Montag weiter zu belasten.
+        ${freeSlots} Abo-Plätze sind frei (${stops} von ${max} belegt). Eine Aktion „Zustellung ${App.config.promo.weakDayFreeWeeks} Wochen gratis“ füllt diese Tage, ohne die vollen Tage weiter zu belasten.
       <//>`);
     }
     util.filter(u => u.effective === 'few').forEach(u => {
@@ -191,16 +191,18 @@
     const util = App.sel.utilization(s, region.id);
     const k = App.sel.kpis(s, region.id);
     const mon = util[0];
+    const wb = App.config.promo.weakBelowPct;
+    const over = util.filter(u => u.abo > u.max).map(u => T.WD_LONG[u.wd]);
     const headline = region.planned ? region.name + ' ist in Planung.'
-      : mon.abo > mon.max ? 'Montag ist überbucht, Dienstag bis Freitag sind halb leer.'
-        : 'Alle Tage liegen innerhalb der Kapazität.';
+      : (over.length ? over.join(' und ') + (over.length > 1 ? ' sind' : ' ist') + ' überbucht' : 'Kein Tag ist überbucht')
+        + ' · ' + T.WD[1] + '–' + T.WD[4] + ' sind im Schnitt zu ' + F.pct(k.utilMidweek) + ' ausgelastet.';
     return html`<div class="bo-page">
       ${B.head('Übersicht', region.name + ' · ' + headline)}
       <div class="bo-kpis">
         <${Kpi} label="Haushalte" value=${k.households} sub=${k.weeklyStops + ' Abo-Stopps pro Woche'} />
         <${Kpi} label="Umsatz pro Woche (netto)" value=${F.eur(k.weeklyRevenue)} sub="aus Abos inkl. Zustellung" />
         <${Kpi} label="Auslastung Montag" value=${F.pct(k.utilMonday)} tone=${k.utilMonday > 1 ? 'full' : k.utilMonday >= 0.9 ? 'warn' : 'ok'} sub=${k.utilMonday > 1 ? 'überbucht' : 'der Plätze belegt'} />
-        <${Kpi} label="Auslastung Di–Fr" value=${F.pct(k.utilMidweek)} tone=${k.utilMidweek < 0.6 ? 'warn' : 'ok'} sub=${k.utilMidweek < 0.6 ? 'viel freie Kapazität' : 'der Plätze belegt'} />
+        <${Kpi} label="Auslastung Di–Fr" value=${F.pct(k.utilMidweek)} tone=${k.utilMidweek < wb ? 'warn' : 'ok'} sub=${k.utilMidweek < wb ? 'viel freie Kapazität' : 'der Plätze belegt'} />
         <${Kpi} label="Warteliste" value=${k.waitlist} tone=${k.waitlist ? 'info' : undefined} sub=${k.waitlist ? 'warten auf einen Platz' : 'niemand wartet'} />
         <${Kpi} label="Einmallieferungen" value=${k.flexNext7} sub="in den nächsten 7 Tagen" />
       </div>

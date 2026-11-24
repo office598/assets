@@ -118,7 +118,7 @@
           <li><strong>Plätze</strong> = Fahrer × Stopps je Fahrer (Standard: ${d.stopsPerDriver.weekday} werktags, ${d.stopsPerDriver.weekend} am Wochenende).</li>
           <li><strong>Abo-Plätze</strong> = Plätze − Flex-Kontingent (Standard ${d.flexQuota}). Sind sie vergeben, gilt der Tag für neue Abos als ausgebucht.</li>
           <li><strong>Einmallieferungen</strong> nutzen jeden am Datum noch freien Platz, auch das Flex-Kontingent und Plätze von pausierten oder ausgesetzten Abos.</li>
-          <li><strong>Tourende</strong> ist die Prognose für das nächste Datum dieses Wochentags. Zu spät heißt: nach der Frist (werktags 06:30, am Wochenende 08:30).</li>
+          <li><strong>Tourende</strong> ist die Prognose für das nächste Datum dieses Wochentags. Zu spät heißt: nach der Frist (werktags ${T.fmt.hm(App.config.deadlineMin.weekday)}, am Wochenende ${T.fmt.hm(App.config.deadlineMin.weekend)}).</li>
         </ul></section>
       ${edit != null ? html`<${EditSheet} key=${edit} s=${s} region=${region} wd=${edit} onClose=${() => setEdit(null)} />` : null}
     </div>`;
