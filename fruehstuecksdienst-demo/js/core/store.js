@@ -1020,6 +1020,12 @@
         body: (C.labels.placement[c.placement] || 'Vor der Tür') + (c.placement === 'hinweis' && c.note ? ': ' + c.note : '') + '. Guten Appetit!',
         ref: 'delivery|' + dateKey + '|' + cid })]);
     }
+    if (status === 'problem' && c && c.notify) {
+      const r0 = String(reason || '').trim().replace(/[.!]+$/, ''), text = r0 ? r0 + '.' : 'Wir konnten Ihr Sackerl nicht wie gewohnt zustellen.';
+      patch.notifications = s.notifications.filter(n => n.ref !== 'delivery|' + dateKey + '|' + cid).concat([makeNote({
+        customerId: cid, contactName: c.name, channel: c.notify.push ? 'push' : 'email', kind: 'delivery', title: 'Hinweis zu Ihrer Lieferung',
+        body: text, ref: 'delivery|' + dateKey + '|' + cid })]);
+    }
     setState(patch);
   };
   A.undoStop = (dateKey, cid) => {

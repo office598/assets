@@ -305,6 +305,13 @@ check('tourPlan zeigt Zustellstatus', sel.tourPlan(s, 'nord', '2026-11-25').tour
 A.undoStop('2026-11-25', 'c-huber');
 check('undoStop entfernt Push', sel.unreadPush(store.getState(), 'c-huber').length === before);
 
+A.markStop('2026-11-25', 'c-huber', 'problem', 'Haustür nicht erreichbar, Sackerl wurde beim Nachbarn abgegeben');
+s = store.getState();
+const pn = sel.inbox(s, 'c-huber').find(n => n.title === 'Hinweis zu Ihrer Lieferung');
+check('markStop problem erzeugt Hinweis', !!pn && pn.kind === 'delivery' && pn.channel === 'push' && pn.body === 'Haustür nicht erreichbar, Sackerl wurde beim Nachbarn abgegeben.' && pn.ref === 'delivery|2026-11-25|c-huber');
+A.undoStop('2026-11-25', 'c-huber');
+check('undoStop entfernt Hinweis', !sel.inbox(store.getState(), 'c-huber').some(n => n.title === 'Hinweis zu Ihrer Lieferung'));
+
 // --- Aussetzen, Pause, Abo bearbeiten
 A.skipDate('c-huber', '2026-11-25');
 check('skipDate: Stopp entfällt', !sel.stopsOn(store.getState(), 'nord', '2026-11-25').some(x => x.customerId === 'c-huber'));
