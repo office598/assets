@@ -65,3 +65,9 @@
 .fa-prob-time { font-size: 13px; color: var(--muted); }
 .fa-prob-name { font-size: 14px; color: var(--ink-2); }
 .fa-prob-reason { display: flex; align-items: center; gap: 6px; color: var(--full); font-weight: 700; }
+
+/* Zugangshilfe an Stopps */
+.fa-access { margin-top: 10px; border: 1.5px solid var(--butter); border-radius: var(--r-ctl); background: var(--butter-soft); overflow: hidden; }
+.fa-access-btn { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; border: 0; background: transparent; font-weight: 700; font-size: 16px; text-align: left; }
+.fa-access-body { padding: 2px 14px 14px; }
+.fa-addhelp { margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--sun-text); font-weight: 700; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }

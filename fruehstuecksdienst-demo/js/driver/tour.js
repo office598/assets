@@ -2,7 +2,7 @@
 (function (root) {
   const App = root.App = root.App || {};
   const { html, useState } = App.lib;
-  const { Icon, Btn, Pill, Segmented, Sheet, Bar, Empty, toast } = App.ui;
+  const { Icon, Btn, Pill, Segmented, Sheet, Bar, Empty, AccessView, AccessSheet, toast } = App.ui;
   const T = App.time;
 
   const REASONS = ['Niemand erreichbar', 'Zugang nicht möglich', 'Adresse nicht gefunden', 'Ablageort blockiert', 'Lieferung abgelehnt', 'Sonstiges'];
@@ -18,8 +18,10 @@
 
   function Tags({ st, isNew }) {
     const one = st.kinds.indexOf('abo') < 0;
-    if (!one && !isNew) return null;
-    return html`<span class="fa-tags">${one ? html`<${Pill} tone="kraft">einmalig<//>` : null}${isNew ? html`<${Pill} tone="info">neu<//>` : null}</span>`;
+    const a = st.customer.access || {};
+    const hasDir = !!((a.directions || '').trim() || a.code || a.navPoint), hasPhoto = !!(a.photos && a.photos.length);
+    if (!one && !isNew && !hasDir && !hasPhoto) return null;
+    return html`<span class="fa-tags">${one ? html`<${Pill} tone="kraft">einmalig<//>` : null}${isNew ? html`<${Pill} tone="info">neu<//>` : null}${hasDir ? html`<${Pill} tone="sun" icon="route">Wegbeschreibung<//>` : null}${hasPhoto ? html`<${Pill} tone="sun" icon="pin">Foto<//>` : null}</span>`;
   }
 
   function DoneRow({ st, d, onUndo }) {
@@ -32,8 +34,11 @@
     </li>`;
   }
 
-  function Ticket({ s, st, next, following, onDone, onProblem, isNew }) {
+  function Ticket({ s, st, next, following, onDone, onProblem, onAccess, isNew }) {
     const c = st.customer;
+    const has = App.sel.hasAccessHelp(c);
+    const [openOverride, setOpenOverride] = useState(null);
+    const showAccess = openOverride === null ? next : openOverride;
     const navUrl = App.sel.mapsUrl(s, st.customerId);
     return html`<li class=${'fa-ticket' + (next ? ' is-next' : '')} aria-current=${next ? 'step' : undefined}>
       <div class="fa-t-top"><span class="fa-no ui-mono">${st.seq}</span><span class="fa-eta ui-mono">${hm(st.etaMin)}</span>
@@ -43,6 +48,11 @@
       <div class="fa-tear"></div>
       <div class="fa-items">${App.sel.itemsText(s, st.items, 99)}</div>
       <div class="fa-place"><${Icon} name="door" size=${16} /><span>${placementText(c)}</span></div>
+      ${has ? html`<div class="fa-access">
+        <button type="button" class="fa-access-btn" aria-expanded=${showAccess ? 'true' : 'false'} onClick=${() => setOpenOverride(!showAccess)}>
+          <${Icon} name="route" size=${18} /><span>Zugangshilfe</span><span class="ui-grow"></span><${Icon} name=${showAccess ? 'chevron-up' : 'chevron-down'} size=${18} /></button>
+        ${showAccess ? html`<div class="fa-access-body"><${AccessView} customer=${c} /></div>` : null}</div>` : null}
+      <button type="button" class="fa-addhelp" onClick=${onAccess}><${Icon} name="plus" size=${18} />Wegbeschreibung / Foto ergänzen</button>
       ${next ? html`<div class="fa-actions">
         ${following
           ? html`<${Btn} variant="sun" size="lg" full icon="check" href=${App.sel.mapsUrl(s, following.customerId)} target="_blank" rel="noopener" onClick=${onDone}>Zugestellt & weiter<//>
@@ -64,6 +74,7 @@
     const [problem, setProblem] = useState(null);
     const [showDone, setShowDone] = useState(false);
     const [showLoad, setShowLoad] = useState(false);
+    const [accessFor, setAccessFor] = useState(null);
     const reg0 = App.sel.region(s, s.ui.boRegion);
     const regionId = reg0 && !reg0.planned ? reg0.id : 'nord';
     const date = s.ui.driverDate, today = T.today();
@@ -148,10 +159,12 @@
       <ol class="fa-list" aria-label="Offene Stopps">
         ${open.map((st, i) => html`<${Ticket} key=${st.customerId} s=${s} st=${st} next=${i === 0} following=${open[i + 1]}
           isNew=${st.customer.since >= newSince}
-          onDone=${() => markDone(st)} onProblem=${() => setProblem(st)} />`)}
+          onDone=${() => markDone(st)} onProblem=${() => setProblem(st)} onAccess=${() => setAccessFor(st.customerId)} />`)}
       </ol>
 
       <p class="fa-note ui-muted">Die Demo-Adressen sind erfunden. In der echten Version stehen hier die Kundenadressen.</p>
+
+      <${AccessSheet} open=${!!accessFor} onClose=${() => setAccessFor(null)} customerId=${accessFor} addedBy="fahrer" title="Wegbeschreibung / Foto ergänzen" />
 
       <${Sheet} open=${!!problem} onClose=${() => setProblem(null)} title="Problem melden">
         ${problem ? html`<p class="ui-muted" style="margin-top:0">${problem.seq} · ${problem.customer.street} ${problem.customer.houseNo}. Was ist passiert?</p>
