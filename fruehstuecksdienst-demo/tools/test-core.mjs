@@ -206,8 +206,46 @@ const ru = sel.mapsRouteUrl(s0, ['c-huber', 'me']);
 check('mapsRouteUrl Waypoints', ru.includes('waypoints=') && ru.includes('destination='));
 
 // --- Leitgeschichte
+// --- Gemeinsames Sackerl und Zusammenfassung (8.14)
+A.draftCheckPlz('5303');
+A.draftSetSameForAll(false);
+A.draftToggleDay(1); A.draftToggleDay(3);
+A.draftSetQty({ wd: 1 }, 'kaisersemmel', 4); A.draftSetQty({ wd: 1 }, 'laugenbreze', 1);
+let sm = sel.draftSummary(store.getState());
+const flexOne = sel.feeFor(store.getState(), { mode: 'flex', wd: 1, regionId: 'nord', customerId: 'me', total: sm.deliveries[0].total });
+check('Screenshot-Fall: leerer Do zählt nicht', sm.deliveries.length === 1 && T.weekday(sm.firstDelivery) === 1 && sm.problems.includes('empty-day:3') &&
+  Math.abs(sm.saving.perWeek - (flexOne - sm.deliveries[0].fee)) < 0.001 && sm.count === 1 && sm.cutoff.getTime() === T.cutoffFor(sm.firstDelivery).getTime(), sm);
+check('saving.text und groups', sm.saving.perWeek > 0 && sm.saving.text.includes('pro Woche') && sm.groups.length === 1 && sm.groups[0].wds.join() === '1');
+A.setDraft({ abo: {}, sameForAll: true });
+A.draftToggleDay(0); A.draftToggleDay(2); A.draftToggleDay(4);
+A.draftSetQty({ wd: 0 }, 'kaisersemmel', 4);
+A.draftSetQty({ wd: 2 }, 'laugenbreze', 2);
+let ab = store.getState().draft.abo;
+check('sameForAll: Menge auf allen gewählten Tagen', [0, 2, 4].every(w => ab[w].kaisersemmel === 4 && ab[w].laugenbreze === 2));
+A.draftToggleDay(5);
+ab = store.getState().draft.abo;
+check('sameForAll: neuer Tag übernimmt Sackerl', ab[5].kaisersemmel === 4 && ab[5].laugenbreze === 2);
+A.draftSetQty({ wd: 0 }, 'briochestriezel', 1);
+ab = store.getState().draft.abo;
+check('weekendOnly nur für Sa/So', ab[5].briochestriezel === 1 && !ab[0].briochestriezel && !ab[2].briochestriezel);
+sm = sel.draftSummary(store.getState());
+check('groups: Werktage gemeinsam, Sa getrennt', sm.groups.length === 2 && sm.groups[0].wds.join() === '0,2,4' && sm.groups[1].wds.join() === '5' && sm.deliveries.length === 4);
+A.draftSetSameForAll(false);
+A.draftSetQty({ wd: 2 }, 'kaisersemmel', 1);
+ab = store.getState().draft.abo;
+check('sameForAll aus: Kopien bleiben, Änderungen nur je Tag', ab[2].kaisersemmel === 1 && ab[0].kaisersemmel === 4 && ab[4].kaisersemmel === 4);
+A.draftSetSameForAll(true);
+ab = store.getState().draft.abo;
+check('sameForAll an: erster gefüllter Tag (Mo) auf alle', [0, 2, 4, 5].every(w => ab[w].kaisersemmel === 4) && !ab[2].briochestriezel && !ab[5].briochestriezel);
+A.setDraft({ abo: { 2: { kaisersemmel: 2 } } });
+const cp = A.draftCopyToDays(2, [0, 1, 3]);
+check('draftCopyToDays überspringt vollen Montag', cp.skipped.join() === '0' && cp.copied.join() === '1,3' && !store.getState().draft.abo[0] && store.getState().draft.abo[3].kaisersemmel === 2, cp);
+A.setDraft(App.data.draftDefaults());
+check('draft.sameForAll Standard true', store.getState().draft.sameForAll === true);
+
 A.toggleOffer('semmel-5-1', true); A.toggleOffer('croissant-2-1', true);
 A.draftCheckPlz('5303');
+A.draftSetSameForAll(false);
 eq('draft.regionId nord', store.getState().draft.regionId, 'nord');
 eq('Mo ausgebucht für Besucher', sel.dayStatusFor(store.getState(), 'nord', 0, 'me'), 'full');
 const jr = A.joinWaitlist({ regionId: 'nord', weekday: 0, channel: 'push', customerId: 'me', contact: { name: 'Test Besucher', plz: '5303', email: 'test@mail.example' } });

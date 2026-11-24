@@ -389,7 +389,7 @@
   // ---------------------------------------------------------------- Entwurf, Kapazität, Seed
   function draftDefaults() {
     return {
-      plz: '', regionId: null, mode: 'abo', abo: {}, flexDate: null, flex: {}, target: null, step: 'plan',
+      plz: '', regionId: null, mode: 'abo', sameForAll: true, abo: {}, flexDate: null, flex: {}, target: null, step: 'plan',
       address: { name: '', street: '', houseNo: '', plz: '', city: '', email: '', phone: '' },
       placement: 'tuerschnalle', note: '', notify: { push: true, email: true }, payment: 'sepa', lastOrder: null
     };

@@ -457,10 +457,12 @@
         wds.forEach(wd => {
           const items = d.abo[wd] || {};
           const bag = sel.priceBag(s, items, { wd });
-          if (!Object.keys(items).some(id => items[id] > 0)) plan.push('empty-day:' + wd);
+          const filled = Object.keys(items).some(id => items[id] > 0);
+          if (!filled) plan.push('empty-day:' + wd);
           const st = sel.dayStatusFor(s, d.regionId, wd, cid);
           if (st === 'full' || st === 'closed') plan.push('day-full:' + wd);
           const fee = sel.feeFor(s, { mode: 'abo', wd, regionId: d.regionId, customerId: cid, total: bag.total });
+          if (!filled) return;
           deliveries.push({ wd, items, subtotal: bag.subtotal, total: bag.total, fee, discounts: bag.discounts, hints: bag.hints,
             freeDeliveryMissing: missingForFree(s, { mode: 'abo', wd, regionId: d.regionId, customerId: cid }, bag.total) });
           const k = T.nextDateForWeekday(wd);
@@ -498,7 +500,23 @@
     const needsAddr = s.draft.step === 'adresse' || s.draft.step === 'zahlung';
     const problems = ev.plan.concat(needsAddr ? ev.addr : []);
     const sum = ev.deliveries.reduce((a, x) => a + x.total + x.fee, 0);
+    // Gruppen: Tage mit identischem Inhalt
+    const groups = [], byKey = {};
+    ev.deliveries.filter(x => x.wd != null).forEach(x => {
+      const key = JSON.stringify(Object.keys(x.items).filter(id => x.items[id] > 0).sort().map(id => [id, x.items[id]]));
+      let g = byKey[key];
+      if (!g) { g = byKey[key] = { wds: [], items: x.items, total: x.total, fee: x.fee, discounts: x.discounts }; groups.push(g); }
+      g.wds.push(x.wd);
+    });
+    let savePerWeek = 0;
+    if (s.draft.mode === 'abo') {
+      ev.deliveries.forEach(x => {
+        savePerWeek += sel.feeFor(s, { mode: 'flex', wd: x.wd, regionId: s.draft.regionId, customerId: s.session.customerId, total: x.total }) - x.fee;
+      });
+    }
+    savePerWeek = Math.max(0, round2(savePerWeek));
     return {
+      groups, saving: { perWeek: savePerWeek, text: savePerWeek > 0 ? 'Mit dem Abo sparen Sie ' + App.fmt.eur(savePerWeek) + ' pro Woche gegenüber Einmalbestellungen.' : '' },
       deliveries: ev.deliveries, count: ev.deliveries.length,
       perWeek: s.draft.mode === 'abo' ? round2(sum) : 0, total: round2(sum),
       firstDelivery: ev.firstDelivery, cutoff: ev.cutoff,
@@ -752,34 +770,61 @@
     setDraftPatch(patch);
     return r;
   };
+  // Gemeinsames Sackerl: Artikel mit weekendOnly nur für Sa/So.
+  const dayOk = (s, wd, id) => { const p = sel.product(s, id); return !(p && p.weekendOnly && wd < 5); };
+  const bagFor = (s, wd, items) => { const o = {}; Object.keys(items || {}).forEach(id => { if (items[id] > 0 && dayOk(s, wd, id)) o[id] = items[id]; }); return o; };
+  const filledBag = abo => { const k = Object.keys(abo).map(Number).sort((a, b) => a - b).find(w => Object.keys(abo[w] || {}).length); return k == null ? {} : abo[k]; };
+  const abosOf = (s, wds, items) => { const o = {}; wds.forEach(w => { o[w] = bagFor(s, w, items); }); return o; };
+
   A.draftToggleDay = wd => {
-    const abo = Object.assign({}, get().draft.abo);
-    if (abo[wd]) delete abo[wd]; else abo[wd] = {};
+    const s = get(), d = s.draft, abo = Object.assign({}, d.abo);
+    if (abo[wd]) delete abo[wd]; else abo[wd] = d.sameForAll ? bagFor(s, wd, filledBag(d.abo)) : {};
     setDraftPatch({ abo });
   };
   A.draftSetQty = (target, productId, qty) => {
-    const d = get().draft;
-    const upd = base => { const o = Object.assign({}, base); if (qty > 0) o[productId] = qty; else delete o[productId]; return o; };
-    if (target && target.flex) setDraftPatch({ flex: upd(d.flex) });
-    else setDraftPatch({ abo: Object.assign({}, d.abo, { [target.wd]: upd(d.abo[target.wd] || {}) }) });
+    const s = get(), d = s.draft;
+    const upd = (base, wd) => { const o = Object.assign({}, base); if (qty > 0 && (wd == null || dayOk(s, wd, productId))) o[productId] = qty; else delete o[productId]; return o; };
+    if (target && target.flex) { setDraftPatch({ flex: upd(d.flex) }); return; }
+    const abo = Object.assign({}, d.abo);
+    const wds = d.sameForAll ? Object.keys(abo).map(Number).concat(abo[target.wd] ? [] : [target.wd]) : [target.wd];
+    wds.forEach(w => { abo[w] = upd(abo[w] || {}, w); });
+    setDraftPatch({ abo });
+  };
+  A.draftSetSameForAll = on => {
+    const s = get(), d = s.draft;
+    if (!on) { setDraftPatch({ sameForAll: false }); return; }
+    const wds = Object.keys(d.abo).map(Number), shared = filledBag(d.abo);
+    setDraftPatch({ sameForAll: true, abo: Object.assign({}, d.abo, abosOf(s, wds, shared)) });
+  };
+  A.draftCopyToDays = (fromWd, wds) => {
+    const s = get(), d = s.draft, abo = Object.assign({}, d.abo), copied = [], skipped = [];
+    const src = d.abo[fromWd] || {};
+    wds.filter(w => w !== fromWd).forEach(w => {
+      const st = d.regionId ? sel.dayStatusFor(s, d.regionId, w, s.session.customerId) : 'free';
+      if (st === 'full' || st === 'closed' || st === 'planned') { skipped.push(w); return; }
+      abo[w] = bagFor(s, w, src); copied.push(w);
+    });
+    setDraftPatch({ abo });
+    return { copied, skipped };
   };
   A.draftCopyDay = (fromWd, toWd) => {
-    const d = get().draft;
-    setDraftPatch({ abo: Object.assign({}, d.abo, { [toWd]: Object.assign({}, d.abo[fromWd] || {}) }) });
+    const s = get(), d = s.draft;
+    setDraftPatch({ abo: Object.assign({}, d.abo, { [toWd]: bagFor(s, toWd, d.abo[fromWd]) }) });
   };
   A.draftApplyBag = (target, items) => {
-    const d = get().draft, copy = Object.assign({}, items);
-    if (target && target.flex) setDraftPatch({ flex: copy });
-    else setDraftPatch({ abo: Object.assign({}, d.abo, { [target.wd]: copy }) });
+    const s = get(), d = s.draft, copy = Object.assign({}, items);
+    if (target && target.flex) { setDraftPatch({ flex: copy }); return; }
+    const wds = d.sameForAll ? Object.keys(d.abo).map(Number).concat(d.abo[target.wd] ? [] : [target.wd]) : [target.wd];
+    setDraftPatch({ abo: Object.assign({}, d.abo, abosOf(s, wds, copy)) });
   };
   A.draftSwap = (target, fromId, toId) => {
-    const d = get().draft, bag = Object.assign({}, target && target.flex ? d.flex : d.abo[target.wd] || {});
-    const q = bag[fromId] || 0;
-    if (!q || fromId === toId) return;
-    delete bag[fromId];
-    bag[toId] = (bag[toId] || 0) + q;
-    if (target && target.flex) setDraftPatch({ flex: bag });
-    else setDraftPatch({ abo: Object.assign({}, d.abo, { [target.wd]: bag }) });
+    const s = get(), d = s.draft;
+    const swap = bag => { const b = Object.assign({}, bag), q = b[fromId] || 0; if (!q || fromId === toId) return b; delete b[fromId]; b[toId] = (b[toId] || 0) + q; return b; };
+    if (target && target.flex) { setDraftPatch({ flex: swap(d.flex) }); return; }
+    const wds = d.sameForAll ? Object.keys(d.abo).map(Number).concat(d.abo[target.wd] ? [] : [target.wd]) : [target.wd];
+    const abo = Object.assign({}, d.abo);
+    wds.forEach(w => { abo[w] = bagFor(s, w, swap(abo[w] || {})); });
+    setDraftPatch({ abo });
   };
   A.setEconomics = patch => setState({ economics: Object.assign({}, get().economics, patch) });
   A.setWeeklySpecial = patch => setState({ weeklySpecial: Object.assign({}, get().weeklySpecial, patch) });
