@@ -37,7 +37,7 @@ eq('fmt.day / dayLong', [T.fmt.day('2026-11-24'), T.fmt.dayLong('2026-11-24')], 
 
 // --- PLZ und Gebiete
 const rp = p => sel.regionForPlz(s0, p);
-eq('PLZ 5303 -> nord', rp('5303').region.id, 'nord');
+for (const p of ['5303', '5322', '5203', '5321', '5301', '5302', '5202', '5300', '5023']) eq('PLZ ' + p + ' -> nord', rp(p).region.id, 'nord');
 eq('PLZ 5322 -> nord', rp('5322').region.id, 'nord');
 eq('PLZ 5310 -> sued', rp('5310').region.id, 'sued');
 check('PLZ 5330 -> west (in Planung)', rp('5330').region.id === 'west' && rp('5330').region.planned);
@@ -46,27 +46,30 @@ eq('PLZ 53 -> null', rp('53'), null);
 
 // --- Kapazität
 const c0 = sel.cap(s0, 'nord', 0), c1 = sel.cap(s0, 'nord', 1), c6 = sel.cap(s0, 'nord', 6);
-check('cap nord Mo: abo 64 / max 60 / full', c0.abo === 64 && c0.max === 60 && c0.effective === 'full', c0);
+check('cap nord Mo: abo 41 / max 38 / full', c0.abo === 41 && c0.max === 38 && c0.effective === 'full', c0);
 eq('cap nord Di free', c1.effective, 'free');
 eq('cap nord So few', c6.effective, 'few');
 eq('cap west planned', sel.cap(s0, 'west', 1).effective, 'planned');
-const wantAbo = { nord: [64, 31, 29, 33, 36, 70, 82], sued: [44, 22, 20, 24, 27, 51, 58] };
+const wantAbo = { nord: [41, 19, 18, 21, 22, 38, 50], sued: [26, 12, 11, 13, 14, 24, 30] };
 for (const r of ['nord', 'sued']) eq('Abo-Stopps ' + r, sel.utilization(s0, r).map(u => u.abo), wantAbo[r]);
 eq('weakDays nord = Di-Fr', sel.weakDays(s0, 'nord'), [1, 2, 3, 4]);
-check('Seed: Kundenzahlen', s0.customers.filter(c => c.regionId === 'nord').length >= 150 && s0.customers.filter(c => c.regionId === 'sued').length >= 105);
+check('Seed: Kundenzahlen', s0.customers.filter(c => c.regionId === 'nord').length === 95 && s0.customers.filter(c => c.regionId === 'sued').length === 65);
 check('Seed: Kunden haben plz+city', s0.customers.filter(c => c.registered).every(c => /^\d{4}$/.test(c.plz) && c.city));
 eq('Seed: Warteliste nord Mo / west', [sel.waitlistFor(s0, 'nord', 0).length, sel.waitlistFor(s0, 'west', null).length], [6, 14]);
 check('Seed: heutige Stopps zugestellt', Object.keys(s0.deliveries['2026-11-24'] || {}).length === sel.stopsOn(s0, 'nord', '2026-11-24').length + sel.stopsOn(s0, 'sued', '2026-11-24').length);
 check('JSON-serialisierbar', JSON.stringify(JSON.parse(JSON.stringify(s0))) === JSON.stringify(s0));
 
-// --- Kalibrierung
+// --- Kalibrierung (Abschnitt 8.9)
 const endOf = (wd, d) => sel.tourPlan(s0, 'nord', T.nextDateForWeekday(wd), d).endMin;
+const tue = sel.tourPlan(s0, 'nord', T.nextDateForWeekday(1), 1);
 const mo1 = endOf(0, 1), mo2 = endOf(0, 2), so = endOf(6);
+check('Kalibrierung nord Di 48-62 km, Ende <= 05:40 (' + Math.round(tue.km) + ' km, ' + hm(tue.endMin) + ')', tue.km >= 48 && tue.km <= 62 && tue.endMin <= 340);
 check('Kalibrierung nord Mo 1 Fahrer 06:36-06:55 (' + hm(mo1) + ')', mo1 >= 396 && mo1 <= 415);
 check('Mo 1 Fahrer zu spät (late)', sel.tourPlan(s0, 'nord', '2026-11-30', 1).late === true);
-check('Kalibrierung nord Mo 2 Fahrer <= 05:40 (' + hm(mo2) + ')', mo2 <= 340 && !sel.tourPlan(s0, 'nord', '2026-11-30', 2).late);
-for (const wd of [1, 2, 3, 4]) check('Kalibrierung nord ' + T.WD[wd] + ' <= 05:45 (' + hm(endOf(wd)) + ')', endOf(wd) <= 345);
-check('Kalibrierung nord So 07:45-08:20 (' + hm(so) + ')', so >= 465 && so <= 500);
+check('Kalibrierung nord Mo 2 Fahrer <= 05:30 (' + hm(mo2) + ')', mo2 <= 330 && !sel.tourPlan(s0, 'nord', '2026-11-30', 2).late);
+for (const wd of [2, 3, 4]) check('Kalibrierung nord ' + T.WD[wd] + ' <= 05:45 (' + hm(endOf(wd)) + ')', endOf(wd) <= 345);
+check('Kalibrierung nord So 07:45-08:25 (' + hm(so) + ')', so >= 465 && so <= 505 && !sel.tourPlan(s0, 'nord', T.nextDateForWeekday(6), 1).late);
+check('Tour-Start 03:30 / 04:30', sel.tourPlan(s0, 'nord', T.nextDateForWeekday(1)).tours[0].startMin === 210 && sel.tourPlan(s0, 'nord', T.nextDateForWeekday(6)).tours[0].startMin === 270);
 const tp = sel.tourPlan(s0, 'nord', '2026-11-30', 2);
 check('tourPlan Struktur', tp.tours.length === 2 && tp.tours[0].stops[0].seq === 1 && tp.tours[0].driver.name === 'Jovana' &&
   tp.stops === tp.tours[0].stops.length + tp.tours[1].stops.length && tp.deadlineMin === 390);
@@ -125,13 +128,35 @@ check('Einkauf netto aus Konfiguration', Math.abs(sel.costOf(s0, sel.product(s0,
 check('Preise 8.7 und Allergene', sel.product(s0, 'kaisersemmel').price === 0.65 && sel.product(s0, 'box-familie').price === 27.9 &&
   s0.products.every(p => Array.isArray(p.allergens) && p.cost > 0 && p.cost < p.price) && sel.product(s0, 'buttercroissant').allergens.includes('G') && !!C.labels.allergens.A);
 const sb = sel.starterBags(s0);
-check('starterBags: 3 Sackerl mit Summen', sb.length === 3 && sb.every(b => b.total > 0 && b.saving >= 0 && b.title) && sb[1].total === 10.2 && sb[2].total === 12.8, sb.map(b => [b.title, b.total, b.saving]));
-eq('starterBags Klassiker 4 Semmeln + 2 Kornweckerl', [sb[0].items, sb[0].total], [{ kaisersemmel: 4, kornweckerl: 2 }, 5.6]);
+check('starterBags: 3 Sackerl mit Summen', sb.length === 3 && sb.every(b => b.total > 0 && b.saving >= 0 && b.title) && sb[0].total === 6.35 && sb[1].total === 8.9 && sb[2].total === 23.8, sb.map(b => [b.title, b.total, b.saving]));
+eq('starterBags Klassiker', sb[0].items, { kaisersemmel: 3, kornweckerl: 2, salzstangerl: 1 });
+check('starterBags popular/anchor', sb[1].id === 'brotzeit' && sb[1].popular === true && sb[2].anchor === true && !sb[0].popular && sb[2].items['box-sonntag'] === 1 && sb[1].items.bauernbrot === 1);
 check('suggestions: nie bereits im Sackerl', [{ kaisersemmel: 4 }, { buttercroissant: 2, marillenmarmelade: 1 }, { bauernbrot: 1, bergkaese: 1 }, {}].every(it =>
   { const r = sel.suggestions(s0, it, 3); return r.length > 0 && r.length <= 3 && r.every(p => !(it[p.id] > 0)); }));
-eq('suggestions Gebäck -> Teebutter zuerst', sel.suggestions(s0, { kaisersemmel: 4 }, 2).map(p => p.id), ['teebutter', 'marillenmarmelade']);
+check('suggestions: Fokus-Artikel zuerst', sel.suggestions(s0, { kaisersemmel: 4 }, 3)[0].focus === true && sel.suggestions(s0, { kaisersemmel: 4 }, 3).every(p => p.cat !== 'boxen'));
+check('unitMargin: Brot > Semmel', sel.unitMargin(s0, sel.product(s0, 'bauernbrot')) > sel.unitMargin(s0, sel.product(s0, 'kaisersemmel')));
+const tu = sel.tradeUps(s0, { kaisersemmel: 3, kornweckerl: 1 });
+check('tradeUps: Kaisersemmel -> Bio-Handsemmel', tu.some(t => t.fromId === 'kaisersemmel' && t.toId === 'handsemmel' && t.qty === 3 && t.diffPerPiece === 0.65 && t.text.includes('Handsemmel')) && sel.tradeUps(s0, {}).length === 0, tu);
+const fp = sel.focusProposal(s0, 5);
+check('focusProposal(5): keine Kaisersemmel, absteigend', fp.length === 5 && !fp.some(p => p.id === 'kaisersemmel') && fp.every((p, i) => i === 0 || sel.unitMargin(s0, fp[i - 1]) >= sel.unitMargin(s0, p)), fp.map(p => p.id));
+check('Seed: Fokus und Brot der Woche', ['bauernbrot', 'briochestriezel', 'box-sonntag', 'buttercroissant'].every(i => sel.product(s0, i).focus) && s0.weeklySpecial.productId === 'nussbrot' && s0.weeklySpecial.pct === 0);
+// Sackerl-Mischung des Seeds
+const mix = (() => {
+  const c = { semmel: 0, weckerl: 0, suess: 0, brot: 0, other: 0 }, pcs = []; let val = 0, n = 0;
+  s0.subs.filter(x => sel.customer(s0, x.customerId).regionId === 'nord').forEach(x => {
+    pcs.push(sel.pieces(x.items));
+    Object.keys(x.items).forEach(id => {
+      const p = sel.product(s0, id), q = x.items[id]; n += q; val += q * p.price;
+      if (id === 'kaisersemmel' || id === 'handsemmel') c.semmel += q; else if (p.cat === 'gebaeck') c.weckerl += q;
+      else if (p.cat === 'suess') c.suess += q; else if (p.cat === 'brot') c.brot += q; else c.other += q;
+    });
+  });
+  return { avg: n / pcs.length, perPiece: val / n, semmel: c.semmel / n, weckerl: c.weckerl / n, suess: c.suess / n, brot: c.brot / n };
+})();
+check('Seed-Mischung: ~5 Stück, 1,40-1,55 EUR/Stück, Anteile (' + mix.avg.toFixed(2) + ' Stk, ' + mix.perPiece.toFixed(2) + ' EUR)', mix.avg >= 4.6 && mix.avg <= 5.4 && mix.perPiece >= 1.4 && mix.perPiece <= 1.55 &&
+  Math.abs(mix.semmel - 0.23) < 0.05 && Math.abs(mix.weckerl - 0.57) < 0.06 && Math.abs(mix.suess - 0.16) < 0.05 && Math.abs(mix.brot - 0.04) < 0.03, mix);
 const rs = sel.regionStats(s0, 'nord');
-check('regionStats.households > 0', rs.households > 0 && rs.deliveriesPerWeek === 345, rs);
+check('regionStats.households > 0', rs.households > 0 && rs.deliveriesPerWeek === 209, rs);
 
 // --- Wirtschaftlichkeit
 check('pieces', sel.pieces({ kaisersemmel: 4, bauernbrot: 1 }) === 5 && sel.pieces({}) === 0);
@@ -165,7 +190,7 @@ check('setCapacity: notified >= 7', cr.notified >= 7 && cr.push + cr.email === c
 let s = store.getState();
 eq('dayStatusFor reserved', sel.dayStatusFor(s, 'nord', 0, 'me'), 'reserved');
 check('Nachricht kind waitlist für me', sel.inbox(s, 'me').some(n => n.kind === 'waitlist' && n.action.view === 'lieferplan' && n.action.weekday === 0) && sel.unreadPush(s, 'me').length === 1);
-check('cap Mo nach Freigabe frei', sel.cap(s, 'nord', 0).effective === 'free' && sel.cap(s, 'nord', 0).freeAbo === 50);
+check('cap Mo nach Freigabe frei', sel.cap(s, 'nord', 0).effective === 'free' && sel.cap(s, 'nord', 0).freeAbo === 32);
 A.draftToggleDay(0); A.draftToggleDay(1);
 A.draftApplyBag({ wd: 0 }, { kaisersemmel: 5 });
 A.draftSetQty({ wd: 0 }, 'kaisersemmel', 6);
@@ -184,11 +209,11 @@ const po = A.placeOrder();
 s = store.getState();
 const me = sel.customer(s, 'me');
 check('placeOrder ok + orderNo', po.ok && /^SE-\d+$/.test(po.orderNo) && po.firstDelivery === '2026-11-30', po);
-check('me registriert, Koordinaten im Gebiet', me.registered && me.regionId === 'nord' && me.x >= 0.6 && me.x <= 5.6 && me.y >= 0.6 && me.y <= 4.6 && me.city === 'Thalgau');
+check('me registriert, Koordinaten im Gebiet', me.registered && me.regionId === 'nord' && me.x >= sel.region(s, 'nord').area.x0 && me.x <= sel.region(s, 'nord').area.x1 && me.y >= sel.region(s, 'nord').area.y0 && me.y <= sel.region(s, 'nord').area.y1 && me.city === 'Thalgau');
 check('Abo vorhanden (Mo + Di)', s.subs.filter(x => x.customerId === 'me').map(x => x.weekday).sort().join() === '0,1');
 check('Wartelisten-Eintrag booked', s.waitlist.find(w => w.customerId === 'me' && w.weekday === 0).status === 'booked');
 check('Bestätigung kind order, Entwurf zurückgesetzt', sel.inbox(s, 'me').some(n => n.kind === 'order') && s.draft.step === 'fertig' && Object.keys(s.draft.abo).length === 0 && s.draft.lastOrder.orderNo === po.orderNo);
-check('Auslastung Mo steigt auf 65', sel.cap(s, 'nord', 0).abo === 65);
+check('Auslastung Mo steigt auf 42', sel.cap(s, 'nord', 0).abo === 42);
 
 // --- Flex-Bestellung (Besucher ist nun registriert)
 A.setDraft({ mode: 'flex', step: 'plan' }); A.draftSetFlexDate('2026-11-26');
@@ -232,7 +257,7 @@ check('setClock speichert Preset, ui-Daten gültig', store.getState().clockPrese
 A.setClock('echt');
 check('Kampagnen: Ideen vorhanden', sel.campaignIdeas(store.getState(), 'nord').length >= 3 && sel.campaignIdeas(store.getState(), 'nord').every(i => i.recipients >= 0));
 const sc = A.sendCampaign({ title: 'Test', body: 'Test', channel: 'push', segment: 'all' });
-check('sendCampaign', sc.recipients > 200 && store.getState().campaigns[0].title === 'Test');
+check('sendCampaign', sc.recipients > 100 && store.getState().campaigns[0].title === 'Test');
 const scr = A.sendCampaign({ title: 'Test', body: 'Test', channel: 'push', segment: 'all', regionId: 'nord' });
 check('sendCampaign mit regionId zählt nur das Gebiet', scr.recipients === sel.segmentCustomers(store.getState(), 'all', 'nord').length && scr.recipients > 0 && scr.recipients < sc.recipients);
 const sv = A.saveOffer({ title: 'Test', buy: { kind: 'cat', ref: 'suess', qty: 3 }, get: { productId: 'nussschnecke', qty: 1, pct: 50 } });
@@ -244,10 +269,20 @@ const un = store.subscribe(() => { called++; });
 A.setUi({ boRegion: 'sued' });
 un(); A.setUi({ boRegion: 'nord' });
 check('subscribe/unsubscribe', called === 1);
-check('kpis', sel.kpis(store.getState(), 'nord').weeklyStops === 345 + 1 + 1 && sel.kpis(store.getState(), 'nord').utilMonday > 1 === false);
+check('kpis', sel.kpis(store.getState(), 'nord').weeklyStops === 209 + 1 + 1 && sel.kpis(store.getState(), 'nord').utilMonday > 1 === false);
+A.setDraft({ mode: 'abo', step: 'plan', abo: {}, flex: {} });
+A.draftApplyBag({ wd: 2 }, { kaisersemmel: 3, kornweckerl: 1 });
+A.draftSwap({ wd: 2 }, 'kaisersemmel', 'handsemmel');
+eq('draftSwap (Abo-Tag)', store.getState().draft.abo[2], { kornweckerl: 1, handsemmel: 3 });
+A.draftApplyBag({ flex: true }, { salzstangerl: 2, laugenbreze: 1 });
+A.draftSwap({ flex: true }, 'salzstangerl', 'laugenbreze');
+eq('draftSwap (Einmalig, mit Zusammenführen)', store.getState().draft.flex, { laugenbreze: 3 });
+A.setWeeklySpecial({ pct: 10 });
+check('setWeeklySpecial + Rabatt', store.getState().weeklySpecial.pct === 10 && store.getState().weeklySpecial.productId === 'nussbrot' &&
+  sel.priceBag(store.getState(), { nussbrot: 2 }, { wd: 2 }).discounts.some(d => d.offerId === 'weekly-special' && Math.abs(d.amount - 0.92) < 1e-9));
 A.resetDemo();
 s = store.getState();
-check('resetDemo: frischer Zustand', !sel.customer(s, 'me').registered && s.waitlist.length === 20 && s.subs.length === 345 + 246 && s.offers.length === 4 && !s.offers[2].active && s.clockPreset === 'echt');
+check('resetDemo: frischer Zustand', !sel.customer(s, 'me').registered && s.waitlist.length === 20 && s.subs.length === 209 + 130 && s.offers.length === 4 && !s.offers[2].active && s.clockPreset === 'echt');
 check('Seed deterministisch', JSON.stringify(App.data.seed()) === JSON.stringify(App.data.seed()));
 check('App.useStore existiert', typeof App.useStore === 'function');
 

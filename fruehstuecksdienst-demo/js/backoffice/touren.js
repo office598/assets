@@ -27,13 +27,7 @@
     if (c.placement === 'hinweis') return c.note ? 'Hinweis: ' + c.note : lab.hinweis;
     return lab[c.placement] || '';
   }
-  /* Stück und Vergütung je Fahrer: aus dem Store (tourEconomics), sonst aus config.economics berechnet */
-  const pcs = (items) => (App.sel.pieces ? App.sel.pieces(items) : Object.keys(items).reduce((n, k) => n + items[k], 0));
-  function perDriver(s, regionId, date, drivers, plan) {
-    if (App.sel.tourEconomics) return App.sel.tourEconomics(s, regionId, date, drivers).perDriver;
-    const rate = App.config.economics && App.config.economics.driverPerPiece;
-    return plan.tours.map((t) => { const p = t.stops.reduce((n, st) => n + pcs(st.items), 0); return { driver: t.driver, stops: t.stops.length, pieces: p, pay: rate != null ? p * rate : null }; });
-  }
+  const perDriver = (s, regionId, date, drivers) => App.sel.tourEconomics(s, regionId, date, drivers).perDriver;
   const addr = (c) => c.street + ' ' + c.houseNo;
 
   /* ---------- Karte ---------- */
@@ -244,7 +238,7 @@
     };
     const send = () => { App.actions.sendTour(regionId, date); toast('Tour an die Fahrer-App gesendet.', 'ok'); };
 
-    const eco = perDriver(s, regionId, date, drivers, plan);
+    const eco = perDriver(s, regionId, date, drivers);
     const compare = [1, 2, 3].map((n) => ({ n, p: App.sel.tourPlan(s, regionId, date, n) }));
 
     return html`<div class="bo-touren">
@@ -288,7 +282,7 @@
           ${compare.map((c) => html`<li key=${c.n} class=${c.n === drivers ? 'is-on' : ''}><button type="button" onClick=${() => setDrivers(c.n)}>
             <span>${c.n} ${c.n === 1 ? 'Fahrer' : 'Fahrer'}</span><b class=${'ui-mono ' + (c.p.late ? 'is-late' : 'is-ok')}>${hm(c.p.endMin)}</b>
             <small>${c.p.late ? mm(c.p.endMin - c.p.deadlineMin) + ' zu spät' : 'pünktlich'}</small>
-            ${(() => { const e = perDriver(s, regionId, date, c.n, c.p); const mx = e.length ? e[0] : null; return mx && mx.pay != null ? html`<small>je Fahrer ca. ${App.fmt.eur(e.reduce((n, x) => n + x.pay, 0) / e.length)} · ${Math.round(e.reduce((n, x) => n + x.pieces, 0) / e.length)} Stück</small>` : null; })()}</button></li>`)}
+            ${(() => { const e = perDriver(s, regionId, date, c.n); const mx = e.length ? e[0] : null; return mx && mx.pay != null ? html`<small>je Fahrer ca. ${App.fmt.eur(e.reduce((n, x) => n + x.pay, 0) / e.length)} · ${Math.round(e.reduce((n, x) => n + x.pieces, 0) / e.length)} Stück</small>` : null; })()}</button></li>`)}
         </ul>
         <div class="bo-whatif-act">
           <${Btn} variant=${changed ? 'sun' : 'ghost'} size="sm" icon="check" disabled=${!changed} onClick=${apply}>In Kapazität übernehmen<//>

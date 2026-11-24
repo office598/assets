@@ -14,7 +14,7 @@
       startMin: { weekday: 210, weekend: 270 },     // 03:30 / 04:30
       speedKmh: 40,
       roadFactor: 1.3,
-      serviceMin: 1.4                               // Minuten je Stopp (kalibriert, siehe tools/test-core.mjs)
+      serviceMin: 2.0                               // Minuten je Stopp (kalibriert, siehe tools/test-core.mjs)
     },
     capacityDefaults: {
       stopsPerDriver: { weekday: 38, weekend: 55 },

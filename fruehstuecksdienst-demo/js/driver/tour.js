@@ -8,7 +8,7 @@
   const REASONS = ['Niemand erreichbar', 'Zugang nicht möglich', 'Adresse nicht gefunden', 'Ablageort blockiert', 'Lieferung abgelehnt', 'Sonstiges'];
   const hm = (m) => T.fmt.hm(m);
 
-  const pcs = (items) => (App.sel.pieces ? App.sel.pieces(items) : Object.keys(items).reduce((n, k) => n + items[k], 0));
+  const pcs = (items) => App.sel.pieces(items);
 
   function placementText(c) {
     const lab = App.config.labels.placement;
@@ -93,7 +93,7 @@
     const loadList = s.products.filter((p) => loads[p.id]);
     const loadTotal = loadList.reduce((n, p) => n + loads[p.id], 0);
 
-    const rate = App.config.economics ? App.config.economics.driverPerPiece : null;
+    const rate = App.config.economics.driverPerPiece;
     const doneStops = stops.filter((st) => st.delivery && st.delivery.status === 'delivered');
     const piecesDone = doneStops.reduce((n, st) => n + pcs(st.items), 0);
     const piecesAll = stops.reduce((n, st) => n + pcs(st.items), 0);
@@ -111,7 +111,7 @@
           <div><span>Deadline</span><b class="ui-mono">${hm(plan.deadlineMin)}</b></div>
           <div><span>Start</span><b class="ui-mono">${hm(tour.startMin)}</b></div>
         </div>
-        ${rate != null ? html`<div class="fa-earn"><span>Ihr Verdienst heute</span><b class="ui-mono">${App.fmt.eur(piecesDone * rate)}</b><span class="ui-muted">von ca. ${App.fmt.eur(piecesAll * rate)} · ${piecesDone} von ${piecesAll} Stück</span></div>` : null}
+        ${html`<div class="fa-earn"><span>Ihr Verdienst heute</span><b class="ui-mono">${App.fmt.eur(piecesDone * rate)}</b><span class="ui-muted">von ca. ${App.fmt.eur(piecesAll * rate)} · ${piecesDone} von ${piecesAll} Stück</span></div>`}
         ${lateMin > 0 ? html`<div class="fa-late"><${Icon} name="alert" size=${16} /> ${lateMin} Min nach der Deadline – die Disposition ist informiert.</div>` : null}
       </section>
 
