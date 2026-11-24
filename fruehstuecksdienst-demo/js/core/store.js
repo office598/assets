@@ -2,7 +2,7 @@
 (function (root) {
   const App = root.App = root.App || {};
   const C = App.config, T = App.time;
-  const STORAGE_KEY = 'fd-demo-v1';
+  const STORAGE_KEY = 'fd-demo-v2';
   const CUSTOMER_VIEWS = ['start', 'sortiment', 'lieferplan', 'konto'];
   const BO_VIEWS = ['uebersicht', 'kapazitaet', 'touren', 'baecker', 'kunden', 'warteliste', 'marketing', 'sortiment'];
   const CAT_ORDER = ['gebaeck', 'suess', 'brot', 'extras', 'boxen'];

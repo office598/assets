@@ -68,7 +68,7 @@
     ['Gebiete.', 'Welche PLZ, welche Touren, wie viele Stopps schafft ein Fahrer wirklich bis 06:30 Uhr?'],
     ['Bäcker.', 'Wie kommt die Bestellung heute zur Bäckerei, bis wann und in welcher Form?'],
     ['Preise.', 'Zustellgebühr je Lieferung, Mindestbestellwert, Aufschlag für Einmallieferungen.'],
-    ['Einkauf.', 'Was kostet der Einkauf beim Bäcker wirklich? Die Demo rechnet mit Ladenpreis minus 10 %.'],
+    ['Einkauf.', 'Was kostet der Einkauf beim Bäcker wirklich? Die Demo rechnet mit Ladenpreis minus 25 %.'],
     ['Fahrervergütung.', 'Gilt sie je Stück oder je Stopp? Davon hängt ab, ob sich Mehrkauf rechnet.'],
     ['Extras.', 'Welche Produkte, welcher Partner, wie bleibt Gekühltes im Sommer kühl?'],
     ['Bezahlung.', 'Monatliche Lastschrift oder zusätzlich Karte?'],
@@ -182,10 +182,10 @@
 
       <section class="kz-sec" aria-labelledby="s6">
         <${H} id="s6">6. Woran verdient wird<//>
-        <p>Die Kalkulation der Demo beruht auf Schätzwerten: Verkaufspreise brutto inklusive 10 % USt und rund 10 % über dem Ladenpreis des Bäckers, Einkauf rund 10 % unter dem Ladenpreis, Fahrer als Subunternehmer mit € 0,36 netto je ausgeliefertem Stück.</p>
+        <p>Die Kalkulation der Demo beruht auf Schätzwerten: Verkaufspreise brutto inklusive 10 % USt und rund 10 % über dem Ladenpreis des Bäckers, Einkauf rund 25 % unter dem Ladenpreis, Fahrer als Subunternehmer mit € 0,36 netto je ausgeliefertem Stück.</p>
         <ul class="kz-list">
-          <li>Eine Semmel zu € 0,67 bringt netto rund € 0,11 Rohertrag. Nach der Fahrervergütung bleiben minus € 0,25.</li>
-          <li>Ein Artikel trägt die Fahrervergütung erst ab etwa € 2,20 Bruttopreis.</li>
+          <li>Eine Semmel zu € 0,67 bringt netto rund € 0,19 Rohertrag. Nach der Fahrervergütung bleiben minus € 0,17.</li>
+          <li>Ein Artikel trägt die Fahrervergütung ab etwa € 1,25 Bruttopreis. Weckerl, Stangerl, Süßes und Brot liegen darüber, die einfache Semmel nicht.</li>
           <li>Die Zustellgebühr (€ 1,75 werktags, € 2,75 am Wochenende) ist damit die eigentliche Ertragsquelle.</li>
         </ul>
         <p>Daraus folgt: Es zählen mehr Lieferungen und mehr Haushalte pro Tour, nicht mehr Stück pro Sackerl. Aktionen wie „5 Semmeln + 1 gratis“ rechnen sich mit diesen Werten nicht. Sinnvoll sind Nachlässe auf teurere Artikel und auf Extras vom Hofladen. Das Backoffice rechnet jede Aktion durch.</p>

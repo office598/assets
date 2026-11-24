@@ -1,0 +1,83 @@
+[
+  {
+    "id": "hero",
+    "file": "hero.jpg",
+    "title": "Panes y mermelada",
+    "author": "Luisfi",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Panes_y_mermelada.jpg",
+    "standIn": false
+  },
+  {
+    "id": "baecker",
+    "file": "baecker.jpg",
+    "title": "Baker woman's hands kneading bread dough",
+    "author": "Shixart1985",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Baker_woman%27s_hands_kneading_bread_dough.jpg",
+    "standIn": false
+  },
+  {
+    "id": "hofladen",
+    "file": "hofladen.jpg",
+    "title": "NaturalColoredTennesseeEggs",
+    "author": "Aussiedogphotog",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:NaturalColoredTennesseeEggs.jpg",
+    "standIn": false
+  },
+  {
+    "id": "buero",
+    "file": "buero.jpg",
+    "title": "Serbian Easter breakfast",
+    "author": "Petar Milošević",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Serbian_Easter_breakfast.jpg",
+    "standIn": true
+  },
+  {
+    "id": "geschenk",
+    "file": "geschenk.jpg",
+    "title": "Exotic Fruit Gift Basket (4461109309)",
+    "author": "Vegan Feast Catering",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Exotic_Fruit_Gift_Basket_(4461109309).jpg",
+    "standIn": true
+  },
+  {
+    "id": "fruehstueck",
+    "file": "fruehstueck.jpg",
+    "title": "Freshly baked pastries with coffee and cookies on a table",
+    "author": "Shixart1985",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Freshly_baked_pastries_with_coffee_and_cookies_on_a_table.jpg",
+    "standIn": false
+  },
+  {
+    "id": "box-sonntag",
+    "file": "p-box-sonntag.jpg",
+    "title": "Petit dejeuner",
+    "author": "Rama",
+    "license": "CC BY-SA 2.0 fr",
+    "source": "https://commons.wikimedia.org/wiki/File:Petit_dejeuner.jpg",
+    "standIn": false
+  },
+  {
+    "id": "box-buero",
+    "file": "p-box-buero.jpg",
+    "title": "Home made sour dough bread",
+    "author": "Tomascastelazo",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Home_made_sour_dough_bread.jpg",
+    "standIn": true
+  },
+  {
+    "id": "box-nikolo",
+    "file": "p-box-nikolo.jpg",
+    "title": "Lebkuchen supermarkt 2",
+    "author": "Viceskeeni2",
+    "license": "CC0",
+    "source": "https://commons.wikimedia.org/wiki/File:Lebkuchen_supermarkt_2.jpg",
+    "standIn": true
+  }
+]

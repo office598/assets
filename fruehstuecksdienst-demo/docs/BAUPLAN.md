@@ -465,3 +465,6 @@ An schwachen Tagen ist die Tour für den Fahrer nach Fahrzeugkosten kaum etwas w
 - `tourEconomics(...).perDriver[i]` zusätzlich `pieceBased` (Stück × Satz) und `minApplied` (true, wenn die Mindestvergütung greift); `weekdayEconomics` und `kpis` rechnen mit der tatsächlichen Vergütung.
 - V3: Backoffice › Sortiment bekommt oben den Bereich „Kalkulations-Annahmen“ (Vergütung je Stück, Mindestvergütung je Tour, Fahrzeugkosten je km, USt, Aufschlag auf den Ladenpreis, Einkaufsrabatt, Kostenanteil Extras) mit Speichern und „Zurück auf Standard“, und in der Tabelle ein bearbeitbares Feld „Einkauf netto“ je Artikel. Der Satz zum zweiten Fahrer in Kapazität und Übersicht wird berichtigt: Er kostet zusätzlich, solange die Mindestvergütung greift – mit den konkreten Zahlen aus `tourEconomics`.
 - V4: Touren zeigt je Fahrer, wenn die Mindestvergütung greift („Mindestvergütung € 50 statt € 33,48 nach Stück“), ebenso die Fahrer-App. Zusätzlich je Fahrer in Touren die Links „Route in Google Maps öffnen“ (je 10 Stopps ein Link, aus `mapsRouteUrl`).
+
+### 8.12 Einkaufsannahme
+Der Einkaufsrabatt gegenüber dem Ladenpreis ist auf 25 % gesetzt (`economics.purchaseDiscount = 0.25`, im Backoffice einstellbar). Der Speicher-Schlüssel ist `fd-demo-v2`, damit gespeicherte Stände den neuen Wert übernehmen.
