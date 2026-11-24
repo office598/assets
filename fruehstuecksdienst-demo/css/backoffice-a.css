@@ -220,3 +220,13 @@
 .bo-fs-grid .ui-seg { display: flex; width: 100%; }
 .bo-fs-grid .ui-seg button { flex: 1 1 0; padding-left: 8px; padding-right: 8px; white-space: nowrap; }
 .bo-prod-table .ui-pill-full { font-weight: 700; }
+.bo-prod-table { min-width: 0; }
+.bo-prod-table td, .bo-prod-table th { padding-left: 8px; padding-right: 8px; }
+.bo-prod-table td:nth-child(2) .ui-input { min-width: 138px; }
+.bo-prod-table td:nth-child(3) .ui-input { min-width: 112px; }
+.bo-prod-table td:first-child { min-width: 130px; }
+.bo-money { width: 90px; }
+.bo-prod-table th { white-space: normal; letter-spacing: .02em; line-height: 1.25; vertical-align: bottom; }
+.bo-prod-table td:nth-child(2) .ui-input { min-width: 128px; padding-right: 22px; }
+.bo-prod-table td:nth-child(3) .ui-input { min-width: 96px; }
+.bo-prod-table .ui-toggle-text { display: none; }

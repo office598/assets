@@ -397,7 +397,7 @@
   }
 
   function seed() {
-    const rng = mulberry32(20261124);
+    const rng = mulberry32(20261133);
     const today = T.today();
     const regions = worldRegions();
     const products = worldProducts();

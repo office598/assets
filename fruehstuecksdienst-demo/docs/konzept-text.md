@@ -32,7 +32,7 @@ Jeder Schritt hat einen Button, der direkt in die passende Ansicht springt.
 | Wird ein Tag wieder frei, erfährt es niemand. | Wer wartet, bekommt automatisch eine Push-Nachricht oder E-Mail. Der Platz ist 24 Stunden reserviert. |
 | Es gibt nur Daueraufträge. | Abo und Einmallieferung stehen nebeneinander. Einmallieferungen sind je Tour und Tag begrenzt. |
 | Dienstag bis Freitag ist die Tour halb leer. | Das System erkennt Tage mit freien Plätzen und bewirbt genau diese: als Aktion in der Wochenleiste und als Kampagne an passende Kunden. |
-| Es gibt keinen Anreiz, mehr zu kaufen. | Mengenaktionen wie „5 Kaisersemmeln + 1 gratis“, Gratis-Zustellung ab einem Sackerl-Wert und passende Ergänzungen im Sackerl. Im Backoffice einstellbar, mit Kalkulation je Aktion. |
+| Es gibt keinen Anreiz, mehr zu kaufen. | Mengenaktionen, passende Ergänzungen im Sackerl und Schnellstart-Sackerl. Im Backoffice einstellbar. Die Kalkulation rechnet Einkauf und Fahrervergütung mit und markiert Aktionen, die Verlust machen. |
 | Das Sortiment endet beim Gebäck. | Extras vom Hofladen (Butter, Marmelade, Eier, Schinken, Käse, Milch) und fertige Frühstücks-Sackerl. |
 | Die Montagstour schafft 06:30 Uhr nicht immer. | Die Tour wird je Gebiet automatisch gereiht, mit Ankunftszeit je Stopp und einer Warnung, wenn die Deadline nicht hält. Fahrer haben eigene Zugänge. |
 
@@ -44,7 +44,7 @@ Das Abo bleibt das Rückgrat, weil es die Tour planbar macht. Einmallieferungen 
 2. **Flex-Kontingent.** Abo-Plätze werden nur bis Kapazität minus Kontingent verkauft, in der Demo 6 Plätze. Dieser Rest gehört den Einmallieferungen.
 3. **Freie Plätze am konkreten Datum.** Eine Einmallieferung darf jeden Platz nutzen, der an genau diesem Tag frei ist, auch den eines Kunden im Urlaub. An schwachen Tagen sind das viele, am vollen Montag keiner.
 4. **Der Bestellschluss bleibt.** 16:30 Uhr am Vortag, freitags für Samstag, Sonntag und Montag. Der Bäcker bekommt eine Zahl, die sich nicht mehr ändert.
-5. **Der Preis lenkt.** Die Einmallieferung kostet mehr Zustellung als das Abo und hat einen Mindestbestellwert. Wer oft spontan bestellt, wechselt von selbst ins Abo.
+5. **Der Preis lenkt.** Die Einmallieferung kostet mehr Zustellung als das Abo (in der Demo werktags € 2,50 statt € 1,75) und hat einen Mindestbestellwert. Wer oft spontan bestellt, wechselt von selbst ins Abo.
 6. **Voll ist voll.** Die App zeigt den nächsten freien Tag und bietet die Warteliste an. Kein Fahrer wird überrascht.
 
 Ausbaustufe: Eine Einmallieferung an eine Adresse, die ohnehin auf der Tour liegt, kostet fast keine Zeit. Rechnet das System die zusätzliche Fahrzeit je Bestellung statt fixer Stopps, kann es solche Bestellungen immer annehmen.
@@ -57,8 +57,21 @@ Ausbaustufe: Eine Einmallieferung an eine Adresse, die ohnehin auf der Tour lieg
 - **Saison.** Nikolo-Sackerl, Osterpinze, Muttertag: als Einmallieferung vorbestellbar.
 - **Verschenken und Büro.** Frühstück verschenken und Büro-Frühstück als eigene Angebote.
 - **Pünktlich-Versprechen** als Idee: Kommt das Sackerl zu spät, geht die Zustellung auf uns.
+- **Mengenaktionen mit Kalkulation.** Jede Aktion wird vor dem Start durchgerechnet.
 
-## 6. Was andere Anbieter machen
+## 6. Woran verdient wird
+
+Die Kalkulation der Demo beruht auf Schätzwerten: Verkaufspreise brutto inklusive 10 % USt und rund 10 % über dem Ladenpreis des Bäckers, Einkauf rund 10 % unter dem Ladenpreis, Fahrer als Subunternehmer mit € 0,36 netto je ausgeliefertem Stück.
+
+- Eine Semmel zu € 0,67 bringt netto rund € 0,11 Rohertrag. Nach der Fahrervergütung bleiben minus € 0,25.
+- Ein Artikel trägt die Fahrervergütung erst ab etwa € 2,20 Bruttopreis.
+- Die Zustellgebühr (€ 1,75 werktags, € 2,75 am Wochenende) ist damit die eigentliche Ertragsquelle.
+
+Daraus folgt: Es zählen mehr Lieferungen und mehr Haushalte pro Tour, nicht mehr Stück pro Sackerl. Aktionen wie „5 Semmeln + 1 gratis“ rechnen sich mit diesen Werten nicht. Sinnvoll sind Nachlässe auf teurere Artikel und auf Extras vom Hofladen. Das Backoffice rechnet jede Aktion durch.
+
+Ein zweiter Fahrer kostet das Unternehmen nichts extra, weil je Stück bezahlt wird. Für den Fahrer lohnt er sich aber erst mit genug Stück. Die Warteliste zeigt, wann es so weit ist.
+
+## 7. Was andere Anbieter machen
 
 Stand: Websuche. Die Angaben sind nicht einzeln auf den Seiten der Anbieter geprüft.
 
@@ -67,22 +80,24 @@ Stand: Websuche. Die Angaben sind nicht einzeln auf den Seiten der Anbieter gepr
 - Milchmann-Dienste in Großbritannien liefern Gebäck, Milch und Eier in einer Tour. Einzelne Lieferungen lassen sich in der App aussetzen.
 - Eine kostenlose erste Lieferung ist als Einstieg weit verbreitet.
 
-## 7. Was für die echte Version fehlt
+## 8. Was für die echte Version fehlt
 
 - **Stufe 1, Kundenportal:** Registrierung, Bestellung, Kapazität und Warteliste, monatliche Abrechnung per SEPA-Lastschrift, E-Mails.
 - **Stufe 2, Betrieb:** Backoffice mit Zugängen und Rollen, Tourenplanung auf echten Straßen, Fahrer-App, automatische Bestellung an den Bäcker zum Bestellschluss.
 - **Stufe 3, Wachstum:** installierbare App mit Push-Nachrichten, Kampagnen, Empfehlungsprogramm, Feiertagslogik, Auswertungen.
 
-## 8. Offene Fragen an Michael
+## 9. Offene Fragen an Michael
 
 - **Name und Marke.** „Semmelengel“ ist ein Arbeitstitel. Vor einer Entscheidung Marken- und Firmenregister prüfen.
 - **Gebiete.** Welche PLZ, welche Touren, wie viele Stopps schafft ein Fahrer wirklich bis 06:30 Uhr?
 - **Bäcker.** Wie kommt die Bestellung heute zur Bäckerei, bis wann und in welcher Form?
 - **Preise.** Zustellgebühr je Lieferung, Mindestbestellwert, Aufschlag für Einmallieferungen.
+- **Einkauf.** Was kostet der Einkauf beim Bäcker wirklich? Die Demo rechnet mit Ladenpreis minus 10 %.
+- **Fahrervergütung.** Gilt sie je Stück oder je Stopp? Davon hängt ab, ob sich Mehrkauf rechnet.
 - **Extras.** Welche Produkte, welcher Partner, wie bleibt Gekühltes im Sommer kühl?
 - **Bezahlung.** Monatliche Lastschrift oder zusätzlich Karte?
 - **Bestandskunden.** Wie kommen sie ins neue System? Datenschutz und Franchisevertrag (Wettbewerbs- und Kundenschutzklauseln) vorab rechtlich prüfen lassen.
 
-## 9. Hinweise zur Demo
+## 10. Hinweise zur Demo
 
 Alle Kunden, Adressen und Zahlen sind erfunden. Die Karte ist schematisch. Push-Nachrichten und E-Mails werden nur simuliert. „Zurücksetzen“ in der Demo-Leiste stellt den Ausgangszustand wieder her.

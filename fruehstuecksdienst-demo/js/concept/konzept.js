@@ -7,8 +7,8 @@
 
   const SECTIONS = [
     ['s1', '1. Worum es geht'], ['s2', '2. Die Demo in 7 Schritten'], ['s3', '3. Was sich ändert'],
-    ['s4', '4. Abo oder einmal'], ['s5', '5. Marketing'], ['s6', '6. Andere Anbieter'],
-    ['s7', '7. Echte Version'], ['s8', '8. Offene Fragen'], ['s9', '9. Hinweise']
+    ['s4', '4. Abo oder einmal'], ['s5', '5. Marketing'], ['s6', '6. Woran verdient wird'],
+    ['s7', '7. Andere Anbieter'], ['s8', '8. Echte Version'], ['s9', '9. Offene Fragen'], ['s10', '10. Hinweise']
   ];
 
   const STEPS = [
@@ -26,7 +26,7 @@
     ['Wird ein Tag wieder frei, erfährt es niemand.', 'Wer wartet, bekommt automatisch eine Push-Nachricht oder E-Mail. Der Platz ist 24 Stunden reserviert.'],
     ['Es gibt nur Daueraufträge.', 'Abo und Einmallieferung stehen nebeneinander. Einmallieferungen sind je Tour und Tag begrenzt.'],
     ['Dienstag bis Freitag ist die Tour halb leer.', 'Das System erkennt Tage mit freien Plätzen und bewirbt genau diese: als Aktion in der Wochenleiste und als Kampagne an passende Kunden.'],
-    ['Es gibt keinen Anreiz, mehr zu kaufen.', 'Mengenaktionen wie „5 Kaisersemmeln + 1 gratis“, Gratis-Zustellung ab einem Sackerl-Wert und passende Ergänzungen im Sackerl. Im Backoffice einstellbar, mit Kalkulation je Aktion.'],
+    ['Es gibt keinen Anreiz, mehr zu kaufen.', 'Mengenaktionen, passende Ergänzungen im Sackerl und Schnellstart-Sackerl. Im Backoffice einstellbar. Die Kalkulation rechnet Einkauf und Fahrervergütung mit und markiert Aktionen, die Verlust machen.'],
     ['Das Sortiment endet beim Gebäck.', 'Extras vom Hofladen (Butter, Marmelade, Eier, Schinken, Käse, Milch) und fertige Frühstücks-Sackerl.'],
     ['Die Montagstour schafft 06:30 Uhr nicht immer.', 'Die Tour wird je Gebiet automatisch gereiht, mit Ankunftszeit je Stopp und einer Warnung, wenn die Deadline nicht hält. Fahrer haben eigene Zugänge.']
   ];
@@ -36,7 +36,7 @@
     ['Flex-Kontingent.', 'Abo-Plätze werden nur bis Kapazität minus Kontingent verkauft, in der Demo 6 Plätze. Dieser Rest gehört den Einmallieferungen.'],
     ['Freie Plätze am konkreten Datum.', 'Eine Einmallieferung darf jeden Platz nutzen, der an genau diesem Tag frei ist, auch den eines Kunden im Urlaub. An schwachen Tagen sind das viele, am vollen Montag keiner.'],
     ['Der Bestellschluss bleibt.', '16:30 Uhr am Vortag, freitags für Samstag, Sonntag und Montag. Der Bäcker bekommt eine Zahl, die sich nicht mehr ändert.'],
-    ['Der Preis lenkt.', 'Die Einmallieferung kostet mehr Zustellung als das Abo und hat einen Mindestbestellwert. Wer oft spontan bestellt, wechselt von selbst ins Abo.'],
+    ['Der Preis lenkt.', 'Die Einmallieferung kostet mehr Zustellung als das Abo (in der Demo werktags € 2,50 statt € 1,75) und hat einen Mindestbestellwert. Wer oft spontan bestellt, wechselt von selbst ins Abo.'],
     ['Voll ist voll.', 'Die App zeigt den nächsten freien Tag und bietet die Warteliste an. Kein Fahrer wird überrascht.']
   ];
 
@@ -46,7 +46,8 @@
     ['Gebiet vormerken.', 'In neuen Gebieten sammeln sich Interessenten, gestartet wird ab einer Mindestzahl.'],
     ['Saison.', 'Nikolo-Sackerl, Osterpinze, Muttertag: als Einmallieferung vorbestellbar.'],
     ['Verschenken und Büro.', 'Frühstück verschenken und Büro-Frühstück als eigene Angebote.'],
-    ['Pünktlich-Versprechen', ' als Idee: Kommt das Sackerl zu spät, geht die Zustellung auf uns.']
+    ['Pünktlich-Versprechen', ' als Idee: Kommt das Sackerl zu spät, geht die Zustellung auf uns.'],
+    ['Mengenaktionen mit Kalkulation.', 'Jede Aktion wird vor dem Start durchgerechnet.']
   ];
 
   const OTHERS = [
@@ -67,6 +68,8 @@
     ['Gebiete.', 'Welche PLZ, welche Touren, wie viele Stopps schafft ein Fahrer wirklich bis 06:30 Uhr?'],
     ['Bäcker.', 'Wie kommt die Bestellung heute zur Bäckerei, bis wann und in welcher Form?'],
     ['Preise.', 'Zustellgebühr je Lieferung, Mindestbestellwert, Aufschlag für Einmallieferungen.'],
+    ['Einkauf.', 'Was kostet der Einkauf beim Bäcker wirklich? Die Demo rechnet mit Ladenpreis minus 10 %.'],
+    ['Fahrervergütung.', 'Gilt sie je Stück oder je Stopp? Davon hängt ab, ob sich Mehrkauf rechnet.'],
     ['Extras.', 'Welche Produkte, welcher Partner, wie bleibt Gekühltes im Sommer kühl?'],
     ['Bezahlung.', 'Monatliche Lastschrift oder zusätzlich Karte?'],
     ['Bestandskunden.', 'Wie kommen sie ins neue System? Datenschutz und Franchisevertrag (Wettbewerbs- und Kundenschutzklauseln) vorab rechtlich prüfen lassen.']
@@ -178,26 +181,38 @@
       </section>
 
       <section class="kz-sec" aria-labelledby="s6">
-        <${H} id="s6">6. Was andere Anbieter machen<//>
+        <${H} id="s6">6. Woran verdient wird<//>
+        <p>Die Kalkulation der Demo beruht auf Schätzwerten: Verkaufspreise brutto inklusive 10 % USt und rund 10 % über dem Ladenpreis des Bäckers, Einkauf rund 10 % unter dem Ladenpreis, Fahrer als Subunternehmer mit € 0,36 netto je ausgeliefertem Stück.</p>
+        <ul class="kz-list">
+          <li>Eine Semmel zu € 0,67 bringt netto rund € 0,11 Rohertrag. Nach der Fahrervergütung bleiben minus € 0,25.</li>
+          <li>Ein Artikel trägt die Fahrervergütung erst ab etwa € 2,20 Bruttopreis.</li>
+          <li>Die Zustellgebühr (€ 1,75 werktags, € 2,75 am Wochenende) ist damit die eigentliche Ertragsquelle.</li>
+        </ul>
+        <p>Daraus folgt: Es zählen mehr Lieferungen und mehr Haushalte pro Tour, nicht mehr Stück pro Sackerl. Aktionen wie „5 Semmeln + 1 gratis“ rechnen sich mit diesen Werten nicht. Sinnvoll sind Nachlässe auf teurere Artikel und auf Extras vom Hofladen. Das Backoffice rechnet jede Aktion durch.</p>
+        <p>Ein zweiter Fahrer kostet das Unternehmen nichts extra, weil je Stück bezahlt wird. Für den Fahrer lohnt er sich aber erst mit genug Stück. Die Warteliste zeigt, wann es so weit ist.</p>
+      </section>
+
+      <section class="kz-sec" aria-labelledby="s7">
+        <${H} id="s7">7. Was andere Anbieter machen<//>
         <p class="ui-muted">Stand: Websuche. Die Angaben sind nicht einzeln auf den Seiten der Anbieter geprüft.</p>
         <ul class="kz-list">${OTHERS.map((t, i) => html`<li key=${i}>${t}</li>`)}</ul>
       </section>
 
-      <section class="kz-sec" aria-labelledby="s7">
-        <${H} id="s7">7. Was für die echte Version fehlt<//>
+      <section class="kz-sec" aria-labelledby="s8">
+        <${H} id="s8">8. Was für die echte Version fehlt<//>
         <${Lead} items=${STAGES} />
       </section>
 
-      <section class="kz-sec" aria-labelledby="s8">
-        <${H} id="s8">8. Offene Fragen an Michael<//>
+      <section class="kz-sec" aria-labelledby="s9">
+        <${H} id="s9">9. Offene Fragen an Michael<//>
         <ul class="kz-questions">${QUESTIONS.map(([lead, text], i) => html`<li key=${i}>
           <span class="kz-q-no ui-mono" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
           <p><strong>${lead}</strong> ${text}</p>
         </li>`)}</ul>
       </section>
 
-      <section class="kz-sec" aria-labelledby="s9">
-        <${H} id="s9">9. Hinweise zur Demo<//>
+      <section class="kz-sec" aria-labelledby="s10">
+        <${H} id="s10">10. Hinweise zur Demo<//>
         <p class="kz-note">Alle Kunden, Adressen und Zahlen sind erfunden. Die Karte ist schematisch. Push-Nachrichten und E-Mails werden nur simuliert. „Zurücksetzen“ in der Demo-Leiste stellt den Ausgangszustand wieder her.</p>
       </section>
     </article>`;

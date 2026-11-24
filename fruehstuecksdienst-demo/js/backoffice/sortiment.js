@@ -49,7 +49,7 @@
       <td><${MoneyInput} id=${'pk-' + p.id} label=${'Einkaufspreis ' + p.name + ' in Euro'} value=${p.cost || 0} onCommit=${v => up({ cost: v })} /></td>
       <td class="num ui-mono">${F.eur(rate)}</td>
       <td class="num"><${Pill} tone=${tone} mono>${B().minus(F.eur(margin))} · ${B().minus(Math.round(mp * 100) + ' %')}<//></td>
-      <td><${Toggle} id=${'pa-' + p.id} label=${p.active === false ? 'inaktiv' : 'aktiv'} checked=${p.active !== false} onChange=${v => up({ active: v })} /></td>
+      <td><${Toggle} id=${'pa-' + p.id} label=${(p.active === false ? 'inaktiv: ' : 'aktiv: ') + p.name} checked=${p.active !== false} onChange=${v => up({ active: v })} /></td>
     </tr>`;
   }
 

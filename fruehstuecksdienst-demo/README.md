@@ -37,7 +37,7 @@ tools/         serve, smoke, shot, test-core
 
 ## Was wo ändern
 
-- **Markenname, Claim, Fristen, Gebühren:** `js/core/config.js` (`brand`, `cutoff`, `deadlineMin`, `fees`, `capacityDefaults`, `promo`, `season`, `labels`).
+- **Markenname, Claim, Fristen, Gebühren:** `js/core/config.js` (`brand`, `cutoff`, `deadlineMin`, `fees`, `economics` (Kalkulationsannahmen: Fahrervergütung, USt, Einkauf), `capacityDefaults`, `promo`, `season`, `labels`).
 - **Gebiete und Postleitzahlen, Kunden, Sortiment und Preise, Mengenaktionen:** `js/core/data.js` (Regionen mit `plz`, Produktliste mit `price`, `offers`). Die Zahl der Abo-Stopps je Wochentag steht dort ebenfalls.
 - **Fotos:** Bilddateien in `img/` ablegen und in `js/core/photos.js` unter der Produkt-ID bzw. Szene (`hero`, `baecker`, `hofladen`, `buero`, `geschenk`, `fruehstueck`) eintragen; Bildnachweise in `App.photoCredits` und `img/CREDITS.md`. Ohne Eintrag zeigt die Demo Illustrationen aus `js/core/art.js`.
 - **Farben und Schriften:** Tokens am Anfang von `css/base.css`.
