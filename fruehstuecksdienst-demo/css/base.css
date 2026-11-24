@@ -527,6 +527,7 @@ textarea.ui-input { min-height: 96px; resize: vertical; }
 .k-chip .k-chip-name { display: none; }
 @media (min-width: 480px) { .k-chip .k-chip-name { display: inline; } .k-chip-plz::before { content: "\00b7\00a0"; } }
 .k-chip-plz { flex: none; }
+@media (max-width: 479.98px) { .k-chip { flex: none; padding: 0 9px; gap: 4px; max-width: none; } .k-head-in { gap: 4px; } .k-spacer { flex: 1 1 0; min-width: 0; } }
 .k-chip svg { flex: none; }
 .k-iconbtn { position: relative; flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 12px; background: transparent; color: var(--ink); }
 .k-iconbtn:hover { background: var(--surface-2); }
