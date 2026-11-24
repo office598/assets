@@ -491,7 +491,7 @@
       <aside class="k-plan-side" id="k-summary" aria-label="Zusammenfassung"><${WeekSummary} s=${s} sum=${sum} abo=${abo} tried=${tried} /></aside>
     </div>
     ${sum.deliveries.length && nItems > 0 ? html`<${BagBar} count=${nItems} total=${abo ? eur(sum.perWeek) : eur(sum.total)}
-      sub=${sum.cutoff ? html`<span class="k-bb-l">${abo ? sum.deliveries.length + (sum.deliveries.length === 1 ? ' Lieferung' : ' Lieferungen') + ' pro Woche' : 'Einmalig'}</span><span class="k-bb-l">Bestellschluss <${Countdown} to=${sum.cutoff} /></span>` : null}
+      sub=${sum.cutoff ? html`<span class="k-bb-l">${abo ? sum.deliveries.length + (sum.deliveries.length === 1 ? ' Lieferung' : ' Lieferungen') + ' pro Woche' : 'Einmalig'}</span><span class="k-bb-l">Bestellen <${Countdown} to=${sum.cutoff} /></span>` : null}
       cta=${registered ? 'Bestellen' : 'Weiter'} onClick=${next} />` : null}
       <${ProductSheet} open=${!!picker} onClose=${() => setPicker(null)} s=${s} items=${pickerItems} wd=${pickerWd} mode=${d.mode}
         title=${picker && !picker.flex ? 'Artikel für ' + WDL[picker.wd] : 'Artikel hinzufügen'}
