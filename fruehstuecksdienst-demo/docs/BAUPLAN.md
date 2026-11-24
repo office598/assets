@@ -235,38 +235,38 @@ Persistenz: `localStorage['fd-demo-v1'] = { seedDay, state }`, entprellt. Beim S
 
 ## 5. Gestaltung
 
-**Idee „Morgengrauen“.** Der Dienst passiert zwischen Nacht und Morgen. Hell = kühles Morgenlicht mit nachtblauer Schrift, ein warmer Sonnenaufgangs-Akzent, Wärme kommt von Gebäck und Packpapier. Dunkel = kurz vor Sonnenaufgang. Signatur-Element ist die **Wochenleiste aus Türanhängern**: sieben Anhänger (Loch oben, unten rund) mit Wochentag, Status und Lieferzeit. Zweites Motiv: der **Lieferzettel** (Packpapier-Fläche, Mono-Schrift, gestrichelte Abrisskante) für Bestätigungen, Stopps und Zusammenfassungen. Bewusst nicht: Creme-Hintergrund mit Serifenschrift, alles zentriert, überall gleiche Karten, Akzentbalken an Karten, Verlaufs-Hero in Lila/Blau.
+**Idee „Frühstückstisch“.** Warm, hell, appetitlich und modern: mehlweißer Grund, Espresso-Braun als Schrift, Marille als Aktionsfarbe, Buttergelb als Glanzlicht, Packpapier für Zettel und Etiketten. Die Wärme tragen große, echte Fotos von Gebäck und Frühstück. Produkte werden nie als Icon oder Zeichnung gezeigt, wenn ein Foto vorhanden ist; Illustrationen aus `App.art` sind nur Rückfallebene und Beiwerk (Leerzustände, kleine Erklärgrafiken). Modern heißt hier: große Bildflächen mit weichen Ecken, kräftige Überschriften, viel Luft, durchscheinende sticky Leisten (`backdrop-filter`), horizontale Karussells mit Snap, kleine Bewegungen beim Hinzufügen. Nicht verspielt und nicht künstlerisch: Es geht um Frühstück. Signatur-Element ist die **Wochenleiste aus Türanhängern**: sieben Anhänger (Loch oben, unten rund) mit Wochentag, Status und Lieferzeit. Zweites Motiv: der **Lieferzettel** (Packpapier-Fläche, Mono-Schrift, gestrichelte Abrisskante) für Bestätigungen, Stopps und Zusammenfassungen. Bewusst nicht: kühle Blau- oder Grautöne als Grundfarbe, Serifenschrift, alles zentriert, überall gleiche Karten, Akzentbalken an Karten, Verlaufs-Hero in Lila/Blau.
 
 Tokens (K2 übernimmt sie wörtlich nach `css/base.css`; `:root` hell, dann `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { … color-scheme: dark } }` und identisch `:root[data-theme="dark"] { … color-scheme: dark }`):
 
 ```
 Token            hell        dunkel
---bg             #F3F6FA     #0E1424
---surface        #FFFFFF     #172038
---surface-2      #E8EDF5     #1F2A47
---ink            #141B33     #EEF2FB
---ink-2          #3A4563     #C9D2E8
---muted          #5E6987     #97A3C2
---line           #D5DCE9     #2C3858
---night          #141B33     #090D19      dunkle Bänder: Demo-Leiste, Footer
---on-night       #F3F6FA     #EEF2FB
---night-2        #232D4F     #172038
+--bg             #FFF9F0     #17110C
+--surface        #FFFFFF     #221912
+--surface-2      #F7EEDF     #2E2219
+--ink            #2A1B12     #FBF1E3      Espresso
+--ink-2          #4F3C2F     #E4D3BF
+--muted          #7B6858     #B5A08C
+--line           #ECDFCB     #3F2F23
+--night          #2A1B12     #0F0A07      dunkle Bänder (Röstkaffee): Demo-Leiste, Footer
+--on-night       #FFF4E3     #FBF1E3
+--night-2        #432E20     #221912
 --sun            #FF8A3D     #FF9550      Akzentfläche (Haupt-CTA)
 --sun-ink        #3B1A05     #2B1203      Text auf --sun
 --sun-text       #B8480B     #FFAB73      Akzent als Text/Link
---butter         #FFD56B     #FFD56B
---butter-soft    #FFF3CF     #3A3115
+--butter         #FFD15C     #FFD15C
+--butter-soft    #FFF0C2     #3A2F12
 --kraft          #C7A67A     #B8976B      Packpapier
---kraft-soft     #F1E6D3     #2E2618
+--kraft-soft     #F3E7D3     #2E2416
 --kraft-ink      #5F4526     #E9D3B0
 --ok             #167C52     #4FCB92
---ok-soft        #DDF3E8     #12352A
+--ok-soft        #DDF3E8     #143326
 --warn           #8F5500     #F2B552
---warn-soft      #FCEBCB     #3A2C0F
+--warn-soft      #FCEBCB     #3A2A0E
 --full           #B93A32     #F58379
---full-soft      #FADFDC     #431D1B
+--full-soft      #FADFDC     #451E1B
 --info           #2B5FB8     #8DB4F5
---info-soft      #DFE9FA     #18294A
+--info-soft      #E3ECFA     #1B2942
 --crust-1        #F2C98A     #F2C98A      Illustrationen: Kruste hell
 --crust-2        #D99A4E     #D99A4E
 --crust-3        #A8672C     #A8672C
@@ -276,9 +276,9 @@ Token            hell        dunkel
 --leaf           #5E9B5A     #6FB06A
 --yolk           #FFC83D     #FFC83D
 --milk           #FDFEFF     #F3F6FA
---tile           #FFF1DC     #2A2436      Kachel hinter Illustrationen
---tile-2         #E4EEFB     #1B2742
---shadow         0 1px 2px rgba(20,27,51,.06), 0 10px 28px rgba(20,27,51,.09)   |   0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35)
+--tile           #FFF1DC     #2C2118      Kachel hinter Bildern/Illustrationen
+--tile-2         #F4EADB     #261C14
+--shadow         0 1px 2px rgba(42,27,18,.06), 0 10px 28px rgba(42,27,18,.10)   |   0 1px 2px rgba(0,0,0,.45), 0 10px 28px rgba(0,0,0,.4)
 ```
 
 Schrift: `--font-display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif` (Überschriften, 600–800, enge Laufweite, `text-wrap: balance`); `--font-body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif` (Fließtext 16 px in Kunden- und Fahrer-App, 14–15 px im Backoffice); `--font-mono: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace` (Uhrzeiten, Stopp-Nummern, Etiketten in Versalien mit 0.06em Laufweite). Ziffern in Tabellen und Preisen `font-variant-numeric: tabular-nums`. Font-Link: `https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Mono:wght@400;500&family=Figtree:wght@400..800&display=swap`.
@@ -371,3 +371,18 @@ Oberfläche: `ProductCard` bekommt eine optionale Prop `badge` (Text, als Sonnen
 - `mapsUrl(s, customerId)` → `https://www.google.com/maps/dir/?api=1&destination=<URL-kodiert „Lindenweg 12, 5303 Thalgau“>&travelmode=driving`.
 - `mapsRouteUrl(s, customerIds)` → eine Route über mehrere Stopps: letzter Stopp als `destination`, die übrigen als `waypoints` (mit `|` getrennt, URL-kodiert), höchstens 10 Stopps je Link.
 - V4: Jeder Stopp hat „Navigation“ als echten Link (`<a href target="_blank" rel="noopener">`, kein `window.open`). Der nächste offene Stopp hat die große Taste „Zugestellt & weiter“: Sie verbucht die Zustellung (löst die Push-Nachricht an den Kunden aus) und ist zugleich der Link zur Navigation zum folgenden Stopp. Daneben „Nur zugestellt“ ohne Navigation. Zusätzlich „Nächste 10 Stopps als Route öffnen“. Kleiner Hinweis: Die Demo-Adressen sind erfunden; in der echten Version stehen hier die Kundenadressen.
+
+### 8.4 Verkaufsförderung in der Kunden-App
+Alles ehrlich: nur echte Zahlen aus dem System, keine erfundenen Bewertungen, keine falschen Timer, keine künstliche Verknappung.
+
+Logik (K1):
+- `config.fees.freeDeliveryFrom = 15` (0 oder `null` = aus). `feeFor(s, { mode, wd, regionId, customerId, total })` ist 0, sobald `total ≥ freeDeliveryFrom`. `draftSummary().deliveries[i].freeDeliveryMissing` nennt den fehlenden Betrag (0, wenn erreicht oder die Zustellung ohnehin gratis ist).
+- `products[i].bestseller` (kaisersemmel, kornweckerl, buttercroissant, bauernbrot, teebutter, box-sonntag) und `products[i].isNew` (dinkelweckerl, liptauer, box-nikolo).
+- `starterBags(s)` → drei Schnellstart-Sackerl `[ { id, title, text, items, total, saving } ]`: „Klassiker“ (4 Kaisersemmeln, 2 Kornweckerl) · „Süßer Morgen“ (2 Buttercroissants, 2 Kaisersemmeln, 1 Marillenmarmelade) · „Familie“ (6 Kaisersemmeln, 2 Salzstangerl, 1 Bauernbrot, 1 Teebutter). `total` und `saving` aus `priceBag`. Aktion `draftApplyBag(target, items)` legt den Inhalt in das Ziel (`{ wd } | { flex:true }`).
+- `suggestions(s, items, max)` → passende Artikel, die noch nicht im Sackerl sind (Gebäck ohne Aufstrich → Teebutter, Marillenmarmelade · Croissant → Marmelade, Orangensaft · Brot → Bergkäse, Beinschinken · sonst Bestseller).
+- `regionStats(s, regionId)` → `{ households, deliveriesPerWeek }` für Sätze wie „142 Haushalte in Thalgau & Hof frühstücken schon mit uns“.
+
+Oberfläche (V1, V2): sticky Sackerl-Leiste mit Summe und Bestellschluss-Countdown · Fortschritt „Noch € 3,20 bis zur Gratis-Zustellung“ · Etiketten Bestseller / Neu / Aktion an den Produktfotos · „Dazu passt“ im Sackerl mit Ein-Tipp-Hinzufügen · Schnellstart-Sackerl auf der Startseite und im Lieferplan · Knappheit nur aus echter Kapazität („Sonntag: nur noch 7 Plätze“) · Abo als „Empfohlen“ mit konkretem Vorteil in Euro gegenüber Einmalig · Sicherheit direkt am Bestellknopf: „Keine Bindung · jederzeit pausieren · bis 16:30 am Vortag änderbar“.
+
+### 8.5 Gestaltung: warm, modern, mit Fotos
+Die Token-Tabelle und die Gestaltungsidee in Abschnitt 5 sind auf „Frühstückstisch“ umgestellt (warme Neutrale statt kühler Blautöne). K2 übernimmt die neuen Werte. Fotos kommen über `App.photos` (Manifest in `js/core/photos.js`): Produktfotos quadratisch unter der Produkt-ID, Szenen `hero`, `baecker`, `hofladen`, `buero`, `geschenk`, `fruehstueck`. Jede Ansicht muss mit und ohne Foto gut aussehen, weil `Photo` ohne Eintrag auf die Illustration zurückfällt. Die Startseite beginnt mit dem Foto `hero` als großer Bildfläche (Text gut lesbar über einem dunklen Verlauf aus `--night`), nicht mit einer Zeichnung. Unter den Fotos im Fuß: „Bildnachweise“ öffnet ein Sheet mit `App.photoCredits`.

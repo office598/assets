@@ -22,7 +22,7 @@ Jeder Schritt hat einen Button, der direkt in die passende Ansicht springt.
 | 4 | Tour prüfen | Unter Touren den Montag wählen. Mit einem Fahrer endet die Tour nach 06:30 Uhr, mit zwei Fahrern pünktlich. | `go('backoffice','touren')` |
 | 5 | Montag freigeben | Unter Kapazität den Montag auf zwei Fahrer und „Offen“ stellen. Die Warteliste wird automatisch benachrichtigt. | `go('backoffice','kapazitaet')` |
 | 6 | Nachricht beim Kunden | Zurück in der Kunden-App erscheint die Push-Nachricht „Montag ist frei“. Der Platz ist 24 Stunden reserviert. | `go('kunde','konto')` |
-| 7 | Zustellung | In der Fahrer-App die Stopps in Tour-Reihenfolge abhaken. Der Kunde bekommt „Ihr Frühstück ist da“. | `go('fahrer')` |
+| 7 | Zustellung | In der Fahrer-App die Stopps in Tour-Reihenfolge abhaken. „Zugestellt & weiter“ öffnet Google Maps mit dem nächsten Stopp, der Kunde bekommt „Ihr Frühstück ist da“. | `go('fahrer')` |
 
 ## 3. Was sich ändert
 
@@ -32,6 +32,7 @@ Jeder Schritt hat einen Button, der direkt in die passende Ansicht springt.
 | Wird ein Tag wieder frei, erfährt es niemand. | Wer wartet, bekommt automatisch eine Push-Nachricht oder E-Mail. Der Platz ist 24 Stunden reserviert. |
 | Es gibt nur Daueraufträge. | Abo und Einmallieferung stehen nebeneinander. Einmallieferungen sind je Tour und Tag begrenzt. |
 | Dienstag bis Freitag ist die Tour halb leer. | Das System erkennt Tage mit freien Plätzen und bewirbt genau diese: als Aktion in der Wochenleiste und als Kampagne an passende Kunden. |
+| Es gibt keinen Anreiz, mehr zu kaufen. | Mengenaktionen wie „5 Kaisersemmeln + 1 gratis“, Gratis-Zustellung ab einem Sackerl-Wert und passende Ergänzungen im Sackerl. Im Backoffice einstellbar, mit Kalkulation je Aktion. |
 | Das Sortiment endet beim Gebäck. | Extras vom Hofladen (Butter, Marmelade, Eier, Schinken, Käse, Milch) und fertige Frühstücks-Sackerl. |
 | Die Montagstour schafft 06:30 Uhr nicht immer. | Die Tour wird je Gebiet automatisch gereiht, mit Ankunftszeit je Stopp und einer Warnung, wenn die Deadline nicht hält. Fahrer haben eigene Zugänge. |
 
