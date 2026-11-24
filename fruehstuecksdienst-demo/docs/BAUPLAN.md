@@ -449,3 +449,12 @@ Größenordnung einer typischen ländlichen Wochentags-Tour: rund 19 Stopps, 95 
 - V2: Im Sackerl „Lieber …?“-Hinweise aus `tradeUps` mit Tausch per Tipp (`draftSwap`), „Brot der Woche dazulegen“ für den gewählten Tag (am Wochenende zuerst), „Dazu passt“ wie von `suggestions` gereiht.
 - V3: Sortiment mit Schalter „Im Fokus“ je Artikel, Sortierung nach Deckungsbeitrag je Stück und Knopf „Fokus vorschlagen“ (`focusProposal`). Marketing: Auswahl „Brot der Woche“ (`setWeeklySpecial`).
 - V4: Karte und Tourenkopf müssen mit der größeren Fläche und den neuen Ortsnamen gut aussehen (Beschriftungen prüfen).
+
+### 8.10 Lohnt sich die Tour? (Sicht des Unternehmens und des Fahrers je Wochentag)
+An schwachen Tagen ist die Tour für den Fahrer nach Fahrzeugkosten kaum etwas wert; größere und dichtere Touren lösen das. Die Demo zeigt das in Zahlen.
+- Konfiguration: `economics.kmCost = 0.50` (Annahme: Fahrzeugkosten je km).
+- `tourEconomics(...).perDriver[i]` zusätzlich: `km`, `kmCost`, `afterKm` (Vergütung − Fahrzeugkosten), `hours` (Tourdauer von Start bis Ende), `perHour` (`afterKm / hours`), `stopsPerKm`.
+- `weekdayEconomics(s, regionId)` → 7 Einträge `{ wd, dateKey, drivers, stops, pieces, km, businessMargin, driverPay, kmCost, afterKm, hours, perHour }` für das jeweils nächste Datum des Wochentags mit der hinterlegten Fahrerzahl (Fahrerwerte je Fahrer im Mittel).
+- `marginalStop(s, regionId)` → `{ business, driver, pieces }`: was ein zusätzlicher durchschnittlicher Stopp dem Unternehmen (Deckungsbeitrag) und dem Fahrer (Vergütung) bringt.
+- V3 › Übersicht: Tabelle „Was die Tour je Wochentag bringt“ (Stopps, km, Deckungsbeitrag Unternehmen, Fahrer: Vergütung, nach Fahrzeugkosten, je Stunde; schwache Tage sichtbar markiert) und der Satz aus `marginalStop` („Jeder zusätzliche Stopp bringt dem Unternehmen rund € … und dem Fahrer rund € …“). Die Empfehlung zu den schwachen Tagen nennt diese Zahlen.
+- V4 › Touren: je Fahrer zusätzlich „nach Fahrzeugkosten € … · rund € … je Stunde“ mit dem Hinweis auf die Annahme (`kmCost` aus der Konfiguration). Fahrer-App: unter „Ihr Verdienst heute“ klein „nach Fahrzeugkosten (Annahme € …/km): € …“ für die ganze Tour.
