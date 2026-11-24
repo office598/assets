@@ -93,7 +93,8 @@
     const loadList = s.products.filter((p) => loads[p.id]);
     const loadTotal = loadList.reduce((n, p) => n + loads[p.id], 0);
 
-    const rate = App.config.economics.driverPerPiece;
+    const E = s.economics, rate = E.driverPerPiece;
+    const eco = App.sel.tourEconomics(s, regionId, date).perDriver[s.ui.driverIdx];
     const doneStops = stops.filter((st) => st.delivery && st.delivery.status === 'delivered');
     const piecesDone = doneStops.reduce((n, st) => n + pcs(st.items), 0);
     const piecesAll = stops.reduce((n, st) => n + pcs(st.items), 0);
@@ -111,8 +112,9 @@
           <div><span>Deadline</span><b class="ui-mono">${hm(plan.deadlineMin)}</b></div>
           <div><span>Start</span><b class="ui-mono">${hm(tour.startMin)}</b></div>
         </div>
-        ${html`<div class="fa-earn"><span>Ihr Verdienst heute</span><b class="ui-mono">${App.fmt.eur(piecesDone * rate)}</b><span class="ui-muted">von ca. ${App.fmt.eur(piecesAll * rate)} · ${piecesDone} von ${piecesAll} Stück</span>
-          <span class="ui-muted fa-earn-km">nach Fahrzeugkosten (Annahme ${App.fmt.eur(App.config.economics.kmCost)}/km): ${App.fmt.eur(piecesAll * rate - tour.km * App.config.economics.kmCost)} für die ganze Tour</span></div>`}
+        ${html`<div class="fa-earn"><span>Ihr Verdienst heute</span><b class="ui-mono">${App.fmt.eur(piecesDone * rate)}</b><span class="ui-muted">von ca. ${App.fmt.eur(eco.pay)} · ${piecesDone} von ${piecesAll} Stück</span>
+          ${eco.minApplied ? html`<span class="fa-earn-km fa-minpay">Mindestvergütung ${App.fmt.eur(eco.pay)} für diese Tour (nach Stück wären es ${App.fmt.eur(eco.pieceBased)})</span>` : null}
+          <span class="ui-muted fa-earn-km">nach Fahrzeugkosten (Annahme ${App.fmt.eur(E.kmCost)}/km): ${App.fmt.eur(eco.afterKm)} für die ganze Tour</span></div>`}
         ${lateMin > 0 ? html`<div class="fa-late"><${Icon} name="alert" size=${16} /> ${lateMin} Min nach der Deadline – die Disposition ist informiert.</div>` : null}
       </section>
 

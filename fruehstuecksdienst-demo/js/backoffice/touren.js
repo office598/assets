@@ -28,6 +28,7 @@
     return lab[c.placement] || '';
   }
   const perDriver = (s, regionId, date, drivers) => App.sel.tourEconomics(s, regionId, date, drivers).perDriver;
+  const chunks = (stops) => { const out = []; for (let i = 0; i < stops.length; i += 10) { const part = stops.slice(i, i + 10); out.push({ from: i + 1, to: i + part.length, ids: part.map((x) => x.customerId) }); } return out; };
   const addr = (c) => c.street + ' ' + c.houseNo;
 
   /* ---------- Karte ---------- */
@@ -182,9 +183,13 @@
         <div class="ui-grow"><strong>${t.driver.name}</strong>
           <div class="ui-muted bo-small">${t.stops.length} Stopps · ${Math.round(t.km * 10) / 10} km · ${hm(t.startMin)} bis ${hm(t.endMin)}</div>
           ${eco ? html`<div class="bo-small bo-tour-pay"><span>${eco.pieces} Stück</span><span>Vergütung <strong>${App.fmt.eur(eco.pay)}</strong></span></div>
+          ${eco.minApplied ? html`<div class="bo-small bo-minpay"><${Icon} name="info" size=${14} /> Mindestvergütung ${App.fmt.eur(eco.pay)} statt ${App.fmt.eur(eco.pieceBased)} nach Stück</div>` : null}
           <div class="bo-small bo-tour-pay"><span>nach Fahrzeugkosten <strong>${App.fmt.eur(eco.afterKm)}</strong></span><span>rund ${App.fmt.eur(eco.perHour)} je Stunde</span></div>` : null}</div>
         ${t.endMin > dl ? html`<${Pill} tone="full" icon="alert">${mm(t.endMin - dl)} zu spät<//>` : html`<${Pill} tone="ok" icon="check">pünktlich<//>`}
       </header>
+      <div class="bo-routes"><span class="bo-small ui-muted">Route in Google Maps öffnen:</span>
+        ${chunks(t.stops).map((c) => html`<a key=${c.from} class="bo-routelink" href=${App.sel.mapsRouteUrl(s, c.ids)} target="_blank" rel="noopener"><${Icon} name="route" size=${14} />Stopps ${c.from}–${c.to}</a>`)}
+        <span class="bo-small ui-muted bo-routes-note">Die Demo-Adressen sind erfunden.</span></div>
       <ol class="bo-stops">
         ${t.stops.map((st) => {
           const c = st.customer, d = st.delivery, on = active === st.customerId;
@@ -284,9 +289,10 @@
             <span>${c.n} ${c.n === 1 ? 'Fahrer' : 'Fahrer'}</span><b class=${'ui-mono ' + (c.p.late ? 'is-late' : 'is-ok')}>${hm(c.p.endMin)}</b>
             <small>${c.p.late ? mm(c.p.endMin - c.p.deadlineMin) + ' zu spät' : 'pünktlich'}</small>
             ${(() => { const e = perDriver(s, regionId, date, c.n); const av = (k) => e.reduce((n, x) => n + x[k], 0) / (e.length || 1);
-              return e.length ? html`<small>je Fahrer ${Math.round(av('pieces'))} Stück · ${App.fmt.eur(av('pay'))}</small><small>nach Fahrzeugkosten ${App.fmt.eur(av('afterKm'))} · rund ${App.fmt.eur(av('perHour'))}/Std.</small>` : null; })()}</button></li>`)}
+              return e.length ? html`<small>je Fahrer ${Math.round(av('pieces'))} Stück · ${App.fmt.eur(av('pay'))}</small><small>nach Fahrzeugkosten ${App.fmt.eur(av('afterKm'))} · rund ${App.fmt.eur(av('perHour'))}/Std.</small>
+                <small class=${e.some((x) => x.minApplied) ? 'bo-minpay' : ''}>${e.some((x) => x.minApplied) ? 'Mindestvergütung greift · ' : ''}Vergütung gesamt ${App.fmt.eur(e.reduce((n, x) => n + x.pay, 0))}</small>` : null; })()}</button></li>`)}
         </ul>
-        <p class="ui-muted bo-small" style="margin:0">Annahme: ${App.fmt.eur(App.config.economics.kmCost)} Fahrzeugkosten je km, Vergütung ${App.fmt.eur(App.config.economics.driverPerPiece)} je Stück.</p>
+        <p class="ui-muted bo-small" style="margin:0">Annahme: ${App.fmt.eur(s.economics.kmCost)} Fahrzeugkosten je km, Vergütung ${App.fmt.eur(s.economics.driverPerPiece)} je Stück.</p>
         <div class="bo-whatif-act">
           <${Btn} variant=${changed ? 'sun' : 'ghost'} size="sm" icon="check" disabled=${!changed} onClick=${apply}>In Kapazität übernehmen<//>
           <span class="ui-muted bo-small">${changed ? 'Gespeichert sind ' + cap.drivers + (cap.drivers === 1 ? ' Fahrer' : ' Fahrer') + '.' : 'Entspricht der gespeicherten Kapazität (' + cap.drivers + (cap.drivers === 1 ? ' Fahrer' : ' Fahrer') + ').'}

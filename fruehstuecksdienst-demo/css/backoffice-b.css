@@ -129,3 +129,9 @@
 .bo-packtable td:nth-child(3) { min-width: 220px; }
 
 .bo-tour-pay { display: flex; gap: var(--s-3); flex-wrap: wrap; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+.bo-minpay { color: var(--warn); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.bo-routes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--s-2); padding: 10px var(--s-4); border-bottom: 1px solid var(--line); }
+.bo-routelink { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 12px; border-radius: var(--r-pill); border: 1.5px solid var(--line); color: var(--ink-2); font-size: 13px; font-weight: 600; text-decoration: none; background: var(--surface); }
+.bo-routelink:hover { border-color: var(--muted); color: var(--ink); }
+.bo-routes-note { flex-basis: 100%; }
