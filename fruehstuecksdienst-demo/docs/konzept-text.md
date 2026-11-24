@@ -16,7 +16,7 @@ Jeder Schritt hat einen Button, der direkt in die passende Ansicht springt.
 
 | Nr. | Titel | Text | Sprung |
 |---|---|---|---|
-| 1 | Liefertage prüfen | In der Kunden-App die PLZ 4040 eingeben. Montag ist ausgebucht, Dienstag bis Freitag sind frei und tragen eine Aktion. | `go('kunde','start')` |
+| 1 | Liefertage prüfen | In der Kunden-App die PLZ 5303 (Thalgau) eingeben. Montag ist ausgebucht, Dienstag bis Freitag sind frei und tragen eine Aktion. | `go('kunde','start')` |
 | 2 | Warteliste und Bestellung | Für Montag auf die Warteliste setzen. Dann ein Abo für Dienstag und Samstag anlegen oder einmalig bestellen. | `go('kunde','lieferplan')` |
 | 3 | Auslastung sehen | Im Backoffice zeigt die Übersicht: Montag liegt über 100 %, Dienstag bis Freitag bei rund der Hälfte. | `go('backoffice','uebersicht')` |
 | 4 | Tour prüfen | Unter Touren den Montag wählen. Mit einem Fahrer endet die Tour nach 06:30 Uhr, mit zwei Fahrern pünktlich. | `go('backoffice','touren')` |

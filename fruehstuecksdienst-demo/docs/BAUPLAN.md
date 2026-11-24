@@ -15,7 +15,7 @@ Klickbare, voll funktionsfähige Demo eines eigenständigen Frühstücks-Lieferd
 
 Die Demo muss diese Geschichte lückenlos tragen (das ist der Abnahmetest):
 
-1. Kunde gibt PLZ 4040 ein → Wochenleiste: **Mo ausgebucht** (Warteliste), Di–Fr frei mit Aktion, Sa frei, So wenige Plätze.
+1. Kunde gibt PLZ 5303 (Thalgau) ein → Wochenleiste: **Mo ausgebucht** (Warteliste), Di–Fr frei mit Aktion, Sa frei, So wenige Plätze.
 2. Kunde setzt sich für Montag auf die Warteliste (Push) und bestellt ein Abo für Di + Sa – oder eine Einmallieferung.
 3. Backoffice › Übersicht: Montag 107 % ausgelastet, Di–Fr rund 50 %.
 4. Backoffice › Touren, Montag: 1 Fahrer → Tourende nach 06:30 (rot). Mit 2 Fahrern pünktlich.
@@ -176,7 +176,7 @@ App.fmt = { eur(n) /* '€ 1,20' */, num(n), pct(x) /* 0.52 → '52 %' */ };
 
 | Selektor | Rückgabe |
 |---|---|
-| `regionForPlz(s, plz)` | `null` bei ungültigem Format, sonst `{ region, demoMapped }`. Bekannte PLZ → ihre Region. Jede andere 4-stellige PLZ wird nach letzter Ziffer zugeordnet (0–5 nord, 6–8 sued, 9 west) mit `demoMapped:true`. |
+| `regionForPlz(s, plz)` | `null` bei ungültigem Format, sonst `{ region, outside }`. Bekannte PLZ → `{ region, outside:false }`. Jede andere gültige 4-stellige PLZ → `{ region:null, outside:true }` (noch kein Liefergebiet; die Oberfläche bietet eine Vormerkung an). |
 | `product(s, id)`, `customer(s, id)`, `region(s, id)` | Datensatz |
 | `cap(s, regionId, wd)` | `{ status, drivers, stopsPerDriver, flexQuota, autoNotify, max, abo, freeAbo, pct, effective }`. `max = drivers × stopsPerDriver`; `abo` = Kunden mit Abo an diesem Wochentag; `freeAbo = max − flexQuota − abo`; `pct = abo / max`. `effective`: `planned` (Region in Planung) · `closed` (Status closed) · `full` (Status waitlist oder freeAbo ≤ 0) · `few` (freeAbo ≤ fewThreshold) · sonst `free`. |
 | `dayStatusFor(s, regionId, wd, customerId)` | wie `cap().effective`, aber `booked`, wenn der Kunde an dem Wochentag schon ein Abo hat, und `reserved`, wenn sein Wartelisten-Eintrag `notified` ist und `reservedUntil` in der Zukunft liegt. |
@@ -210,12 +210,16 @@ Persistenz: `localStorage['fd-demo-v1'] = { seedDay, state }`, entprellt. Beim S
 
 ### 4.6 Beispieldaten (`App.data.seed()`), deterministisch (fester Seed)
 
-- Welt 12 × 8 km (x nach rechts, y nach unten). Regionen: **nord** (PLZ 4020, 4040; Fläche x 0.6–5.6, y 0.6–4.6), **sued** (4030, 4050; x 6.2–11.2, y 3.4–7.4), **west** (4060; `planned:true`, `neededPrereg:25`; x 0.6–4.6, y 5.2–7.6). Je Region 4–5 Siedlungs-Cluster mit Namen (z. B. Sonnenhang, Altstadt, Am Bach, Lindenfeld, Bahnhofsviertel) und passenden Straßennamen. Partnerbäckerei je Region mittig: „Backstube Kornfeld“ (seit 1928).
+- Welt 12 × 8 km (x nach rechts, y nach unten), schematisch. Die Region-IDs bleiben `nord`, `sued`, `west`, die Namen und PLZ sind echt (Raum Thalgau):
+  - **nord** = „Thalgau & Hof“, PLZ 5303 (Thalgau), 5322 (Hof bei Salzburg); Fläche x 0.6–5.6, y 0.6–4.6; Cluster „Thalgau Markt“, „Unterdorf“, „Enzersberg“, „Vetterbach“, „Hof“.
+  - **sued** = „Mondseeland“, PLZ 5310 (Mondsee), 5311 (Loibichl); Fläche x 6.2–11.2, y 3.4–7.4; Cluster „Mondsee Markt“, „Tiefgraben“, „St. Lorenz“, „Schwarzindien“, „Loibichl“.
+  - **west** = „Fuschlsee“, PLZ 5330 (Fuschl am See), 5340 (St. Gilgen); `planned:true`, `neededPrereg:25`; Fläche x 0.6–4.6, y 5.2–7.6.
+  - Jeder Kunde hat `plz` und den passenden Ort in `city`. Straßennamen bleiben erfunden und allgemein (Lindenweg, Bachstraße, Kirchengasse …). Partnerbäckerei je Region mittig: „Backstube Kornfeld“ (seit 1928, Beispielname).
 - Abo-Stopps je Wochentag **exakt**: nord `[64, 31, 29, 33, 36, 70, 82]`, sued `[44, 22, 20, 24, 27, 51, 58]`. Kundenpool nord ca. 140, sued ca. 95; dazu je ca. 15 reine Flex-Kunden.
 - Kapazität: Standardwerte; **nord Montag `status:'waitlist'`**; alles andere `open`.
 - Einmallieferungen: je 1–4 für die nächsten 7 Tage (nord und sued).
 - Warteliste: nord Montag 6 Interessenten (4 Push, 2 E-Mail); west 14 Gebiets-Vormerkungen.
-- `me`: Besucher, `registered:false`. `c-huber`: Maria Huber, Lindenweg 12, nord, Abo Mi/Sa/So, 3 Nachrichten im Postfach.
+- `me`: Besucher, `registered:false`. `c-huber`: Maria Huber, Lindenweg 12, 5303 Thalgau, nord, Abo Mi/Sa/So, 3 Nachrichten im Postfach.
 - Fahrer: Jovana, Tobias, Erwin. Zwei vergangene Kampagnen. Ist die Deadline von heute schon vorbei, sind die heutigen Stopps als zugestellt verbucht.
 - Kalibrierung (K1 stellt `serviceMin` so ein und prüft es im Test): nord Montag 1 Fahrer endet 06:36–06:55; mit 2 Fahrern spätestens 05:40; Di–Fr spätestens 05:45; Sonntag 07:45–08:20.
 - Sortiment (id · Kategorie · Name · Preis; `desc` je ein Satz):
@@ -306,7 +310,7 @@ Alles aus Abschnitt 4. `tools/test-core.mjs` lädt die fünf Logikdateien in Nod
 `App.art = { has(id), Product({ id }), Hero(), Spot({ name }), Mark({ size }) }`. Flacher, leicht geometrischer Stil aus einfachen Formen (Kreise, Ellipsen, abgerundete Rechtecke, kurze Pfade), 2–3 Tonwerte je Objekt, nur Token-Farben per `fill="var(--…)"`. `Product`: ein Motiv je Sortiments-ID, viewBox 120 × 120, Aufsicht oder leichte Schrägsicht, ohne Hintergrund (die Kachel kommt von `Photo`). `Hero`: Szene 480 × 520 – Haustür im Morgengrauen, Papiersackerl hängt an der Türschnalle, Himmel von Nachtblau zu Sonnenaufgang, ein paar verblassende Sterne. `Spot`: `bag-door`, `oven`, `van`, `bell`, `calendar`, `neighbors`, `office`, `gift`, `map-pin`. `Mark`: Semmel mit Kaiserstern und kleinem Heiligenschein.
 
 ### V1 – Kunden-App: Start und Sortiment
-**Start** (Reihenfolge): (1) Hero: Mono-Zeile „WERKTAGS BIS 06:30 · AM WOCHENENDE BIS 08:30“, H1 = `brand.claim`, kurzer Lead, PLZ-Feld + „Liefertage prüfen“, darunter Demo-Beispiele als Chips „4040 · Montag ausgebucht“, „4050 · alles frei“, „4060 · Gebiet in Planung“; rechts/unten `Photo hero` bzw. `App.art.Hero` mit überlagertem Lieferzettel. (2) Ergebnis direkt darunter: `WeekStrip` für das Gebiet mit Datum des nächsten Liefertags je Wochentag, Aktions-Etikett an `weakDays`, Satz „Gebiet Nord: an 6 von 7 Tagen sind Plätze frei.“; volle Tage mit „Auf die Warteliste“ (Sheet: Kanal Push oder E-Mail, E-Mail-Feld → `joinWaitlist`, danach Position anzeigen); Button „Lieferplan zusammenstellen“. Gebiet in Planung: Fortschritt „14 von 25 Haushalten vorgemerkt“ + Vormerk-Formular. (3) „So funktioniert's“ in drei echten Schritten mit Uhrzeiten (bis 16:30 bestellen · ab 03:30 holen wir frisch vom Bäcker · bis 06:30 hängt das Sackerl an der Tür). (4) „Regelmäßig oder nur einmal“: zwei gleichwertige Optionen mit Preisen aus `config.fees` (Abo: fixer Platz auf der Tour, pausierbar, keine Bindung · Einmalig: solange Plätze frei sind, Mindestbestellwert). (5) Sortiment-Auswahl (horizontal scrollbar) + Kategorien → Sortiment. (6) Saison-Aktion aus `config.season` (nur wenn das Datum noch bestellbar ist; „Vorbestellen“ setzt Einmallieferung für dieses Datum). (7) Partnerbäckerei und Hofladen-Extras. (8) „Nachbarn werben“ mit Code und Guthaben aus `config.promo`. (9) Büro-Frühstück und Frühstück verschenken. (10) Pünktlich-Versprechen (kommt das Sackerl später als 06:30, geht die Zustellung auf uns). (11) FAQ als Akkordeon (Bestellschluss, Urlaub, Montag ausgebucht, einmal bestellen, Bezahlung, Ablageort). (12) Fuß auf `--night` mit Hinweis „Demo mit Beispieldaten“.
+**Start** (Reihenfolge): (1) Hero: Mono-Zeile „WERKTAGS BIS 06:30 · AM WOCHENENDE BIS 08:30“, H1 = `brand.claim`, kurzer Lead, PLZ-Feld + „Liefertage prüfen“, darunter Demo-Beispiele als Chips „5303 Thalgau · Montag ausgebucht“, „5310 Mondsee · alles frei“, „5330 Fuschl · Gebiet in Planung“; rechts/unten `Photo hero` bzw. `App.art.Hero` mit überlagertem Lieferzettel. (2) Ergebnis direkt darunter: `WeekStrip` für das Gebiet mit Datum des nächsten Liefertags je Wochentag, Aktions-Etikett an `weakDays`, Satz „Thalgau & Hof: an 6 von 7 Tagen sind Plätze frei.“; PLZ außerhalb aller Gebiete (`outside`): „Für diese PLZ liefern wir noch nicht“ + Vormerk-Formular; volle Tage mit „Auf die Warteliste“ (Sheet: Kanal Push oder E-Mail, E-Mail-Feld → `joinWaitlist`, danach Position anzeigen); Button „Lieferplan zusammenstellen“. Gebiet in Planung: Fortschritt „14 von 25 Haushalten vorgemerkt“ + Vormerk-Formular. (3) „So funktioniert's“ in drei echten Schritten mit Uhrzeiten (bis 16:30 bestellen · ab 03:30 holen wir frisch vom Bäcker · bis 06:30 hängt das Sackerl an der Tür). (4) „Regelmäßig oder nur einmal“: zwei gleichwertige Optionen mit Preisen aus `config.fees` (Abo: fixer Platz auf der Tour, pausierbar, keine Bindung · Einmalig: solange Plätze frei sind, Mindestbestellwert). (5) Sortiment-Auswahl (horizontal scrollbar) + Kategorien → Sortiment. (6) Saison-Aktion aus `config.season` (nur wenn das Datum noch bestellbar ist; „Vorbestellen“ setzt Einmallieferung für dieses Datum). (7) Partnerbäckerei und Hofladen-Extras. (8) „Nachbarn werben“ mit Code und Guthaben aus `config.promo`. (9) Büro-Frühstück und Frühstück verschenken. (10) Pünktlich-Versprechen (kommt das Sackerl später als 06:30, geht die Zustellung auf uns). (11) FAQ als Akkordeon (Bestellschluss, Urlaub, Montag ausgebucht, einmal bestellen, Bezahlung, Ablageort). (12) Fuß auf `--night` mit Hinweis „Demo mit Beispieldaten“.
 **Sortiment:** Kategorien als sticky Tabs, Raster 2 Spalten (mobil) bis 4; `ProductCard` mit Etiketten (Bio, Wochenende, gekühlt, vom Hofladen). Leiste „Sie füllen: Sackerl für Di & Sa – ändern“ (`draft.target`); ohne Ziel fragt das erste „+“ per Sheet nach Tag(en) (Abo-Wochentage mit Status oder ein Einmal-Datum). Unten Zusammenfassung „5 Artikel · € 6,90 je Lieferung – zum Lieferplan“.
 
 ### V2 – Kunden-App: Lieferplan und Konto
@@ -334,3 +338,36 @@ Ruhige Textseite (max. 760 px Spalte), Inhalt wörtlich aus `docs/konzept-text.m
 - `node tools/test-core.mjs` grün (K1). `node tools/smoke.mjs --only …` für die eigenen Views ohne Fehler.
 - Eigene Screenshots bei 390 × 844 und 1280 × 800, hell und dunkel, selbst angesehen: nichts abgeschnitten, nichts überlappt, kein horizontales Scrollen, Status mit Farbe und Text.
 - Abschlussbericht kurz: was fertig ist, was offen blieb, was in fremden Dateien fehlt.
+
+## 8. Nachtrag (gilt zusätzlich, bei Widerspruch vor den Abschnitten oben)
+
+### 8.1 Gebiete
+Siehe 4.6: echte Orte rund um Thalgau statt Beispiel-PLZ; `regionForPlz` liefert `{ region, outside }`. `joinWaitlist` nimmt auch `regionId:null` mit `contact.plz` an (Vormerkung für eine PLZ außerhalb aller Gebiete).
+
+### 8.2 Mengenaktionen (Kaufanreize, im Backoffice einstellbar)
+Beispiele: „5 Kaisersemmeln + 1 gratis“, „2 Buttercroissants + 1 gratis (nur Di–Fr)“, „Ab 5 Kaisersemmeln: 1 Kornweckerl gratis“.
+
+Zustand:
+```js
+offers: [ { id, title, active, buy: { kind:'product'|'cat', ref, qty }, get: { productId, qty, pct /* Rabatt in %, 100 = gratis */ },
+            weekdays: null /* alle */ | [wd, …], note } ]
+products[i].cost   // Einkaufspreis je Stück (Seed: Gebäck/Süßes/Brot ca. 55–62 % vom Preis, Extras ca. 70 %, Boxen ca. 65 %)
+```
+Regel je Aktion und Sackerl: Ist die Aktion aktiv und gilt am Wochentag, zählt `n = floor(gekaufte Menge der buy-Artikel / buy.qty)`. Liegt der `get`-Artikel im Sackerl, werden bis zu `n × get.qty` Stück davon um `pct` % rabattiert. Sind `buy` und `get` derselbe Artikel („5 + 1“), gilt je `(buy.qty + get.qty)` Stück im Sackerl `get.qty` Stück als rabattiert. Aktionen werden unabhängig voneinander gerechnet.
+
+Seeds: `semmel-5-1` „5 Kaisersemmeln + 1 gratis“ (aktiv, alle Tage) · `croissant-2-1` „2 Buttercroissants + 1 gratis“ (aktiv, nur Di–Fr = `[1,2,3,4]`, Hinweis „füllt die schwachen Tage“) · `kornweckerl-geschenk` „Ab 5 Kaisersemmeln: 1 Kornweckerl gratis“ (inaktiv, als Vorlage).
+
+Selektoren:
+- `priceBag(s, items, { wd })` → `{ lines:[ { product, qty, sum } ], subtotal, discounts:[ { offerId, title, productId, freeQty, amount } ], total, hints:[ { offerId, title, text, missing, giftProductId } ] }`. `hints` nennt, was bis zur nächsten Aktionsstufe fehlt („Noch 2 Kaisersemmeln bis zur Gratis-Semmel“, „1 Kornweckerl gratis dazulegen“).
+- `priceOf(s, items)` bleibt die Summe ohne Rabatt. Alle Summen in `stopsOn`, `upcoming`, `weeklyPlan`, `draftSummary` und `kpis` rechnen mit `priceBag(...).total`; `draftSummary().deliveries[i]` trägt zusätzlich `discounts` und `hints`.
+- `offersForProduct(s, productId, wd)` → aktive Aktionen, in denen der Artikel als `buy` oder `get` vorkommt, je mit kurzem Etikett `badge` („5 + 1 gratis“).
+- `offerCalc(s, offer)` → Kalkulation je Aktionsbündel unter der vorsichtigen Annahme, dass der Kunde die `buy`-Menge ohnehin gekauft hätte: `{ normalRevenue, normalCost, normalMargin, offerRevenue, offerCost, offerMargin, marginDropPct, breakEvenUpliftPct /* um wie viel der Absatz steigen muss, damit der Deckungsbeitrag gleich bleibt; null, wenn die Aktion Verlust macht */ }`.
+
+Aktionen: `saveOffer(offer)` (anlegen oder ändern), `toggleOffer(id, active)`, `deleteOffer(id)`.
+
+Oberfläche: `ProductCard` bekommt eine optionale Prop `badge` (Text, als Sonnen-Pille über dem Bild). V1 zeigt Etiketten aus `offersForProduct` im Sortiment und auf der Startseite einen Aktionsblock. V2 zeigt in jeder Sackerl-Karte die `hints` (mit „Hinzufügen“-Knopf) und die Rabattzeilen, in der Zusammenfassung die Ersparnis. V3 › Marketing bekommt den Bereich „Mengenaktionen“: Liste mit Ein/Aus, Editor im Sheet (Kaufe [Menge] × [Artikel oder Kategorie] → erhalte [Menge] × [Artikel] gratis bzw. mit x % Rabatt, Wochentage wählbar mit Vorschlag „nur schwache Tage“) und Live-Kalkulation aus `offerCalc` in Klartext („Deckungsbeitrag je Bündel € 1,10 statt € 1,43 · lohnt sich, wenn dadurch 30 % mehr Bündel verkauft werden“). V3 › Sortiment zeigt Einkaufspreis und Marge je Artikel.
+
+### 8.3 Fahrer-App: Navigation mit Google Maps
+- `mapsUrl(s, customerId)` → `https://www.google.com/maps/dir/?api=1&destination=<URL-kodiert „Lindenweg 12, 5303 Thalgau“>&travelmode=driving`.
+- `mapsRouteUrl(s, customerIds)` → eine Route über mehrere Stopps: letzter Stopp als `destination`, die übrigen als `waypoints` (mit `|` getrennt, URL-kodiert), höchstens 10 Stopps je Link.
+- V4: Jeder Stopp hat „Navigation“ als echten Link (`<a href target="_blank" rel="noopener">`, kein `window.open`). Der nächste offene Stopp hat die große Taste „Zugestellt & weiter“: Sie verbucht die Zustellung (löst die Push-Nachricht an den Kunden aus) und ist zugleich der Link zur Navigation zum folgenden Stopp. Daneben „Nur zugestellt“ ohne Navigation. Zusätzlich „Nächste 10 Stopps als Route öffnen“. Kleiner Hinweis: Die Demo-Adressen sind erfunden; in der echten Version stehen hier die Kundenadressen.
