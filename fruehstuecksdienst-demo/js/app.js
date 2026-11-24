@@ -4,11 +4,12 @@
   const { html, useState, useEffect, useErrorBoundary, render } = App.lib;
   const { Icon, Btn, Segmented, Sheet, ConfirmSheet, ToastHost, Placeholder, ErrorBoundary, toast } = App.ui;
 
+  const L2 = (long, short) => App.lib.html`<span class="fd-l-long">${long}</span><span class="fd-l-short">${short}</span>`;
   const ROLES = [
-    { value: 'kunde', label: 'Kunden-App' },
-    { value: 'backoffice', label: 'Backoffice' },
-    { value: 'fahrer', label: 'Fahrer-App' },
-    { value: 'konzept', label: 'Konzept' }
+    { value: 'kunde', label: L2('Kunden-App', 'Kunde') },
+    { value: 'backoffice', label: L2('Backoffice', 'Backoffice') },
+    { value: 'fahrer', label: L2('Fahrer-App', 'Fahrer') },
+    { value: 'konzept', label: L2('Konzept', 'Konzept') }
   ];
   const roleFromHash = () => {
     const r = String(root.location.hash || '').replace(/^#/, '');
@@ -24,8 +25,14 @@
     const [clockOpen, setClockOpen] = useState(false);
     const [resetOpen, setResetOpen] = useState(false);
     useEffect(() => {
-      const el = document.querySelector('.fd-demo-roles [aria-pressed="true"]');
-      if (el && el.scrollIntoView) { try { el.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch (e) { /* egal */ } }
+      const box = document.querySelector('.fd-demo-roles');
+      const el = box && box.querySelector('[aria-pressed="true"]');
+      if (el) {
+        try {
+          const b = box.getBoundingClientRect(), r = el.getBoundingClientRect();
+          box.scrollLeft += (r.left + r.width / 2) - (b.left + b.width / 2);
+        } catch (e) { /* egal */ }
+      }
     }, [s.ui.role]);
     const shifted = s.clockPreset && s.clockPreset !== 'echt';
     const pick = (id) => {
@@ -36,7 +43,7 @@
     const bar = html`<div class="fd-demobar"><div class="ui-wrap ui-wrap-wide fd-demobar-in">
       <span class="fd-demo-tag">DEMO</span>
       <div class="fd-demo-roles"><${Segmented} tone="night" label="Bereich wählen" options=${ROLES} value=${s.ui.role} onChange=${(r) => App.actions.go(r)} /></div>
-      <button type="button" class=${'fd-demo-btn' + (shifted ? ' is-shifted' : '')} aria-label=${'Demo-Uhr: ' + clockText() + ', ändern'} onClick=${() => setClockOpen(true)}><${Icon} name="clock" size=${15} />${clockText()}</button>
+      <button type="button" class=${'fd-demo-btn' + (shifted ? ' is-shifted' : '')} aria-label=${'Demo-Uhr: ' + clockText() + ', ändern'} onClick=${() => setClockOpen(true)}><${Icon} name="clock" size=${15} /><span class="fd-clock-day">${clockText().split(' ')[0] + ' '}</span>${clockText().split(' ').slice(1).join(' ')}</button>
       <button type="button" class="fd-demo-btn fd-demo-reset" aria-label="Demo zurücksetzen" onClick=${() => setResetOpen(true)}><${Icon} name="refresh" size=${16} /></button>
     </div></div>`;
     return [bar, html`<${Sheet} key="clock" open=${clockOpen} onClose=${() => setClockOpen(false)} title="Demo-Uhr">

@@ -44,7 +44,7 @@
     const d = s.draft || {};
     if (d.regionId) {
       const r = (s.regions || []).find(x => x.id === d.regionId);
-      if (r) regionChip = html`<button type="button" class="k-chip" title=${r.name + (d.plz ? ' · ' + d.plz : '')} onClick=${() => go('start')}><${Icon} name="pin" size=${14} /><span style="overflow:hidden;text-overflow:ellipsis">${r.name}${d.plz ? ' · ' + d.plz : ''}</span></button>`;
+      if (r) regionChip = html`<button type="button" class="k-chip" title=${r.name + (d.plz ? ' · ' + d.plz : '')} onClick=${() => go('start')}><${Icon} name="pin" size=${14} /><span class=${d.plz ? 'k-chip-name' : ''}>${r.name}</span>${d.plz ? html`<span class="k-chip-plz">${d.plz}</span>` : null}</button>`;
     }
     const count = bagCount(d);
     const openPush = (n) => {
