@@ -28,10 +28,11 @@
    Bar({ value, max=1, tone='auto'|'ok'|'warn'|'full'|'info'|'sun', label })   Fortschritts-/Auslastungsbalken (auto: >100 % rot, ≥90 % gelb).
    Kpi({ label, value, sub, tone })   Kennzahl-Kachel.
    Progress({ value, max, label, tone })   Beschrifteter Fortschrittsbalken („Noch € 3,20 bis zur Gratis-Zustellung“); ab value ≥ max grün mit Haken.
-   BagBar({ count, total, sub, cta='Zum Lieferplan', onClick, tone:'night'|'sun'|'light' })   Sackerl-Leiste: mobil fest über der Tab-Leiste, ab 900 px
+   BagBar({ count, total, sub, cta='Zum Lieferplan', onClick, tone:'light'|'sun' })   Sackerl-Leiste: mobil fest über der Tab-Leiste, ab 900 px
         am Ende der Spalte klebend. Erste Zeile „5 Artikel · € 6,90“ (total: Zahl oder Text), zweite Zeile sub (z. B. Countdown, ein vnode ist erlaubt).
         Reserviert beim Einhängen automatisch Platz (Klasse has-bagbar am body). Als letztes Element der View rendern.
    PushBanner({ notification, onOpen, onClose })   Benachrichtigung im Handy-Stil; Position setzt der Aufrufer.
+   (Seite ist nur hell: --night/--on-night/--night-2 sind helle Flächen/Espresso-Text, ui-band-night = warme helle Fläche.)
    Empty({ icon, title, text, action })   Leerzustand; action = fertiger Knopf (vnode).
    Countdown({ to })   „noch 2 Std 13 Min“ bis Date/ms/ISO-String; aktualisiert sich selbst.
    Logo({ onNight, size=22 })   Marke + Wortmarke.
@@ -113,7 +114,7 @@
   /* ---------- Buttons, Pills ---------- */
   function Btn({ variant = 'sun', size = 'md', icon, iconAfter, full, disabled, onClick, type = 'button', href, class: klass, children, ...rest }) {
     const cls = cx('ui-btn', 'ui-btn-' + variant, size !== 'md' && 'ui-btn-' + size, full && 'ui-btn-full', klass);
-    const isz = size === 'sm' ? 16 : size === 'lg' ? 22 : 20;
+    const isz = size === 'sm' ? 18 : size === 'lg' ? 24 : 22;
     const inner = [icon ? html`<${Icon} name=${icon} size=${isz} />` : null, children, iconAfter ? html`<${Icon} name=${iconAfter} size=${isz} />` : null];
     if (href) return h('a', { class: cls, href, onClick, 'aria-disabled': disabled ? 'true' : undefined, ...rest }, inner);
     return h('button', { class: cls, type, disabled, onClick, ...rest }, inner);
@@ -216,9 +217,9 @@
   function Stepper({ value = 0, onChange, min = 0, max = 99, label = 'Menge', size = 'md' }) {
     const set = (n) => { if (onChange && n >= min && n <= max) onChange(n); };
     return html`<div class=${cx('ui-stepper', size === 'sm' && 'ui-stepper-sm')} role="group" aria-label=${label}>
-      <button type="button" aria-label=${label + ' verringern'} disabled=${value <= min} onClick=${() => set(value - 1)}><${Icon} name="minus" size=${size === 'sm' ? 16 : 18} /></button>
+      <button type="button" aria-label=${label + ' verringern'} disabled=${value <= min} onClick=${() => set(value - 1)}><${Icon} name="minus" size=${size === 'sm' ? 18 : 20} /></button>
       <span class="ui-stepper-val" aria-live="polite">${value}</span>
-      <button type="button" aria-label=${label + ' erhöhen'} disabled=${value >= max} onClick=${() => set(value + 1)}><${Icon} name="plus" size=${size === 'sm' ? 16 : 18} /></button>
+      <button type="button" aria-label=${label + ' erhöhen'} disabled=${value >= max} onClick=${() => set(value + 1)}><${Icon} name="plus" size=${size === 'sm' ? 18 : 20} /></button>
     </div>`;
   }
 
@@ -393,7 +394,7 @@
     </div>`;
   }
 
-  function BagBar({ count = 0, total, sub, cta = 'Zum Lieferplan', onClick, tone = 'night' }) {
+  function BagBar({ count = 0, total, sub, cta = 'Zum Lieferplan', onClick, tone = 'light' }) {
     useEffect(() => {
       document.body.classList.add('has-bagbar');
       return () => document.body.classList.remove('has-bagbar');

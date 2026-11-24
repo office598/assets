@@ -273,7 +273,7 @@
         <${Icon} name="bag" size=${22} />
         <div class="k-target-text">
           ${target ? html`<span>Sie füllen:</span><strong>${targetLabel(d, target)}</strong>`
-            : html`<strong>Noch kein Liefertag gewählt</strong><span>Wählen Sie, für welche Lieferung Sie packen.</span>`}
+            : html`<strong>Noch kein Liefertag gewählt</strong>`}
         </div>
         <${Btn} variant=${target ? 'ghost' : 'sun'} size="sm" onClick=${() => setSheet(true)}>${target ? 'ändern' : 'Tag wählen'}<//>
       </div>

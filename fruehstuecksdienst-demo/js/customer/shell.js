@@ -74,7 +74,7 @@
       <main class="k-main"><${ViewHost} area="customer" view=${view} /></main>
       <nav class="k-tabs" aria-label="Hauptnavigation">
         ${TABS.map(t => html`<button type="button" class="k-tab" key=${t.id} aria-current=${view === t.id ? 'page' : undefined} onClick=${() => go(t.id)}>
-          <${Icon} name=${t.icon} size=${23} /><span>${t.label}</span>${badgeFor(t.id) ? html`<span class="k-badge">${badgeFor(t.id)}</span>` : null}
+          <${Icon} name=${t.icon} size=${27} /><span>${t.label}</span>${badgeFor(t.id) ? html`<span class="k-badge">${badgeFor(t.id)}</span>` : null}
         </button>`)}
       </nav>
     </div>`;

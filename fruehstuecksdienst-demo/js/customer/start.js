@@ -1,6 +1,5 @@
 /* Kunden-App › Start (V1). Registriert App.views.customer.start.
-   Aufbau: Hero + PLZ-Prüfung · Ergebnis (Wochenleiste) · Schnellstart-Sackerl · So funktioniert's · Abo/Einmalig ·
-   Aktionen + Sortiment · Saison · Partner · Nachbarn werben · Büro/Geschenk · Pünktlich-Versprechen · FAQ · Fuß. */
+   Sieben Abschnitte: Hero + PLZ · Ergebnis (Wochenleiste) · So funktioniert's · Diese Woche · Abo/Einmal · FAQ · Fuß. */
 (function (root) {
   const App = root.App = root.App || {};
   const { html, useState, useEffect, useRef } = App.lib;
@@ -8,7 +7,7 @@
   const T = App.time, C = App.config;
   App.views = App.views || {};
   App.views.customer = App.views.customer || {};
-  App.nav = App.nav || {};                       // kleiner Merkzettel zwischen Start und Sortiment (Kategorie-Tab)
+  App.nav = App.nav || {};                       // Merkzettel zwischen Start und Sortiment
 
   const eur = (n) => App.fmt.eur(n);
   const dayShort = (k) => T.fmt.day(k).replace(/^\S+\s/, '');
@@ -18,31 +17,22 @@
   const goView = (v) => { App.actions.setUi({ customerView: v }); if (root.scrollTo) root.scrollTo(0, 0); };
   const goSortiment = (cat) => { App.nav.sortimentCat = cat || null; goView('sortiment'); };
   const cutoffText = () => hm(C.cutoff.h * 60 + C.cutoff.m);
-  const SAFETY = () => 'Keine Bindung · jederzeit pausieren · bis ' + cutoffText() + ' am Vortag änderbar';
   const F = () => { const f = C.fees; return { abo: f.abo, aboWe: f.aboWeekend != null ? f.aboWeekend : f.abo, flex: f.flex, flexWe: f.flexWeekend != null ? f.flexWeekend : f.flex }; };
   const feePair = (a, b) => (a === b ? eur(a) : eur(a) + ' werktags · ' + eur(b) + ' am Wochenende');
   const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || '').trim());
-
-  /* ---------- Hilfen ---------- */
   const hasPhoto = (id) => !!((App.photos && App.photos[id]) || (C.photos && C.photos[id]));
+
   function Section({ id, eyebrow, title, lead, tone, children, class: klass }) {
-    return html`<section class=${cx('k-sec', tone && 'k-sec-' + tone, klass)} id=${id}>
+    return html`<section class=${cx('k-sec', tone && 'k-sec-' + tone, klass)} id=${id} aria-labelledby=${title ? id + '-h' : undefined}>
       <div class="ui-wrap">
         ${eyebrow || title || lead ? html`<header class="k-sec-head">
           ${eyebrow ? html`<div class="ui-eyebrow">${eyebrow}</div>` : null}
-          ${title ? html`<h2>${title}</h2>` : null}
+          ${title ? html`<h2 id=${id + '-h'}>${title}</h2>` : null}
           ${lead ? html`<p class="ui-lead">${lead}</p>` : null}
         </header>` : null}
         ${children}
       </div>
     </section>`;
-  }
-
-  function weekdaysText(wds) {
-    if (!wds || !wds.length) return 'an allen Liefertagen';
-    const s = wds.slice().sort((a, b) => a - b);
-    const run = s.every((v, i) => i === 0 || v === s[i - 1] + 1);
-    return 'nur ' + (run && s.length > 2 ? T.WD[s[0]] + '–' + T.WD[s[s.length - 1]] : s.map(w => T.WD[w]).join(', '));
   }
 
   /* ---------- Wartelisten-Sheet ---------- */
@@ -144,16 +134,17 @@
       else if (eff === 'full') sub = mine ? 'Sie: Platz ' + (sel().waitPosition(s, cid, region.id, wd) || 1) : 'Warteliste';
       return {
         wd, dateLabel: dayShort(k), effective: eff, sub, cap, k,
-        promo: eff === 'free' && weak.includes(wd) ? 'Gratis-Zustellung' : undefined,
+        promo: eff === 'free' && weak.includes(wd) ? 'Aktion' : undefined,
         selected: d.mode !== 'flex' && !!d.abo[wd]
       };
     });
-    const freeCount = days.filter(x => x.effective === 'free' || x.effective === 'few').length;
-    const chosen = days.filter(x => x.selected);
-    const stats = sel().regionStats ? sel().regionStats(s, region.id) : null;
+    const freeN = days.filter(x => x.effective === 'free').length;
     const few = days.filter(x => x.effective === 'few');
     const full = days.filter(x => x.effective === 'full');
-    const promoDays = days.filter(x => x.promo);
+    const parts = [];
+    if (freeN) parts.push(freeN + (freeN === 1 ? ' Tag frei' : ' Tage frei'));
+    few.forEach(x => parts.push(T.WD_LONG[x.wd] + ': nur noch ' + Math.max(x.cap.freeAbo, 0) + ' Plätze'));
+    full.forEach(x => parts.push(T.WD_LONG[x.wd] + ' ausgebucht'));
     const pick = (day) => {
       if (day.effective === 'full') { onWait({ wd: day.wd, regionId: region.id }); return; }
       if (day.effective === 'booked' || day.effective === 'closed') return;
@@ -162,27 +153,18 @@
     };
     const plan = () => { App.actions.setDraft({ mode: 'abo' }); goView('lieferplan'); };
     const once = () => { App.actions.setDraft({ mode: 'flex' }); goView('lieferplan'); };
+    const hasPromo = days.some(x => x.promo);
     return html`<div class="k-result-body">
-      <div class="k-result-head"><div>
-        <div class="ui-eyebrow">PLZ ${plz} · ${region.name}</div>
-        <h2>${region.name}: an ${freeCount} von 7 Tagen sind Plätze frei.</h2>
-        ${stats && stats.households ? html`<p class="k-proof"><${Icon} name="users" size=${18} /><span>${stats.households} Haushalte in ${region.name} frühstücken schon mit uns.</span></p>` : null}
-      </div></div>
-      <p class="k-strip-hint">Tippen Sie auf die Tage, an denen Sie beliefert werden möchten.</p>
-      <${WeekStrip} days=${days} onPick=${pick} label=${'Liefertage in ' + region.name} />
-      <div class="k-flags">
-        ${few.map(x => html`<span class="k-flag k-flag-warn" key=${'f' + x.wd}><${Icon} name="alert" size=${16} />${T.WD_LONG[x.wd]}: nur noch ${Math.max(x.cap.freeAbo, 0)} Plätze</span>`)}
-        ${full.map(x => html`<button type="button" class="k-flag k-flag-full" key=${'u' + x.wd} onClick=${() => onWait({ wd: x.wd, regionId: region.id })}>
-          <${Icon} name="bell" size=${16} />${T.WD_LONG[x.wd]} ist ausgebucht${sel().waitlistFor(s, region.id, x.wd).length ? ' · ' + sel().waitlistFor(s, region.id, x.wd).length + ' warten' : ''} – auf die Warteliste</button>`)}
+      <div class="k-result-head">
+        <h2>Ihre Liefertage in ${region.name}</h2>
+        <p class="k-summary">${parts.join(' · ')}</p>
       </div>
-      ${promoDays.length ? html`<p class="k-promo"><${Icon} name="gift" size=${18} /><span><strong>Aktion für Neukunden:</strong> ${promoDays.map(x => T.WD[x.wd]).join(', ')} – die ersten ${C.promo.weakDayFreeWeeks} Wochen ohne Zustellgebühr (${eur(F().abo)} je Lieferung).</span></p>` : null}
+      <${WeekStrip} days=${days} onPick=${pick} label=${'Liefertage in ' + region.name} />
+      <p class="k-strip-hint">Tippen Sie auf Ihre Liefertage.${hasPromo ? ' „Aktion“: Neukunden zahlen an diesem Tag ' + C.promo.weakDayFreeWeeks + ' Wochen lang keine Zustellgebühr.' : ''}
+        ${full.length ? html`<span> ${full.map(x => html`<button type="button" class="k-linkbtn" key=${x.wd} onClick=${() => onWait({ wd: x.wd, regionId: region.id })}>${T.WD_LONG[x.wd]}: auf die Warteliste</button>`)}</span>` : null}</p>
       <div class="k-cta">
-        <div class="k-cta-main">
-          <${Btn} variant="sun" size="lg" icon="bag" onClick=${plan}>Lieferplan zusammenstellen<//>
-          <${Btn} variant="ghost" size="lg" onClick=${once}>Nur einmal bestellen<//>
-        </div>
-        <p class="k-safety"><${Icon} name="check" size=${16} /><span>${SAFETY()}</span></p>
-        ${chosen.length ? html`<p class="k-chosen">Vorgemerkt: ${chosen.map(x => T.WD_LONG[x.wd]).join(', ')}</p>` : null}
+        <${Btn} variant="sun" size="lg" icon="bag" onClick=${plan}>Lieferplan zusammenstellen<//>
+        <${Btn} variant="quiet" size="lg" onClick=${once}>Nur einmal bestellen<//>
       </div>
     </div>`;
   }
@@ -199,13 +181,16 @@
     const cut = T.cutoffFor(next);
     const submit = (e) => { e.preventDefault(); onCheck(plz); };
     return html`<section class="k-hero" aria-labelledby="k-h1">
-      <div class="k-hero-bg"><${Photo} id="hero" alt="Papiersackerl mit frischem Gebäck an einer Türschnalle" ratio="3/2" /></div>
-      <div class="k-hero-shade"></div>
       <div class="ui-wrap k-hero-in">
+        <div class="k-hero-media">
+          <${Photo} id="hero" alt="Papiersackerl mit frischem Gebäck an einer Türschnalle" ratio="16/10" />
+          <div class="k-hero-ticket"><${Ticket} title="Lieferzettel" rows=${[['Lieferung', T.fmt.day(next)], ['Sackerl da', 'bis ' + hm(T.deadlineMin(next))]]}
+            footer=${html`<span>Bestellschluss <${Countdown} to=${cut} /></span>`} /></div>
+        </div>
         <div class="k-hero-text">
-          <div class="k-hero-eyebrow">Werktags bis ${hm(C.deadlineMin.weekday)} · am Wochenende bis ${hm(C.deadlineMin.weekend)}</div>
+          <div class="ui-eyebrow">Werktags bis ${hm(C.deadlineMin.weekday)} · am Wochenende bis ${hm(C.deadlineMin.weekend)}</div>
           <h1 id="k-h1">${C.brand.claim}</h1>
-          <p class="k-hero-lead">Semmeln, Weckerl und Croissants vom Partnerbäcker, dazu Butter und Marmelade vom Hofladen. Als Sackerl an Ihrer Türschnalle, bevor der Wecker läutet.</p>
+          <p class="ui-lead">Gebäck vom Partnerbäcker als Sackerl an Ihrer Türschnalle, ohne Klingeln.</p>
           <form class="k-plz" onSubmit=${submit} noValidate>
             <label class="k-plz-label" for="k-plz">Ihre Postleitzahl</label>
             <div class="k-plz-row">
@@ -219,323 +204,162 @@
             <span class="k-demo-label">Demo-Beispiele</span>
             ${DEMOS.map(x => html`<button type="button" class="k-demochip" key=${x.plz} onClick=${() => onCheck(x.plz)}><strong>${x.label}</strong><span>${x.note}</span></button>`)}
           </div>
+          <p class="k-trust"><${Icon} name="check" size=${18} />Keine Bindung · jederzeit pausieren · bis ${hm(C.deadlineMin.weekday)} an der Tür</p>
         </div>
-        <aside class="k-hero-ticket" aria-label="Beispiel Lieferzettel">
-          <${Ticket} title="Lieferzettel" stamp="frisch" rows=${[['Lieferung', T.fmt.day(next)], ['Sackerl da', 'bis ' + hm(T.deadlineMin(next))], ['Ablage', 'Türschnalle'], ['Bestellschluss', T.fmt.rel(cut)]]}
-            footer=${html`<span>Noch Zeit: <${Countdown} to=${cut} /></span>`} />
-        </aside>
       </div>
     </section>`;
   }
 
-  /* ---------- Schnellstart-Sackerl ---------- */
-  function StarterBags({ s, onNeedPlz }) {
-    const bags = sel().starterBags ? sel().starterBags(s) : [];
-    if (!bags.length) return null;
-    const apply = (bag) => {
-      const d = s.draft;
-      if (!d.regionId) { onNeedPlz(); return; }
-      const region = sel().region(s, d.regionId);
-      if (!region || region.planned) { onNeedPlz(); return; }
-      const cid = s.session.customerId;
-      const open = (wd) => ['free', 'few', 'reserved'].includes(sel().dayStatusFor(s, d.regionId, wd, cid));
-      let wds = Object.keys(d.abo).map(Number).filter(open);
-      if (!wds.length) {
-        const cand = [0, 1, 2, 3, 4, 5, 6].filter(open).sort((a, b) => (T.nextDateForWeekday(a) < T.nextDateForWeekday(b) ? -1 : 1));
-        wds = cand.length ? [cand[0]] : [];
-      }
-      if (!wds.length) { toast('An diesen Tagen ist aktuell kein Platz frei.', 'warn'); return; }
-      wds.forEach(wd => App.actions.draftApplyBag({ wd }, bag.items));
-      App.actions.setDraft({ mode: 'abo', target: { type: 'abo', weekdays: wds } });
-      toast(bag.title + ' liegt im Sackerl für ' + wds.map(w => T.WD_LONG[w]).join(' und ') + '.', 'ok');
-      goView('lieferplan');
-    };
-    return html`<${Section} id="k-schnellstart" eyebrow="Schnellstart" title="In zehn Sekunden zum ersten Sackerl" lead="Drei bewährte Zusammenstellungen. Sie können alles im Lieferplan noch ändern.">
-      <div class="k-bags">
-        ${bags.map(b => {
-          const ids = Object.keys(b.items).slice(0, 3);
-          return html`<article class=${cx('k-bag', b.popular && 'k-bag-pop', b.anchor && 'k-bag-anchor')} key=${b.id}>
-            ${b.popular ? html`<span class="k-bag-flag"><${Pill} tone="sun" icon="star">Beliebt<//></span>` : b.anchor ? html`<span class="k-bag-flag"><${Pill} tone="kraft">Das große Sackerl<//></span>` : null}
-            <div class=${'k-mosaic k-mosaic-' + ids.length} aria-hidden="true">${ids.map(id => html`<div class="k-mosaic-cell" key=${id}><${Photo} id=${id} ratio="1/1" /></div>`)}</div>
-            <div class="k-bag-body">
-              <h3>${b.title}</h3>
-              <p class="ui-muted">${b.text}</p>
-              <p class="k-bag-items">${sel().itemsText(s, b.items, 4)}</p>
-              <div class="k-bag-price"><strong>${eur(b.total)}</strong>${b.saving > 0 ? html`<${Pill} tone="ok">spart ${eur(b.saving)}<//>` : null}</div>
-            </div>
-            <${Btn} variant=${b.popular ? 'sun' : 'ghost'} full icon="bag" onClick=${() => apply(b)}>In den Lieferplan<//>
-          </article>`;
-        })}
-      </div>
-    <//>`;
-  }
-
-  /* ---------- So funktioniert's, Abo/Einmalig ---------- */
+  /* ---------- So funktioniert's ---------- */
   function HowItWorks() {
     const steps = [
-      { t: 'bis ' + cutoffText(), h: 'Sie bestellen am Vortag', p: 'Bis ' + cutoffText() + ' am Vortag stellen Sie Ihr Sackerl zusammen. Für Samstag, Sonntag und Montag gilt der Freitag.' },
-      { t: 'ab ' + hm(C.tour.startMin.weekday), h: 'Wir holen frisch vom Bäcker', p: 'In der Nacht backt die Partnerbäckerei, ab ' + hm(C.tour.startMin.weekday) + ' holen wir Ihr Gebäck ab und packen die Sackerl.' },
-      { t: 'bis ' + hm(C.deadlineMin.weekday), h: 'Das Sackerl hängt an der Tür', p: 'Werktags bis ' + hm(C.deadlineMin.weekday) + ', am Wochenende bis ' + hm(C.deadlineMin.weekend) + '. Ablageort Ihrer Wahl, ohne Klingeln.' }
+      { t: 'bis ' + cutoffText(), h: 'Bestellen', p: 'Am Vortag, Sa bis Mo schon am Freitag.' },
+      { t: 'ab ' + hm(C.tour.startMin.weekday), h: 'Frisch vom Bäcker', p: 'Wir holen und packen Ihr Sackerl.' },
+      { t: 'bis ' + hm(C.deadlineMin.weekday), h: 'An Ihrer Tür', p: 'Am Wochenende bis ' + hm(C.deadlineMin.weekend) + ', ohne Klingeln.' }
     ];
-    return html`<${Section} id="k-ablauf" eyebrow="Ablauf" title="So funktioniert’s">
-      <div class=${cx('k-how', !hasPhoto('baecker') && 'k-how-solo')}>
-        ${hasPhoto('baecker') ? html`<div class="k-how-photo"><${Photo} id="baecker" alt="Frisches Gebäck in der Backstube" ratio="4/3" /></div>` : null}
-        <ol class="k-steps">
-          ${steps.map((st, i) => html`<li class="k-step" key=${i}>
-            <span class="k-step-time">${st.t}</span>
-            <div><h3>${st.h}</h3><p>${st.p}</p></div>
-          </li>`)}
-        </ol>
-      </div>
+    return html`<${Section} id="k-ablauf" title="So funktioniert’s">
+      <ol class="k-steps">
+        ${steps.map((st, i) => html`<li class="k-step" key=${i}><span class="k-step-time">${st.t}</span><h3>${st.h}</h3><p>${st.p}</p></li>`)}
+      </ol>
     <//>`;
   }
 
-  function Modes({ s }) {
-    const f = F(), save = Math.round((f.flex - f.abo) * 100) / 100, saveWe = Math.round((f.flexWe - f.aboWe) * 100) / 100;
-    const yearly = Math.round(save * 52);
+  /* ---------- Diese Woche ---------- */
+  function ThisWeek({ s }) {
+    const ws = s.weeklySpecial;
+    const p = ws && sel().product(s, ws.productId);
+    const special = p && p.active !== false ? p : null;
+    const se = C.season;
+    const sp = se && T.isOpenFor(se.dateKey) ? sel().product(s, se.productId) : null;
+    const season = sp && sp.active !== false ? sp : null;
+    if (!special && !season) return null;
+    const addSpecial = () => {
+      if (App.nav.addToTarget && App.nav.addToTarget(special.id, 1)) toast(special.name + ' liegt im Sackerl.', 'ok');
+      else { App.nav.pendingAdd = { pid: special.id, n: 1 }; goSortiment('empfohlen'); }
+    };
+    const preorder = () => {
+      const flex = Object.assign({}, s.draft.flex); flex[season.id] = Math.max(1, flex[season.id] || 0);
+      App.actions.setDraft({ mode: 'flex', flexDate: se.dateKey, flex, target: { type: 'flex' } });
+      goView('lieferplan');
+    };
+    const pct = ws && ws.pct > 0 ? ws.pct : 0;
+    return html`<${Section} id="k-woche" title="Diese Woche" tone="soft">
+      <div class="k-week">
+        ${special ? html`<article class="k-wcard">
+          <div class="k-wcard-photo"><${Photo} id=${special.id} alt=${special.name} ratio="4/3" /></div>
+          <div class="k-wcard-body">
+            <div class="ui-eyebrow">${ws.title || 'Brot der Woche'}</div>
+            <h3>${special.name}</h3>
+            <p>${ws.text || special.desc}</p>
+            <p class="k-wcard-price"><strong class="ui-num">${eur(Math.round(special.price * (100 - pct)) / 100)}</strong>${pct ? html` <s class="ui-muted ui-num">${eur(special.price)}</s>` : null}${special.unit ? html` <span class="ui-muted">· ${special.unit}</span>` : null}</p>
+            <${Btn} variant="sun" icon="bag" onClick=${addSpecial}>Zum Sackerl<//>
+          </div>
+        </article>` : null}
+        ${season ? html`<article class="k-wcard">
+          <div class="k-wcard-photo"><${Photo} id=${season.id} alt=${season.name} ratio="4/3" /></div>
+          <div class="k-wcard-body">
+            <div class="ui-eyebrow">Saison · ${T.fmt.dayLong(se.dateKey)}</div>
+            <h3>${se.title}</h3>
+            <p>${season.desc}</p>
+            <p class="k-wcard-price"><strong class="ui-num">${eur(season.price)}</strong> <span class="ui-muted">· bestellbar bis ${T.fmt.rel(T.cutoffFor(se.dateKey))}</span></p>
+            <${Btn} variant="sun" icon="gift" onClick=${preorder}>Vorbestellen<//>
+          </div>
+        </article>` : null}
+      </div>
+      <p class="k-week-link"><${Btn} variant="ghost" iconAfter="chevron-right" onClick=${() => goSortiment(null)}>Ganzes Sortiment ansehen<//></p>
+    <//>`;
+  }
+
+  /* ---------- Abo / Einmalig ---------- */
+  function Modes() {
+    const f = F(), save = Math.round((f.flex - f.abo) * 100) / 100;
     const choose = (mode) => { App.actions.setDraft({ mode }); goView('lieferplan'); };
-    return html`<${Section} id="k-modi" eyebrow="Regelmäßig oder nur einmal" title="Beides ist möglich. Das Abo ist günstiger." tone="soft">
+    return html`<${Section} id="k-modi" title="Regelmäßig oder nur einmal">
       <div class="k-modes">
         <article class="k-mode k-mode-rec">
           <div class="k-mode-top"><h3>Abo</h3><${Pill} tone="sun" icon="star">Empfohlen<//></div>
           <p class="k-mode-price"><strong>${eur(f.abo)}</strong> werktags${f.aboWe !== f.abo ? html` · <strong>${eur(f.aboWe)}</strong> am Wochenende` : ''} je Lieferung</p>
-          <p class="k-mode-save">Sie sparen ${eur(save)} werktags${saveWe !== save ? ' und ' + eur(saveWe) + ' am Wochenende' : ''} je Lieferung gegenüber einer Einmalbestellung. Bei einem Sackerl pro Woche sind das rund ${eur(yearly)} im Jahr.</p>
-          <ul class="k-ticks">
-            <li><${Icon} name="check" size=${18} />Fester Platz auf der Tour, auch wenn der Tag voll wird</li>
-            <li><${Icon} name="check" size=${18} />Jederzeit pausieren, aussetzen oder ändern</li>
-            <li><${Icon} name="check" size=${18} />Keine Bindung, keine Mindestlaufzeit</li>
-          </ul>
+          <p class="k-mode-save">${eur(save)} günstiger je Lieferung als einmalig, dazu ein fester Platz auf der Tour.</p>
           <${Btn} variant="sun" size="lg" icon="calendar" onClick=${() => choose('abo')}>Abo zusammenstellen<//>
         </article>
         <article class="k-mode">
           <div class="k-mode-top"><h3>Einmalig</h3></div>
-          <p class="k-mode-price"><strong>${eur(f.flex)}</strong> werktags${f.flexWe !== f.flex ? html` · <strong>${eur(f.flexWe)}</strong> am Wochenende` : ''} Zustellung · ab ${eur(C.fees.flexMinOrder)} Bestellwert</p>
-          <p class="k-mode-save ui-muted">Für den Sonntag mit Besuch oder wenn Sie nur testen möchten.</p>
-          <ul class="k-ticks">
-            <li><${Icon} name="check" size=${18} />Solange am gewünschten Tag Plätze frei sind</li>
-            <li><${Icon} name="check" size=${18} />Kein Abo, keine Anmeldung auf Dauer</li>
-            <li><${Icon} name="check" size=${18} />Bestellschluss ${cutoffText()} am Vortag</li>
-          </ul>
+          <p class="k-mode-price"><strong>${eur(f.flex)}</strong> werktags${f.flexWe !== f.flex ? html` · <strong>${eur(f.flexWe)}</strong> am Wochenende` : ''} je Lieferung</p>
+          <p class="k-mode-save">Ab ${eur(C.fees.flexMinOrder)} Bestellwert, solange am Wunschtag ein Platz frei ist.</p>
           <${Btn} variant="ghost" size="lg" icon="bag" onClick=${() => choose('flex')}>Einmal bestellen<//>
         </article>
       </div>
-      <p class="k-safety k-safety-center"><${Icon} name="check" size=${16} /><span>${SAFETY()}</span></p>
-      ${C.fees.freeDeliveryFrom ? html`<p class="ui-muted k-fine">Ab ${eur(C.fees.freeDeliveryFrom)} Warenwert je Lieferung entfällt die Zustellgebühr.</p>` : null}
     <//>`;
   }
 
-  /* ---------- Aktionen und Sortiment ---------- */
-  function Offers({ s }) {
-    const offers = (s.offers || []).filter(o => o.active);
-    if (!offers.length) return null;
-    return html`<div class="k-offers-wrap">
-      <div class="k-sub-head"><h3>Aktionen</h3><span class="ui-muted">Der Rabatt wird im Sackerl automatisch berechnet.</span></div>
-      <div class="k-scroller k-offers">
-        ${offers.map(o => {
-          const gp = sel().product(s, o.get.productId), bp = o.buy.kind === 'product' ? sel().product(s, o.buy.ref) : null;
-          if (!gp) return null;
-          const saving = Math.round(gp.price * o.get.qty * o.get.pct) / 100;
-          return html`<button type="button" class="k-offer" key=${o.id} onClick=${() => goSortiment('aktionen')}>
-            <span class="k-offer-img"><${Photo} id=${gp.id} alt=${gp.name} ratio="4/3" /><span class="ui-pill ui-pill-sun">${o.get.pct >= 100 ? 'gratis' : '−' + o.get.pct + ' %'}</span></span>
-            <span class="k-offer-body">
-              <strong>${o.title}</strong>
-              <span class="ui-muted">${weekdaysText(o.weekdays)} · Sie sparen ${eur(saving)} je Bündel${bp && bp.id !== gp.id ? '' : ''}</span>
-              ${o.note ? html`<span class="k-offer-note">${o.note}</span>` : null}
-            </span>
-          </button>`;
-        })}
-      </div>
-    </div>`;
+  /* ---------- FAQ ---------- */
+  function Faq() {
+    const items = [
+      { id: 'cut', title: 'Bis wann muss ich bestellen?', body: 'Bis ' + cutoffText() + ' am Vortag. Für Samstag, Sonntag und Montag gilt der Freitag davor.' },
+      { id: 'urlaub', title: 'Was passiert im Urlaub?', body: 'Sie setzen einzelne Lieferungen aus oder tragen eine Urlaubspause ein, jeweils bis zum Bestellschluss. Pausierte Lieferungen kosten nichts.' },
+      { id: 'montag', title: 'Was, wenn der Montag ausgebucht ist?', body: 'Dann kommen Sie auf die Warteliste. Wird ein Platz frei, halten wir ihn ' + C.reserveHours + ' Stunden für Sie frei.' },
+      { id: 'spaet', title: 'Was, wenn das Sackerl zu spät kommt?', body: 'Kommt es später als ' + hm(C.deadlineMin.weekday) + ' Uhr (Sa und So ' + hm(C.deadlineMin.weekend) + ' Uhr), geht die Zustellung auf uns.' },
+      { id: 'ablage', title: 'Wohin kommt das Sackerl, und wie bezahle ich?', body: 'An die Türschnalle, vor die Wohnungstür oder in die Zeitungsbox. Bezahlt wird per SEPA-Lastschrift oder Karte, in dieser Demo wird nichts abgebucht.' }
+    ];
+    return html`<${Section} id="k-faq" title="Häufige Fragen"><div class="k-faq"><${Accordion} items=${items} /></div><//>`;
   }
 
-  function Assortment({ s }) {
-    const season = C.season, seasonOpen = season && T.isOpenFor(season.dateKey);
-    const cats = Object.keys(C.labels.cat);
-    const best = s.products.filter(p => p.active !== false && p.bestseller && !(p.season && !seasonOpen));
-    const rest = s.products.filter(p => p.active !== false && !p.bestseller && !p.weekendOnly && !p.season).slice(0, 6);
-    const shown = best.concat(rest).slice(0, 12);
-    return html`<${Section} id="k-sortiment" eyebrow="Sortiment" title="Frisch gebacken, echt lecker">
-      <${Offers} s=${s} />
-      <div class="k-sub-head"><h3>Beliebt zum Frühstück</h3><${Btn} variant="quiet" size="sm" iconAfter="chevron-right" onClick=${() => goSortiment(null)}>Alles ansehen<//></div>
-      <div class="k-scroller k-picks">
-        ${shown.map(p => {
-          const badge = (sel().offersForProduct(s, p.id, null)[0] || {}).badge;
-          return html`<button type="button" class="k-pick" key=${p.id} onClick=${() => goSortiment(p.cat)}>
-            <span class="k-pick-img"><${Photo} id=${p.id} alt=${p.name} ratio="1/1" />${badge ? html`<span class="ui-pill ui-pill-sun">${badge}</span>` : null}</span>
-            <span class="k-pick-name">${p.name}</span>
-            <span class="k-pick-price ui-num">${eur(p.price)}</span>
-          </button>`;
-        })}
-      </div>
-      <div class="k-cats" role="group" aria-label="Kategorien">
-        ${cats.map(c => html`<button type="button" class="k-catpill" key=${c} onClick=${() => goSortiment(c)}>${C.labels.cat[c]}<${Icon} name="chevron-right" size=${16} /></button>`)}
-      </div>
-    <//>`;
-  }
-
-  function WeeklySpecial({ s }) {
-    const ws = s.weeklySpecial;
-    const p = ws && sel().product(s, ws.productId);
-    if (!p || p.active === false) return null;
-    const pct = ws.pct > 0 ? ws.pct : 0;
-    const price = Math.round(p.price * (100 - pct)) / 100;
-    const add = () => {
-      if (App.nav.addToTarget && App.nav.addToTarget(p.id, 1)) toast(p.name + ' liegt im Sackerl.', 'ok');
-      else { App.nav.pendingAdd = { pid: p.id, n: 1 }; goSortiment('empfohlen'); }
-    };
-    return html`<section class="k-sec k-wspecial" id="k-woche"><div class="ui-wrap">
-      <div class="k-season-card k-ws-card">
-        <div class="k-season-photo"><${Photo} id=${p.id} alt=${p.name} ratio="1/1" /></div>
-        <div class="k-season-body">
-          <div class="ui-eyebrow">${ws.title || 'Brot der Woche'}</div>
-          <h2>${p.name}</h2>
-          <p>${ws.text || p.desc}</p>
-          <p class="k-ws-price"><strong class="ui-num">${eur(price)}</strong>${pct ? html` <s class="ui-muted ui-num">${eur(p.price)}</s> <${Pill} tone="ok">−${pct} %<//>` : null}${p.unit ? html` <span class="ui-muted">· ${p.unit}</span>` : null}</p>
-          <${Btn} variant="sun" size="lg" icon="bag" onClick=${add}>Zum Sackerl<//>
-        </div>
-      </div>
-    </div></section>`;
-  }
-
-  function SeasonBlock({ s }) {
-    const se = C.season;
-    if (!se || (s.ui && s.ui.seasonActive === false) || !T.isOpenFor(se.dateKey)) return null;
-    const p = sel().product(s, se.productId);
-    if (!p || !p.active) return null;
-    const pre = () => {
-      const flex = Object.assign({}, s.draft.flex); flex[p.id] = Math.max(1, flex[p.id] || 0);
-      App.actions.setDraft({ mode: 'flex', flexDate: se.dateKey, flex, target: { type: 'flex' } });
-      goView('lieferplan');
-    };
-    const cut = T.cutoffFor(se.dateKey);
-    return html`<section class="k-sec k-season" id="k-saison"><div class="ui-wrap">
-      <div class="k-season-card">
-        <div class="k-season-photo"><${Photo} id=${p.id} alt=${p.name} ratio="1/1" /></div>
-        <div class="k-season-body">
-          <div class="ui-eyebrow">Saison · ${T.fmt.dayLong(se.dateKey)}</div>
-          <h2>${se.title}</h2>
-          <p>${p.desc} Zum Nikolotag als Einmallieferung vor die Tür, ${eur(p.price)}.</p>
-          <p class="k-season-cut"><${Icon} name="clock" size=${18} />Bestellschluss ${T.fmt.rel(cut)} · <${Countdown} to=${cut} /></p>
-          <${Btn} variant="sun" size="lg" icon="gift" onClick=${pre}>Vorbestellen<//>
-        </div>
-      </div>
-    </div></section>`;
-  }
-
-  function Partners({ s }) {
-    const extras = ['teebutter', 'marillenmarmelade', 'bluetenhonig', 'freilandeier'].map(id => sel().product(s, id)).filter(p => p && p.active !== false);
-    return html`<${Section} id="k-partner" eyebrow="Unsere Partner" title="Vom Bäcker und vom Hof">
-      <div class="k-partners">
-        <article class="k-partner">
-          ${hasPhoto('baecker') ? html`<div class="k-partner-photo"><${Photo} id="baecker" alt="Backstube der Partnerbäckerei" ratio="3/2" /></div>` : null}
-          <h3>Backstube Kornfeld</h3>
-          <p>Familienbetrieb seit 1928 (Beispielname). Die Semmeln und Weckerl werden in der Nacht gebacken und gehen noch warm in Ihr Sackerl.</p>
-        </article>
-        <article class="k-partner">
-          ${hasPhoto('hofladen') ? html`<div class="k-partner-photo"><${Photo} id="hofladen" alt="Aufstriche und Milchprodukte aus dem Hofladen" ratio="3/2" /></div>` : null}
-          <h3>Hofladen-Extras</h3>
-          <p>Butter, Marmelade, Honig, Eier, Käse und Milch aus der Region. Gekühlte Waren kommen im Kühlsackerl.</p>
-          <ul class="k-extras">${extras.map(p => html`<li key=${p.id}><${Photo} id=${p.id} alt="" ratio="1/1" /><span>${p.name}</span></li>`)}</ul>
-          <${Btn} variant="quiet" size="sm" iconAfter="chevron-right" onClick=${() => goSortiment('extras')}>Extras ansehen<//>
-        </article>
-      </div>
-    <//>`;
-  }
-
-  /* ---------- Nachbarn werben, Büro, Geschenk ---------- */
+  /* ---------- Fuß mit kleinen Sheets ---------- */
   function codeFor(id) {
     let h = 5381;
     for (let i = 0; i < String(id).length; i++) h = ((h * 33) ^ String(id).charCodeAt(i)) >>> 0;
     return 'ENGEL-' + h.toString(36).toUpperCase().slice(0, 4).padEnd(4, 'X');
   }
-  function Referral({ s }) {
-    const code = codeFor(s.session.customerId);
-    const credit = C.promo.referralCredit;
+
+  function InfoSheet({ s, kind, onClose }) {
+    if (!kind) return null;
+    if (kind === 'credits') {
+      const list = App.photoCredits || [];
+      return html`<${Sheet} open=${true} onClose=${onClose} title="Bildnachweise">
+        ${list.length ? html`<ul class="k-credits">${list.map((c, i) => html`<li key=${i}>
+          <strong>${c.title || c.id || 'Foto'}</strong>
+          <span>${[c.author ? 'Von ' + c.author : null, c.license || c.licence].filter(Boolean).join(' · ')}</span>
+          ${c.source ? html`<span class="k-credit-src">Quelle: ${c.source}</span>` : null}</li>`)}</ul>`
+          : html`<p>Solange keine Fotos hinterlegt sind, zeigt die Demo Illustrationen. Fotos werden hier mit Titel, Urheber, Lizenz und Quelle genannt.</p>`}
+      <//>`;
+    }
+    if (kind === 'buero' || kind === 'geschenk') {
+      const p = sel().product(s, kind === 'buero' ? 'box-buero' : 'box-sonntag');
+      const office = kind === 'buero';
+      return html`<${Sheet} open=${true} onClose=${onClose} title=${office ? 'Büro-Frühstück' : 'Frühstück verschenken'}
+        footer=${html`<${Btn} variant="sun" onClick=${() => { onClose(); goSortiment('boxen'); }}>Frühstücks-Sackerl ansehen<//>`}>
+        <div class="ui-stack">
+          ${p && hasPhoto(p.id) ? html`<${Photo} id=${p.id} alt=${p.name} ratio="3/2" />` : null}
+          <p>${office ? 'Gebäck, Aufstriche und Getränke für das Team' : 'Ein Frühstück an der Tür von Eltern, Freunden oder zum Geburtstag'}${p ? ': ' + p.name + ' ab ' + eur(p.price) + '.' : '.'}</p>
+          <p class="ui-muted">${office ? 'Als Einmallieferung zum Meeting oder regelmäßig am Montag.' : 'Wählen Sie die Einmallieferung und geben Sie bei der Bestellung die Adresse der Beschenkten an.'}</p>
+        </div>
+      <//>`;
+    }
+    const code = codeFor(s.session.customerId), credit = C.promo.referralCredit;
     const copy = () => {
       let ok = false;
       try { if (root.navigator && root.navigator.clipboard) { root.navigator.clipboard.writeText(code); ok = true; } } catch (e) { ok = false; }
       toast(ok ? 'Code ' + code + ' kopiert.' : 'Ihr Code: ' + code, 'ok');
     };
-    return html`<${Section} id="k-werben" eyebrow="Nachbarn werben" title=${'Zwei Sackerl, ' + eur(credit) + ' Guthaben'} tone="soft">
-      <div class="k-referral">
-        <div>
-          <p class="ui-lead">Je mehr Nachbarn in einer Straße mitmachen, desto kürzer die Tour. Das geben wir weiter: Wer einen Haushalt wirbt, bekommt ${eur(credit)} Guthaben, die Geworbenen ebenfalls.</p>
-          <p class="ui-muted">Das Guthaben wird mit der nächsten Rechnung verrechnet.</p>
-        </div>
-        <${Ticket} title="Ihr Empfehlungscode" rows=${[['Code', code], ['Guthaben', eur(credit) + ' für beide']]}
-          footer=${html`<${Btn} variant="primary" size="sm" icon="send" onClick=${copy}>Code kopieren<//>`} />
+    return html`<${Sheet} open=${true} onClose=${onClose} title="Nachbarn werben">
+      <div class="ui-stack">
+        <p>Wer einen Haushalt wirbt, bekommt ${eur(credit)} Guthaben, die Geworbenen ebenfalls. Es wird mit der nächsten Rechnung verrechnet.</p>
+        <${Ticket} title="Ihr Empfehlungscode" rows=${[['Code', code], ['Guthaben', eur(credit) + ' für beide']]} footer=${html`<${Btn} variant="primary" size="sm" icon="send" onClick=${copy}>Code kopieren<//>`} />
       </div>
     <//>`;
   }
 
-  function OfficeGift({ s }) {
-    const office = sel().product(s, 'box-buero'), gift = sel().product(s, 'box-sonntag');
-    return html`<${Section} id="k-buero" eyebrow="Für Büro und Geschenk" title="Frühstück für andere">
-      <div class="k-duo">
-        <article class="k-duo-card">
-          ${hasPhoto('buero') ? html`<div class="k-duo-photo"><${Photo} id="buero" alt="Gedeckter Frühstückstisch im Büro" ratio="3/2" /></div>` : null}
-          <div class="k-duo-body">
-            <h3>Büro-Frühstück${office ? ' für 10' : ''}</h3>
-            <p>Gebäck, Aufstriche und Getränke für das Team${office ? ', ab ' + eur(office.price) : ''}. Als Einmallieferung zum Meeting oder regelmäßig am Montag.</p>
-            <${Btn} variant="ghost" size="sm" iconAfter="chevron-right" onClick=${() => goSortiment('boxen')}>Frühstücks-Sackerl ansehen<//>
-          </div>
-        </article>
-        <article class="k-duo-card">
-          ${hasPhoto('geschenk') ? html`<div class="k-duo-photo"><${Photo} id="geschenk" alt="Verpacktes Frühstücks-Sackerl als Geschenk" ratio="3/2" /></div>` : null}
-          <div class="k-duo-body">
-            <h3>Frühstück verschenken</h3>
-            <p>Ein Sonntagsfrühstück${gift ? ' (' + eur(gift.price) + ')' : ''} für Eltern, Freunde oder zum Geburtstag. Wählen Sie die Einmallieferung und geben Sie bei der Bestellung die Adresse der Beschenkten an.</p>
-            <${Btn} variant="ghost" size="sm" iconAfter="chevron-right" onClick=${() => goSortiment('boxen')}>Sackerl aussuchen<//>
-          </div>
-        </article>
-      </div>
-    <//>`;
-  }
-
-  function PromiseBlock() {
-    return html`<section class="k-sec k-promise"><div class="ui-wrap">
-      <div class="k-promise-card">
-        <span class="k-promise-icon"><${Icon} name="clock" size=${30} /></span>
-        <div><h2>Pünktlich oder gratis</h2>
-          <p>Kommt Ihr Sackerl später als ${hm(C.deadlineMin.weekday)} Uhr (Samstag und Sonntag ${hm(C.deadlineMin.weekend)} Uhr), geht die Zustellung auf uns. Das Gebäck bleibt Ihres.</p></div>
-      </div>
-    </div></section>`;
-  }
-
-  function Faq() {
-    const items = [
-      { id: 'cut', title: 'Bis wann muss ich bestellen?', body: 'Bis ' + cutoffText() + ' am Vortag. Für Samstag, Sonntag und Montag gilt der Freitag davor. Im Lieferplan sehen Sie immer, wie lange Sie noch ändern können.' },
-      { id: 'urlaub', title: 'Was passiert im Urlaub?', body: 'Sie können einzelne Lieferungen aussetzen oder eine Urlaubspause von–bis eintragen, jeweils bis zum Bestellschluss. Pausierte Lieferungen kosten nichts.' },
-      { id: 'montag', title: 'Was, wenn der Montag ausgebucht ist?', body: 'Dann setzen wir Sie auf die Warteliste. Sobald ein Platz frei wird, bekommen Sie eine Nachricht und der Platz ist ' + C.reserveHours + ' Stunden für Sie reserviert. Bis dahin können Sie die anderen Tage schon nutzen.' },
-      { id: 'einmal', title: 'Kann ich auch nur einmal bestellen?', body: 'Ja. Einmallieferungen gibt es ab ' + eur(C.fees.flexMinOrder) + ' Bestellwert, solange am Wunschtag ein Platz frei ist. Die Zustellung kostet ' + feePair(F().flex, F().flexWe) + ' je Lieferung. Beim Abo zahlen Sie ' + feePair(F().abo, F().aboWe) + '.' },
-      { id: 'zahlung', title: 'Wie bezahle ich?', body: 'Per SEPA-Lastschrift monatlich oder mit Karte. In dieser Demo wird nichts abgebucht.' },
-      { id: 'ablage', title: 'Wohin kommt das Sackerl?', body: 'An die Türschnalle, vor die Wohnungstür oder in die Zeitungsbox. Sie können auch einen eigenen Hinweis für den Fahrer hinterlegen, zum Beispiel für den Hintereingang.' }
-    ];
-    return html`<${Section} id="k-faq" eyebrow="Fragen und Antworten" title="Gut zu wissen">
-      <div class="k-faq"><${Accordion} items=${items} /></div>
-    <//>`;
-  }
-
-  /* ---------- Fuß ---------- */
-  function Credits({ open, onClose }) {
-    const list = App.photoCredits || [];
-    return html`<${Sheet} open=${open} onClose=${onClose} title="Bildnachweise">
-      ${list.length ? html`<ul class="k-credits">${list.map((c, i) => html`<li key=${i}>
-        <strong>${c.title || c.id || 'Foto'}</strong>
-        <span>${[c.author ? 'Von ' + c.author : null, c.license || c.licence].filter(Boolean).join(' · ')}</span>
-        ${c.source ? html`<span class="k-credit-src">Quelle: ${c.source}</span>` : null}
-      </li>`)}</ul>`
-        : html`<p>Die Demo zeigt Illustrationen, solange keine Fotos hinterlegt sind. Sobald Fotos eingebunden werden, stehen hier Titel, Urheber, Lizenz und Quelle.</p>`}
-    <//>`;
-  }
-
-  function Foot({ onCredits }) {
-    return html`<footer class="k-foot ui-band-night"><div class="ui-wrap k-foot-in">
-      <div class="k-foot-brand"><${Logo} onNight size=${24} /><p>${C.brand.claim}</p></div>
-      <div class="k-foot-note">
-        <p><strong>Demo mit Beispieldaten.</strong> Alle Namen, Adressen, Preise und Zahlen sind erfunden. Es wird nichts bestellt und nichts abgebucht.</p>
-        <button type="button" class="k-foot-link" onClick=${onCredits}>Bildnachweise</button>
-      </div>
+  function Foot({ onInfo }) {
+    return html`<footer class="k-foot"><div class="ui-wrap k-foot-in">
+      <div class="k-foot-brand"><${Logo} size=${24} />
+        <p>Unser Gebäck backt die Backstube Kornfeld, Partnerbäckerei seit 1928 (Beispielname). Butter, Marmelade und Co. kommen vom Hofladen.</p></div>
+      <nav class="k-foot-links" aria-label="Weitere Angebote">
+        <button type="button" onClick=${() => onInfo('buero')}>Büro-Frühstück</button>
+        <button type="button" onClick=${() => onInfo('geschenk')}>Frühstück verschenken</button>
+        <button type="button" onClick=${() => onInfo('werben')}>Nachbarn werben</button>
+        <button type="button" onClick=${() => onInfo('credits')}>Bildnachweise</button>
+      </nav>
+      <p class="k-foot-note"><strong>Demo mit Beispieldaten.</strong> Alle Namen, Adressen, Preise und Zahlen sind erfunden. Es wird nichts bestellt oder abgebucht.</p>
     </div></footer>`;
   }
 
@@ -545,7 +369,7 @@
     const [plz, setPlz] = useState(s.draft.plz || '');
     const [err, setErr] = useState('');
     const [wait, setWait] = useState(null);
-    const [credits, setCredits] = useState(false);
+    const [info, setInfo] = useState(null);
     const inputRef = useRef(null);
     const resultRef = useRef(null);
     const scrollNext = useRef(false);
@@ -565,12 +389,6 @@
       if (el && el.scrollIntoView) setTimeout(() => el.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' }), 60);
     }, [s.draft.plz]);
 
-    const needPlz = () => {
-      setErr('Bitte prüfen Sie zuerst Ihre Postleitzahl, dann legen wir das Sackerl für Sie an.');
-      if (root.scrollTo) root.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
-      if (inputRef.current) setTimeout(() => inputRef.current && inputRef.current.focus({ preventScroll: true }), 200);
-    };
-
     const r = sel().regionForPlz(s, s.draft.plz);
     let result = null;
     if (r) {
@@ -584,20 +402,13 @@
       <div class="ui-wrap k-result-wrap" ref=${resultRef} aria-live="polite">
         ${result ? html`<section class="k-result" key=${s.draft.plz} aria-label="Ergebnis der Postleitzahl-Prüfung">${result}</section>` : null}
       </div>
-      <${StarterBags} s=${s} onNeedPlz=${needPlz} />
       <${HowItWorks} />
-      <${Modes} s=${s} />
-      <${Assortment} s=${s} />
-      <${WeeklySpecial} s=${s} />
-      <${SeasonBlock} s=${s} />
-      <${Partners} s=${s} />
-      <${Referral} s=${s} />
-      <${OfficeGift} s=${s} />
-      <${PromiseBlock} />
+      <${ThisWeek} s=${s} />
+      <${Modes} />
       <${Faq} />
-      <${Foot} onCredits=${() => setCredits(true)} />
+      <${Foot} onInfo=${setInfo} />
       ${wait ? html`<${WaitlistSheet} s=${s} target=${wait} onClose=${() => setWait(null)} />` : null}
-      <${Credits} open=${credits} onClose=${() => setCredits(false)} />
+      <${InfoSheet} s=${s} kind=${info} onClose=${() => setInfo(null)} />
     </div>`;
   }
   Start.fullBleed = true;

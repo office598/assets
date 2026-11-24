@@ -57,9 +57,9 @@
           <div class="k-up-st">${status}${flexOnly ? html` <${Pill} tone="kraft">einmalig<//>` : null}</div>
           ${!u.changeable && !dv ? html`<div class="ui-hint">Bestellschluss war ${T.fmt.rel(u.cutoff)}.</div>` : null}</div>
         <div class="k-up-r"><div class="k-up-p">${off ? '–' : eur(u.total + u.fee)}</div>
-          ${u.changeable && !dv ? (u.skipped ? html`<${Btn} size="sm" variant="ghost" onClick=${() => { act().unskipDate(cid, u.dateKey) ? toast('Wir liefern am ' + T.fmt.day(u.dateKey) + ' wieder.', 'ok') : toast('Der Bestellschluss ist vorbei.', 'warn'); }}>Doch liefern<//>`
-            : flexOnly && fo ? html`<${Btn} size="sm" variant="ghost" onClick=${() => { act().cancelFlex(fo.id); toast('Einmallieferung storniert.', 'info'); }}>Stornieren<//>`
-              : html`<${Btn} size="sm" variant="ghost" onClick=${() => { act().skipDate(cid, u.dateKey) ? toast('Ausgesetzt: ' + T.fmt.day(u.dateKey) + '. Sie zahlen für diesen Tag nichts.', 'ok') : toast('Der Bestellschluss ist vorbei.', 'warn'); }}>Aussetzen<//>`) : null}
+          ${u.changeable && !dv ? (u.skipped ? html`<${Btn} variant="ghost" onClick=${() => { act().unskipDate(cid, u.dateKey) ? toast('Wir liefern am ' + T.fmt.day(u.dateKey) + ' wieder.', 'ok') : toast('Der Bestellschluss ist vorbei.', 'warn'); }}>Doch liefern<//>`
+            : flexOnly && fo ? html`<${Btn} variant="ghost" onClick=${() => { act().cancelFlex(fo.id); toast('Einmallieferung storniert.', 'info'); }}>Stornieren<//>`
+              : html`<${Btn} variant="ghost" onClick=${() => { act().skipDate(cid, u.dateKey) ? toast('Ausgesetzt: ' + T.fmt.day(u.dateKey) + '. Sie zahlen für diesen Tag nichts.', 'ok') : toast('Der Bestellschluss ist vorbei.', 'warn'); }}>Aussetzen<//>`) : null}
           ${u.changeable && !dv ? html`<div class="ui-hint">bis ${T.fmt.rel(u.cutoff)}</div>` : null}</div>
       </li>`;
     })}</ul>`;
@@ -81,7 +81,7 @@
       toast('Pause eingetragen: ' + T.fmt.day(from) + ' bis ' + T.fmt.day(to), 'ok');
     };
     return html`<div class="ui-stack" style="--gap:12px">
-      <p class="ui-muted" style="margin:0">Im Urlaub? In dieser Zeit liefern wir nicht und Sie zahlen nichts. Ihr Platz bleibt Ihnen erhalten.</p>
+      <p class="ui-muted" style="margin:0">In dieser Zeit liefern wir nicht, Ihr Platz bleibt Ihnen.</p>
       <form class="k-pause" onSubmit=${add} noValidate>
         <${Field} id="pause-from" label="Von" type="date" min=${tomorrow} value=${from} onInput=${e => { setFrom(e.target.value); setErr(''); }} />
         <${Field} id="pause-to" label="Bis einschließlich" type="date" min=${from || tomorrow} value=${to} onInput=${e => { setTo(e.target.value); setErr(''); }} />
@@ -97,7 +97,7 @@
   function WaitlistBox({ s, cust }) {
     const now = T.now().getTime();
     const mine = s.waitlist.filter(w => w.customerId === cust.id && (w.status === 'waiting' || w.status === 'notified'));
-    if (!mine.length) return html`<p class="ui-muted" style="margin:0">Sie stehen auf keiner Warteliste. Ausgebuchte Tage können Sie im Lieferplan vormerken.</p>`;
+    if (!mine.length) return html`<p class="ui-muted" style="margin:0">Sie stehen auf keiner Warteliste.</p>`;
     return html`<ul class="k-list k-list-lg">${mine.map(w => {
       const res = w.status === 'notified' && w.reservedUntil && new Date(w.reservedUntil).getTime() > now;
       const pos = w.weekday != null ? sel().waitPosition(s, cust.id, w.regionId, w.weekday) : null;
@@ -105,7 +105,7 @@
       return html`<li key=${w.id}><${Icon} name=${res ? 'bell' : 'clock'} size=${20} />
         <span class="ui-grow"><strong>${w.weekday != null ? WDL[w.weekday] : 'Gebiets-Vormerkung'}</strong>
           <span class="ui-hint" style="display:block">${res ? 'Frei – reserviert bis ' + T.fmt.rel(w.reservedUntil) : (pos ? 'Platz ' + pos + ' auf der Warteliste' : 'vorgemerkt') + (rg ? ' · ' + rg.name : '') + ' · ' + (w.channel === 'push' ? 'Push' : 'E-Mail')}</span></span>
-        ${res ? html`<${Btn} size="sm" variant="sun" onClick=${() => bookNow(cust, w)}>Jetzt buchen<//>`
+        ${res ? html`<${Btn} variant="sun" onClick=${() => bookNow(cust, w)}>Jetzt buchen<//>`
           : html`<${Btn} size="sm" variant="quiet" onClick=${() => { act().leaveWaitlist(w.id); toast('Von der Warteliste gestrichen.', 'info'); }}>Streichen<//>`}</li>`;
     })}</ul>`;
   }
@@ -147,7 +147,7 @@
       act().draftCheckPlz(cust.plz); Sheets.bookDay(wd); goPlan();
     };
     return html`<div class="ui-stack" style="--gap:16px">
-      <p class="ui-muted" style="margin:0">Änderungen gelten für alle kommenden Lieferungen am jeweiligen Wochentag, sofern der Bestellschluss noch nicht vorbei ist.</p>
+      <p class="ui-muted" style="margin:0">Änderungen gelten ab der nächsten Lieferung.</p>
       ${plan.length ? plan.map(p => html`<${PlanDay} key=${p.wd} s=${s} cust=${cust} p=${p} onAdd=${() => setAdd(p.wd)} onRemove=${() => setRem(p.wd)} />`)
         : html`<${Empty} icon="bag" title="Noch kein Wochenplan" text="Wählen Sie Liefertage im Lieferplan." action=${html`<${Btn} variant="sun" onClick=${goPlan}>Lieferplan öffnen<//>`} />`}
       <div><h3 class="k-h3">Tag hinzufügen</h3>
@@ -169,15 +169,15 @@
   function Inbox({ s, cust }) {
     const list = sel().inbox(s, cust.id);
     const unread = list.filter(n => !n.read).length;
-    if (!list.length) return html`<${Empty} icon="bell" title="Keine Nachrichten" text="Bestätigungen, Wartelisten-Meldungen und Zustellungen erscheinen hier." />`;
+    if (!list.length) return html`<${Empty} icon="bell" title="Keine Nachrichten" text="Bestätigungen und Zustellmeldungen erscheinen hier." />`;
     return html`<div class="ui-stack" style="--gap:12px">
-      ${unread ? html`<div><${Btn} size="sm" variant="ghost" icon="check" onClick=${() => act().markRead('all', cust.id)}>Alle als gelesen markieren (${unread})<//></div>` : null}
+      ${unread ? html`<div><${Btn} variant="ghost" icon="check" onClick=${() => act().markRead('all', cust.id)}>Alle als gelesen markieren (${unread})<//></div>` : null}
       <ul class="k-msgs">${list.map(n => html`<li key=${n.id} class=${cx('k-msg', !n.read && 'is-unread')}>
         <span class="k-msg-ic"><${Icon} name=${n.channel === 'email' ? 'mail' : 'bell'} size=${20} /></span>
         <div class="ui-grow"><div class="k-msg-h"><strong>${n.title}</strong>${!n.read ? html`<span class="k-msg-dot" aria-label="ungelesen"></span>` : null}</div>
           <div class="k-msg-b">${n.body}</div>
           <div class="k-msg-f"><span class="ui-mono">${T.fmt.rel(n.createdAt)} · ${n.channel === 'email' ? 'E-Mail' : 'Push'}</span>
-            ${n.action && n.action.view ? html`<${Btn} size="sm" variant="ghost" onClick=${() => { act().markRead(n.id, cust.id); act().setUi({ customerView: n.action.view }); if (root.scrollTo) root.scrollTo(0, 0); }}>Öffnen<//>` : null}
+            ${n.action && n.action.view ? html`<${Btn} variant="ghost" onClick=${() => { act().markRead(n.id, cust.id); act().setUi({ customerView: n.action.view }); if (root.scrollTo) root.scrollTo(0, 0); }}>Öffnen<//>` : null}
             ${!n.read ? html`<${Btn} size="sm" variant="quiet" onClick=${() => act().markRead(n.id, cust.id)}>Gelesen<//>` : null}</div></div>
       </li>`)}</ul></div>`;
   }
@@ -212,10 +212,10 @@
         <div class="k-pay-now"><${Icon} name="euro" size=${22} /><div><strong>SEPA-Lastschrift</strong><div class="ui-hint">AT61 •••• •••• •••• 3201 · monatlich im Nachhinein</div></div></div>
         <div class="ui-tablewrap" style="margin-top:12px"><table class="ui-table"><thead><tr><th>Rechnung</th><th>Zeitraum</th><th class="num">Betrag</th></tr></thead>
           <tbody>${invoices.map(r => html`<tr key=${r.no}><td class="ui-mono">${r.no}</td><td>${r.label}</td><td class="num">${eur(r.amount)}</td></tr>`)}</tbody></table></div>
-        <p class="ui-hint" style="margin:8px 0 0">Beispielzeilen der Demo, errechnet aus Ihrem Wochenplan.</p></section>
+        <p class="ui-hint" style="margin:8px 0 0">Beispielzeilen der Demo.</p></section>
 
       <section class="k-card k-refer"><h3 class="k-h3">Nachbarn werben</h3>
-        <p style="margin:0 0 10px">Für jede Nachbarin und jeden Nachbarn, die mit Ihrem Code bestellen, erhalten beide ${eur(C.promo.referralCredit)} Guthaben.</p>
+        <p style="margin:0 0 10px">Sie und Ihre Nachbarn erhalten je ${eur(C.promo.referralCredit)} Guthaben.</p>
         <div class="k-code" aria-label="Ihr Empfehlungscode"><span class="ui-eyebrow">Ihr Code</span><strong>${code}</strong></div></section>
     </div>`;
   }
@@ -228,7 +228,7 @@
     if (!cust || !cust.registered) {
       return html`<div class="k-konto"><h1 class="k-h1">Ihr Konto</h1>
         <${Switcher} cid=${cid} />
-        <${Empty} icon="user" title="Noch kein Konto" text="Sobald Sie eine Bestellung aufgegeben haben, sehen Sie hier Ihre Lieferungen, können aussetzen, pausieren und Ihren Wochenplan ändern."
+        <${Empty} icon="user" title="Noch kein Konto" text="Nach Ihrer ersten Bestellung verwalten Sie hier Ihre Lieferungen."
           action=${html`<div class="ui-stack" style="--gap:10px;align-items:stretch"><${Btn} variant="sun" icon="bag" onClick=${goPlan}>Lieferplan zusammenstellen<//>
             <${Btn} variant="ghost" icon="user" onClick=${() => act().switchCustomer('c-huber')}>Demo: Bestandskundin Maria Huber ansehen<//></div>`} />
       </div>`;

@@ -76,14 +76,6 @@
 .k-sack-empty p { margin: 0; }
 .k-sack-first { align-items: center; text-align: center; padding: var(--s-6) var(--s-4); }
 .k-sack-first > .ui-icon { color: var(--kraft); }
-.k-starters { display: grid; grid-template-columns: 1fr; gap: var(--s-2); }
-@media (min-width: 640px) { .k-starters { grid-template-columns: repeat(3, 1fr); } }
-.k-starter { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: var(--r-ctl); background: var(--surface); transition: transform .12s, border-color .15s; }
-.k-starter:hover { transform: translateY(-2px); border-color: var(--sun); }
-.k-starter strong { font-family: var(--font-display); font-size: var(--fs-18); }
-.k-starter-t { font-size: 13px; color: var(--muted); }
-.k-starter-p { margin-top: 4px; font-weight: 750; font-variant-numeric: tabular-nums; }
-.k-starter-p em { font-style: normal; font-weight: 650; color: var(--ok); font-size: 13px; }
 
 .k-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .k-line { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); }
@@ -232,15 +224,35 @@
 
 .k-konto .ui-btn, .k-lieferplan .ui-btn { white-space: normal; text-align: center; }
 
-.k-starter { position: relative; }
-.k-starter-flag { position: absolute; top: -9px; right: 12px; padding: 1px 10px; border-radius: var(--r-pill); background: var(--butter); color: var(--sun-ink); font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-.k-trade { background: var(--kraft-soft); }
-.k-trade > .ui-icon { color: var(--kraft-ink); }
 .k-x { flex: none; width: 32px; height: 32px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); display: grid; place-items: center; }
 .k-x:hover { background: var(--surface-2); }
-.k-special { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1.5px solid var(--sun); border-radius: var(--r-ctl); background: var(--butter-soft); flex-wrap: wrap; }
-.k-special-ph { width: 56px; flex: none; }
-.k-special .ui-grow { min-width: 140px; }
-.k-special-p { font-variant-numeric: tabular-nums; font-size: var(--fs-14); }
-.k-special-p s { color: var(--muted); } .k-special-p em { font-style: normal; color: var(--ok); font-weight: 700; }
-.k-special .ui-btn { flex: none; }
+.k-special-p s { color: var(--muted); } 
+/* ---------- 8.13: ruhig, hell, groß ---------- */
+.k-lieferplan { gap: var(--s-5); }
+.k-plan-main { gap: var(--s-5); }
+.k-sack-head h3 { font-size: var(--fs-22); }
+.k-sack-sub { font-size: var(--fs-14); color: var(--muted); }
+.k-sack-empty { display: flex; flex-direction: column; gap: var(--s-4); }
+.k-sack-empty p { margin: 0; font-weight: 650; color: var(--ink-2); }
+.k-picks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-2); }
+.k-pick { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px 10px; border: 1.5px solid var(--line); border-radius: var(--r-ctl); background: var(--surface); text-align: center; min-width: 0; }
+.k-pick:hover { border-color: var(--sun); }
+.k-pick-ph { width: 100%; }
+.k-pick-n { font-size: 13px; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; }
+.k-pick-p { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 420px) { .k-picks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.k-tip { display: flex; align-items: center; gap: 10px; padding: 8px 6px 8px 8px; border-radius: var(--r-ctl); background: var(--butter-soft); }
+.k-tip-ph { flex: none; width: 44px; }
+.k-tip-ph .ui-photo { border-radius: 12px; }
+.k-tip-ic { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--surface); color: var(--sun-text); }
+.k-tip-t { flex: 1; min-width: 0; font-size: var(--fs-14); font-weight: 600; line-height: 1.3; }
+.k-tip .ui-btn { flex: none; }
+.k-lfee { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.k-x { width: 40px; height: 40px; }
+.k-sugg { display: flex; flex-direction: column; gap: 8px; margin-bottom: var(--s-3); }
+
+.k-konto { gap: var(--s-5); }
+.k-konto-grid, .k-settings { gap: var(--s-5); }
+.k-card { padding: var(--s-5); }
+.k-card .k-h3 { font-size: var(--fs-22); margin-bottom: var(--s-4); }
+.k-up { padding: 18px 0; }

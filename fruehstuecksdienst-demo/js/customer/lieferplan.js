@@ -52,9 +52,9 @@
     s = state();
     if (!sumQty(s.draft.abo[wd])) {
       const src = Object.keys(s.draft.abo).map(Number).sort().find(w => w !== wd && sumQty(s.draft.abo[w]) > 0);
-      const bags = sel().starterBags ? sel().starterBags(s) : [];
+      const mine = s.subs.find(x => x.customerId === s.session.customerId && sumQty(x.items) > 0);
       if (src != null) a.draftCopyDay(src, wd);
-      else if (bags[0]) a.draftApplyBag({ wd }, bags[0].items);
+      else if (mine) a.draftApplyBag({ wd }, mine.items);
     }
     if (state().draft.step !== 'plan') a.setDraft({ step: 'plan' });
   }
@@ -100,8 +100,13 @@
     const total = sumQty(items);
     const tabs = cats.filter(c => s.products.some(p => p.cat === c && p.active !== false)).map(c => ({ id: c, label: C.labels.cat[c] }));
     const price = sel().priceBag(s, items || {}, { wd });
+    const sug = open && total && sel().suggestions ? sel().suggestions(s, items || {}, 4) : [];
     return html`<${Sheet} open=${open} onClose=${onClose} title=${title} wide
       footer=${html`<div class="k-sheetfoot"><span><strong>${artikel(total)}</strong> · ${eur(price.total)}</span><${Btn} variant="sun" onClick=${onClose}>Fertig<//></div>`}>
+      ${sug.length ? html`<div class="k-sugg"><div class="ui-eyebrow">Dazu passt</div><div class="k-sugg-row">${sug.map(p => html`<button type="button" key=${p.id} class="k-sugg-i"
+        onClick=${() => onQty(p.id, ((items && items[p.id]) || 0) + 1)} aria-label=${p.name + ' hinzufügen, ' + eur(p.price)}>
+        <span class="k-sugg-ph"><${Photo} id=${p.id} alt="" ratio="1/1" /></span><span class="k-sugg-n">${p.name}<small>${eur(p.price)}</small></span>
+        <span class="k-sugg-plus"><${Icon} name="plus" size=${18} /></span></button>`)}</div></div>` : null}
       <div class="k-pickertabs"><${Tabs} tabs=${tabs} value=${cat} onChange=${setCat} label="Kategorien" /></div>
       <div class="k-pgrid">
         ${list.map(p => html`<${ProductCard} key=${p.id} product=${p} qty=${(items && items[p.id]) || 0} onQty=${n => onQty(p.id, n)} badge=${badgeFor(s, p, wd)} />`)}
@@ -131,15 +136,14 @@
     return html`<${Sheet} open=${open} onClose=${onClose} title=${WDL[wd] + ' ist ausgebucht'} footer=${foot}>
       ${entry ? html`<div class="ui-stack" style="--gap:12px">
         <div class="k-lnote k-lnote-ok"><${Icon} name="check" size=${20} /><div><strong>Sie stehen auf Platz ${pos} für ${WDL[wd]}.</strong>
-          <div>${entry.status === 'notified' ? 'Der Tag ist frei geworden. Buchen Sie ihn im Lieferplan.' : 'Wir melden uns per ' + (entry.channel === 'push' ? 'Push-Nachricht' : 'E-Mail') + ', sobald ein Platz frei wird.'}</div></div></div>
+          <div>${entry.status === 'notified' ? 'Der Tag ist frei geworden. Buchen Sie ihn im Lieferplan.' : 'Wir melden uns per ' + (entry.channel === 'push' ? 'Push' : 'E-Mail') + ', sobald ein Platz frei wird.'}</div></div></div>
       </div>` : html`<div class="ui-stack" style="--gap:14px">
-        <p class="ui-muted" style="margin:0">${region ? region.name : 'Ihr Gebiet'}: Alle Abo-Plätze am ${WDL[wd]} sind vergeben. Setzen Sie sich auf die Warteliste. Wird ein Platz frei, reservieren wir ihn ${C.reserveHours} Stunden für Sie.</p>
+        <p class="ui-muted" style="margin:0">${region ? region.name : 'Ihr Gebiet'}: Wird ein Platz frei, reservieren wir ihn ${C.reserveHours} Stunden für Sie.</p>
         <div><div class="ui-label" id="wl-ch-l" style="margin-bottom:6px">Wie sollen wir Sie benachrichtigen?</div>
           <${Segmented} label="Benachrichtigungskanal" value=${channel} onChange=${setChannel} full
             options=${[{ value: 'push', label: 'Push-Nachricht', icon: 'bell' }, { value: 'email', label: 'E-Mail', icon: 'mail' }]} /></div>
         ${channel === 'email' ? html`<${Field} id="wl-email" label="E-Mail-Adresse" type="email" autocomplete="email" value=${email} error=${err}
           onInput=${e => { setEmail(e.target.value); setErr(''); }} placeholder="name@beispiel.at" />` : null}
-        <p class="ui-hint" style="margin:0">Bis dahin können Sie auch einen anderen Tag oder eine Einmallieferung wählen.</p>
       </div>`}
     <//>`;
   }
@@ -186,6 +190,13 @@
     act().draftSetQty(target, id, (items[id] || 0) + Math.max(1, hint.missing));
   }
 
+  function quickPicks(s, items, wd) {
+    const ok = p => p.active !== false && !p.season && !(items[p.id] > 0) && (!p.weekendOnly || (wd != null && wd >= 5)) && p.cat !== 'boxen';
+    const pool = s.products.filter(p => ok(p) && (p.focus || p.bestseller));
+    pool.sort((x, y) => (y.bestseller ? 1 : 0) - (x.bestseller ? 1 : 0));
+    return pool.slice(0, 4);
+  }
+
   function BagCard({ s, target, del, tried, onAdd, copySrc, onRemove, status }) {
     const flex = !!target.flex, wd = flex ? (s.draft.flexDate ? T.weekday(s.draft.flexDate) : null) : target.wd;
     const items = flex ? s.draft.flex : (s.draft.abo[target.wd] || {});
@@ -193,33 +204,40 @@
     const count = sumQty(items);
     const [gone, setGone] = useState({});
     const bagKey = flex ? 'flex' : 'd' + target.wd;
-    const trades = count && sel().tradeUps ? sel().tradeUps(s, items).filter(x => !gone[bagKey + x.fromId + x.toId]).slice(0, 2) : [];
-    const ws = s.weeklySpecial, wsP = ws && ws.productId ? sel().product(s, ws.productId) : null;
-    const special = count && wsP && wsP.active !== false && !(items[wsP.id] > 0) && (!wsP.weekendOnly || (wd != null && wd >= 5)) ? wsP : null;
-    const weekend = wd != null && wd >= 5;
     const setQty = (id, n) => act().draftSetQty(target, id, n);
-    const starters = !count && sel().starterBags ? sel().starterBags(s) : [];
-    const sugg0 = count && sel().suggestions ? sel().suggestions(s, items, 3) : [];
-    const sugg = sugg0.filter(p => !special || p.id !== special.id);
-    const from = C.fees.freeDeliveryFrom;
     const d = del || { total: bag.total, fee: 0, discounts: bag.discounts, hints: bag.hints, freeDeliveryMissing: 0 };
+    const from = C.fees.freeDeliveryFrom;
     const stdFee = feeStd(flex ? 'flex' : 'abo', wd != null ? wd : (flex ? null : target.wd));
     const feeFree = d.fee === 0 && count > 0;
     const byThreshold = from && d.total >= from - 1e-9;
     const minMissing = flex ? Math.max(0, Math.round((C.fees.flexMinOrder - d.total) * 100) / 100) : 0;
-    const title = flex ? 'Ihr Sackerl' + (s.draft.flexDate ? ' für ' + WDL[T.weekday(s.draft.flexDate)] : '') : 'Sackerl für ' + WDL[target.wd];
+    const title = flex ? 'Ihr Sackerl' + (s.draft.flexDate ? ' für ' + WDL[T.weekday(s.draft.flexDate)] : '') : WDL[target.wd];
     const dateK = flex ? s.draft.flexDate : T.nextDateForWeekday(target.wd);
     const empty = tried && !count;
+
+    // genau ein Vorschlag: Tausch → Brot der Woche (Wochenende) → Mengenaktion → Dazu passt
+    let tip = null;
+    if (count) {
+      const key = (k) => bagKey + k;
+      const trade = sel().tradeUps ? sel().tradeUps(s, items).find(x => !gone[key(x.fromId + x.toId)]) : null;
+      const ws = s.weeklySpecial, wsP = ws && ws.productId ? sel().product(s, ws.productId) : null;
+      const wsOk = wsP && wsP.active !== false && !(items[wsP.id] > 0) && (!wsP.weekendOnly || (wd != null && wd >= 5));
+      const hint = d.hints.find(h => !gone[key('h' + h.offerId)]);
+      const sg = sel().suggestions ? sel().suggestions(s, items, 1)[0] : null;
+      if (trade) tip = { k: key(trade.fromId + trade.toId), icon: 'star', photo: trade.toId, text: trade.text, cta: 'Tauschen', run: () => act().draftSwap(target, trade.fromId, trade.toId) };
+      else if (wsOk && wd != null && wd >= 5 && !gone[key('ws')]) tip = { k: key('ws'), photo: wsP.id, text: (ws.title || 'Brot der Woche') + ': ' + wsP.name + ' · ' + (ws.pct > 0 ? eur(Math.round(wsP.price * (100 - ws.pct)) / 100) + ' statt ' + eur(wsP.price) : eur(wsP.price)), cta: 'Dazulegen', run: () => setQty(wsP.id, 1) };
+      else if (hint) tip = { k: key('h' + hint.offerId), icon: 'gift', text: hint.text, cta: 'Hinzufügen', run: () => addHintToBag(s, target, hint, onAdd) };
+      else if (sg && !gone[key('sg')]) tip = { k: key('sg'), photo: sg.id, text: 'Dazu passt: ' + sg.name + ' · ' + eur(sg.price), cta: 'Hinzufügen', run: () => setQty(sg.id, (items[sg.id] || 0) + 1) };
+    }
+    const picks = !count ? quickPicks(s, items, wd) : [];
+
     return html`<section class=${cx('k-sack', empty && 'has-error')} id=${'k-sack-' + (flex ? 'flex' : target.wd)} aria-label=${title}>
       <header class="k-sack-head">
-        <div class="k-sack-ic"><${Icon} name="bag" size=${22} /></div>
         <div class="ui-grow"><h3>${title}</h3>
-          <div class="k-sack-sub">${dateK ? (flex ? 'am ' : 'ab ') + T.fmt.dayLong(dateK) + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : 'Tag wählen'}
+          <div class="k-sack-sub">${dateK ? T.fmt.dayLong(dateK) + ' · bis ' + T.fmt.hm(T.deadlineMin(dateK)) + ' Uhr' : 'Tag wählen'}
             ${status === 'reserved' ? html` <${Pill} tone="info">für Sie reserviert<//>` : null}</div></div>
         ${onRemove ? html`<${Btn} variant="quiet" size="sm" icon="x" aria-label=${WDL[target.wd] + ' entfernen'} onClick=${onRemove}>Entfernen<//>` : null}
       </header>
-
-      <div class="k-lfee"><${Icon} name="truck" size=${16} /><span>Zustellung ${eur(stdFee)} je Lieferung${flex ? ' · Mindestbestellwert ' + eur(C.fees.flexMinOrder) : ''}${from ? ' · gratis ab ' + eur(from) : ''}</span></div>
 
       ${count ? html`<ul class="k-lines">${bag.lines.map(l => html`<li class="k-line" key=${l.product.id}>
         <div class="k-line-ph"><${Photo} id=${l.product.id} alt=${l.product.name} ratio="1/1" /></div>
@@ -230,50 +248,33 @@
       </li>`)}
         ${d.discounts.map(x => { const p = sel().product(s, x.productId); return html`<li class="k-line k-line-disc" key=${x.offerId}>
           <div class="k-line-ph"><${Icon} name="gift" size=${22} /></div>
-          <div class="k-line-main"><div class="k-line-name">${x.title}</div><div class="k-line-sub">${x.freeQty} ${x.freeQty === 1 ? p.name : p.plural} gratis</div></div>
+          <div class="k-line-main"><div class="k-line-name">${x.title}</div><div class="k-line-sub">${p ? p.name : ''}</div></div>
           <div class="k-line-sum">− ${eur(x.amount)}</div></li>`; })}
       </ul>` : html`<div class="k-sack-empty">
-        <p>${empty ? 'Dieses Sackerl ist noch leer. Wählen Sie ein Schnellstart-Sackerl oder legen Sie Artikel hinein.' : 'Noch leer. Starten Sie mit einem Vorschlag oder legen Sie selbst Artikel hinein.'}</p>
-        ${starters.length ? html`<div class="k-starters">${starters.map(b => html`<button type="button" key=${b.id} class="k-starter" onClick=${() => act().draftApplyBag(target, b.items)}>
-          ${b.popular ? html`<span class="k-starter-flag">Beliebt</span>` : null}<strong>${b.title}</strong><span class="k-starter-t">${sel().itemsText(s, b.items, 3)}</span>
-          <span class="k-starter-p">${eur(b.total)}${b.saving > 0 ? html` <em>spart ${eur(b.saving)}</em>` : null}</span></button>`)}</div>` : null}
+        <p>${empty ? 'Dieses Sackerl ist noch leer.' : 'Was darf in Ihr Sackerl?'}</p>
+        <${Btn} variant="sun" size="lg" full icon="plus" onClick=${onAdd}>Artikel hinzufügen<//>
+        ${picks.length ? html`<div class="k-picks" role="group" aria-label="Schnell hinzufügen">${picks.map(p => html`<button type="button" key=${p.id} class="k-pick" onClick=${() => setQty(p.id, 1)} aria-label=${p.name + ' hinzufügen, ' + eur(p.price)}>
+          <span class="k-pick-ph"><${Photo} id=${p.id} alt="" ratio="1/1" /></span><span class="k-pick-n">${p.name}</span><span class="k-pick-p">${eur(p.price)}</span></button>`)}</div>` : null}
       </div>`}
 
-      ${d.hints.length ? html`<div class="k-hints">${d.hints.map(hn => html`<div class="k-hint" key=${hn.offerId}><${Icon} name="gift" size=${20} />
-        <span>${hn.text}</span><${Btn} size="sm" variant="ghost" icon="plus" onClick=${() => addHintToBag(s, target, hn, onAdd)}>Hinzufügen<//></div>`)}</div>` : null}
+      ${tip ? html`<div class="k-tip">${tip.photo ? html`<span class="k-tip-ph"><${Photo} id=${tip.photo} alt="" ratio="1/1" /></span>` : html`<span class="k-tip-ic"><${Icon} name=${tip.icon} size=${22} /></span>`}
+        <span class="k-tip-t">${tip.text}</span><${Btn} size="sm" variant="ghost" onClick=${tip.run}>${tip.cta}<//>
+        <button type="button" class="k-x" aria-label="Hinweis ausblenden" onClick=${() => setGone(Object.assign({}, gone, { [tip.k]: true }))}><${Icon} name="x" size=${16} /></button></div>` : null}
 
-      ${trades.length ? html`<div class="k-hints">${trades.map(x => { const to = sel().product(s, x.toId), fr = sel().product(s, x.fromId); return html`<div class="k-hint k-trade" key=${x.fromId + x.toId}><${Icon} name="star" size=${20} />
-        <span>${x.text}</span><${Btn} size="sm" variant="ghost" onClick=${() => act().draftSwap(target, x.fromId, x.toId)}>Tauschen<//>
-        <button type="button" class="k-x" aria-label=${'Hinweis zu ' + fr.name + ' ausblenden'} onClick=${() => setGone(Object.assign({}, gone, { [bagKey + x.fromId + x.toId]: true }))}><${Icon} name="x" size=${16} /></button></div>`; })}</div>` : null}
-      <div class="k-sack-actions">
-        <${Btn} variant="ghost" size="sm" icon="plus" onClick=${onAdd}>Artikel hinzufügen<//>
-        ${copySrc != null ? html`<${Btn} variant="quiet" size="sm" icon="refresh" onClick=${() => act().draftCopyDay(copySrc, target.wd)}>wie ${WDL[copySrc]} übernehmen<//>` : null}
-      </div>
+      ${count ? html`<div class="k-bag-actions">
+        <${Btn} variant="ghost" icon="plus" onClick=${onAdd}>Artikel hinzufügen<//>
+        ${copySrc != null ? html`<${Btn} variant="quiet" icon="refresh" onClick=${() => act().draftCopyDay(copySrc, target.wd)}>wie ${WDL[copySrc]}<//>` : null}
+      </div>` : copySrc != null ? html`<div class="k-bag-actions"><${Btn} variant="quiet" icon="refresh" onClick=${() => act().draftCopyDay(copySrc, target.wd)}>wie ${WDL[copySrc]} übernehmen<//></div>` : null}
 
-      ${weekend ? special ? html`<div class="k-special"><span class="k-special-ph"><${Photo} id=${special.id} alt=${special.name} ratio="1/1" /></span>
-        <div class="ui-grow"><div class="ui-eyebrow">${ws.title || 'Brot der Woche'}</div><strong>${special.name}</strong>
-          <div class="k-special-p">${ws.pct > 0 ? html`<s>${eur(special.price)}</s> <b>${eur(Math.round(special.price * (100 - ws.pct)) / 100)}</b> <em>−${ws.pct} %</em>` : eur(special.price)}</div></div>
-        <${Btn} size="sm" variant="sun" icon="plus" onClick=${() => setQty(special.id, 1)}>${ws.title || 'Brot der Woche'} dazulegen<//></div>` : null : null}
-      ${sugg.length ? html`<div class="k-sugg"><div class="ui-eyebrow">Dazu passt</div><div class="k-sugg-row">${sugg.map(p => html`<button type="button" key=${p.id} class="k-sugg-i"
-        onClick=${() => setQty(p.id, (items[p.id] || 0) + 1)} aria-label=${p.name + ' hinzufügen, ' + eur(p.price)}>
-        <span class="k-sugg-ph"><${Photo} id=${p.id} alt="" ratio="1/1" /></span><span class="k-sugg-n">${p.name}<small>${eur(p.price)}</small></span>
-        <span class="k-sugg-plus"><${Icon} name="plus" size=${18} /></span></button>`)}</div></div>` : null}
-      ${!weekend ? special ? html`<div class="k-special"><span class="k-special-ph"><${Photo} id=${special.id} alt=${special.name} ratio="1/1" /></span>
-        <div class="ui-grow"><div class="ui-eyebrow">${ws.title || 'Brot der Woche'}</div><strong>${special.name}</strong>
-          <div class="k-special-p">${ws.pct > 0 ? html`<s>${eur(special.price)}</s> <b>${eur(Math.round(special.price * (100 - ws.pct)) / 100)}</b> <em>−${ws.pct} %</em>` : eur(special.price)}</div></div>
-        <${Btn} size="sm" variant="sun" icon="plus" onClick=${() => setQty(special.id, 1)}>${ws.title || 'Brot der Woche'} dazulegen<//></div>` : null : null}
-
-      ${count ? html`<div class="k-sack-foot">
+      ${count ? html`<div class="k-bag-foot">
         ${flex && minMissing > 0 ? html`<div class=${cx('k-hint', tried && 'is-err')}><${Icon} name="info" size=${20} /><span>Mindestbestellwert ${eur(C.fees.flexMinOrder)}: noch ${eur(minMissing)}.</span></div>` : null}
         ${!feeFree && d.freeDeliveryMissing > 0 && from ? html`<${Progress} value=${d.total} max=${from} label=${'Noch ' + eur(d.freeDeliveryMissing) + ' bis zur Gratis-Zustellung'} />` : null}
         ${byThreshold ? html`<${Progress} value=${d.total} max=${from} label=${'Gratis-Zustellung ab ' + eur(from) + ' erreicht'} />` : null}
         <dl class="k-sum">
-          ${d.discounts.length ? html`<div><dt>Warenwert</dt><dd>${eur(d.subtotal != null ? d.subtotal : bag.subtotal)}</dd></div><div class="is-ok"><dt>Aktionen</dt><dd>− ${eur(d.discounts.reduce((a, x) => a + x.amount, 0))}</dd></div>` : null}
           <div><dt>Zustellung</dt><dd>${feeFree ? html`<s>${eur(stdFee)}</s> <strong class="k-free">gratis</strong>` : eur(d.fee)}</dd></div>
           <div class="is-total"><dt>${flex ? 'Summe' : 'Je Lieferung'}</dt><dd>${eur(d.total + d.fee)}</dd></div>
         </dl>
-        ${feeFree && !byThreshold && !flex ? html`<div class="k-lpromo"><${Icon} name="gift" size=${16} /> Aktionstag: Zustellung für Neukunden ${C.promo.weakDayFreeWeeks} Wochen gratis.</div>` : null}
-      </div>` : null}
+      </div>` : html`<div class="k-lfee"><${Icon} name="truck" size=${16} /><span>Zustellung ${eur(stdFee)}${flex ? ' · ab ' + eur(C.fees.flexMinOrder) + ' Bestellwert' : ''}</span></div>`}
     </section>`;
   }
 
@@ -402,8 +403,8 @@
           <${Segmented} label="Lieferart" full value=${d.mode} onChange=${m => act().setDraft({ mode: m })}
             options=${[{ value: 'abo', label: html`Regelmäßig <span class="k-reco">Empfohlen</span>` }, { value: 'flex', label: 'Einmalig' }]} />
           <p class="k-lmode-t">${abo
-            ? html`Fester Platz auf der Tour, Zustellung nur <strong>${feeRange('abo')}</strong> statt ${feeRange('flex')}. Pausieren oder aussetzen jederzeit.`
-            : html`Einmal liefern, solange noch Platz ist: Zustellung ${feeRange('flex')}, Mindestbestellwert ${eur(C.fees.flexMinOrder)}.`}</p>
+            ? html`Fester Platz auf der Tour, Zustellung ab <strong>${eur(feeStd('abo', 0))}</strong> statt ab ${eur(feeStd('flex', 0))}.`
+            : html`Solange Platz ist: Zustellung ab ${eur(feeStd('flex', 0))}, Bestellwert ab ${eur(C.fees.flexMinOrder)}.`}</p>
         </div>
 
         ${reserved.map(w => {
@@ -417,9 +418,8 @@
           </div>`;
         })}
 
-        <h2 class="k-h2">${abo ? 'An welchen Tagen sollen wir liefern?' : 'Für welchen Tag?'}</h2>
+        <h2 class="k-h2">${abo ? 'Liefertage wählen' : 'Liefertag wählen'}</h2>
         ${abo ? html`<${WeekPicker} s=${s} onPick=${pick} />` : html`<${FlexPicker} s=${s} onFull=${setFullPick} />`}
-        ${abo ? html`<p class="ui-hint k-lstrip-hint">Tippen Sie auf einen Anhänger. Ausgebuchte Tage: Warteliste.</p>` : null}
 
         ${!abo && fullPick ? (() => {
           const nk = T.nextDates(14, fullPick).find(k => { const f = sel().flexInfo(s, rid, k, cid).state; return f === 'free' || f === 'few'; });
@@ -432,7 +432,7 @@
             onAdd=${() => setPicker({ wd })} copySrc=${copySrcFor(wd)} onRemove=${() => act().draftToggleDay(wd)} />`)}`
           : html`${unfitFlex ? html`<div class="k-sack-empty k-sack-first"><${Icon} name="calendar" size=${28} /><p><strong>Wählen Sie einen Liefertag.</strong><br />Danach packen Sie Ihr Sackerl.</p></div>`
             : html`<${BagCard} s=${s} target=${{ flex: true }} tried=${tried} del=${sum.deliveries[0]} onAdd=${() => setPicker({ flex: true })} />`}
-            <div class="k-lnote k-lnote-info"><${Icon} name="leaf" size=${20} /><div>Bei regelmäßiger Lieferung zahlen Sie ${feeRange('abo')} statt ${feeRange('flex')} Zustellung.
+            <div class="k-lnote k-lnote-info"><${Icon} name="leaf" size=${20} /><div>Regelmäßig ist günstiger: Zustellung ab ${eur(feeStd('abo', 0))}.
               <button type="button" class="k-link" onClick=${() => act().setDraft({ mode: 'abo' })}>Regelmäßig ansehen</button></div></div>`}
       </div>
 
@@ -626,7 +626,7 @@
     const region = d.regionId ? sel().region(s, d.regionId) : null;
     let body;
     if (step === 'fertig') body = html`<${DoneStep} s=${s} />`;
-    else if (!region) body = html`<div class="k-gate"><h2>Wohin dürfen wir liefern?</h2><p class="ui-lead">Geben Sie Ihre Postleitzahl ein. Wir zeigen Ihnen sofort, an welchen Tagen noch Plätze frei sind.</p><${PlzForm} s=${s} /></div>`;
+    else if (!region) body = html`<div class="k-gate"><h2>Wohin dürfen wir liefern?</h2><p class="ui-lead">Mit Ihrer Postleitzahl sehen Sie, an welchen Tagen Plätze frei sind.</p><${PlzForm} s=${s} /></div>`;
     else if (step === 'adresse' && !registered) body = html`<${AddressStep} s=${s} />`;
     else if (step === 'zahlung' && !registered) body = html`<${PaymentStep} s=${s} />`;
     else body = html`<${PlanStep} s=${s} registered=${registered} />`;
