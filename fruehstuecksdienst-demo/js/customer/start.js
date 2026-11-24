@@ -349,8 +349,8 @@
   function Assortment({ s }) {
     const season = C.season, seasonOpen = season && T.isOpenFor(season.dateKey);
     const cats = Object.keys(C.labels.cat);
-    const best = s.products.filter(p => p.active && p.bestseller && !(p.season && !seasonOpen));
-    const rest = s.products.filter(p => p.active && !p.bestseller && !p.weekendOnly && !p.season).slice(0, 6);
+    const best = s.products.filter(p => p.active !== false && p.bestseller && !(p.season && !seasonOpen));
+    const rest = s.products.filter(p => p.active !== false && !p.bestseller && !p.weekendOnly && !p.season).slice(0, 6);
     const shown = best.concat(rest).slice(0, 12);
     return html`<${Section} id="k-sortiment" eyebrow="Sortiment" title="Frisch gebacken, echt lecker">
       <${Offers} s=${s} />
@@ -373,7 +373,7 @@
 
   function SeasonBlock({ s }) {
     const se = C.season;
-    if (!se || !T.isOpenFor(se.dateKey)) return null;
+    if (!se || (s.ui && s.ui.seasonActive === false) || !T.isOpenFor(se.dateKey)) return null;
     const p = sel().product(s, se.productId);
     if (!p || !p.active) return null;
     const pre = () => {
@@ -397,7 +397,7 @@
   }
 
   function Partners({ s }) {
-    const extras = ['teebutter', 'marillenmarmelade', 'bluetenhonig', 'freilandeier'].map(id => sel().product(s, id)).filter(Boolean);
+    const extras = ['teebutter', 'marillenmarmelade', 'bluetenhonig', 'freilandeier'].map(id => sel().product(s, id)).filter(p => p && p.active !== false);
     return html`<${Section} id="k-partner" eyebrow="Unsere Partner" title="Vom Bäcker und vom Hof">
       <div class="k-partners">
         <article class="k-partner">

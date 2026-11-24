@@ -32,10 +32,10 @@
   }
 
   function Composer({ s, draft, setDraft }) {
-    const n = App.sel.segmentCustomers(s, draft.segment).length;
+    const n = App.sel.segmentCustomers(s, draft.segment, s.ui.boRegion || undefined).length;
     const ok = draft.title.trim() && draft.body.trim() && n > 0;
     const send = () => {
-      const r = App.actions.sendCampaign({ title: draft.title.trim(), body: draft.body.trim(), channel: draft.channel, segment: draft.segment });
+      const r = App.actions.sendCampaign({ title: draft.title.trim(), body: draft.body.trim(), channel: draft.channel, segment: draft.segment, regionId: s.ui.boRegion || undefined });
       toast('Kampagne gesendet · ' + r.recipients + ' Empfänger', 'ok');
       setDraft({ title: '', body: '', channel: draft.channel, segment: draft.segment });
     };

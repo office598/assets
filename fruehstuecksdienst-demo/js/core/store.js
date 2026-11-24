@@ -599,9 +599,12 @@
     { id: 'familie', title: 'Familie', text: 'Reichlich Gebäck, Brot und Butter für alle.', items: { kaisersemmel: 6, salzstangerl: 2, bauernbrot: 1, teebutter: 1 } }
   ];
   sel.starterBags = s => STARTER.map(b => {
-    const bag = sel.priceBag(s, b.items, {});
-    return { id: b.id, title: b.title, text: b.text, items: Object.assign({}, b.items), total: bag.total, saving: round2(bag.subtotal - bag.total) };
-  });
+    const items = {};
+    Object.keys(b.items).forEach(id => { const p = sel.product(s, id); if (p && p.active !== false) items[id] = b.items[id]; });
+    if (!Object.keys(items).length) return null;
+    const bag = sel.priceBag(s, items, {});
+    return { id: b.id, title: b.title, text: b.text, items, total: bag.total, saving: round2(bag.subtotal - bag.total) };
+  }).filter(Boolean);
 
   sel.suggestions = (s, items, max) => {
     const have = items || {}, inBag = id => have[id] > 0;
@@ -612,10 +615,10 @@
     if (ids.includes('buttercroissant') || ids.includes('topfengolatsche') || ids.includes('nussschnecke')) order.push('marillenmarmelade', 'orangensaft');
     if (cats.includes('brot')) order.push('bergkaese', 'beinschinken');
     if (cats.includes('gebaeck') && !spread.some(inBag)) order.push('teebutter', 'marillenmarmelade');
-    s.products.filter(p => p.bestseller).forEach(p => order.push(p.id));
+    s.products.filter(p => p.bestseller && p.active !== false).forEach(p => order.push(p.id));
     const seen = new Set();
     return order.filter(id => { if (seen.has(id) || inBag(id)) return false; seen.add(id); return true; })
-      .map(id => sel.product(s, id)).filter(p => p && p.active).slice(0, max || 3);
+      .map(id => sel.product(s, id)).filter(p => p && p.active !== false).slice(0, max || 3);
   };
 
   sel.regionStats = (s, regionId) => {
@@ -862,12 +865,12 @@
     return n.result;
   };
   A.sendCampaign = o => {
-    const s = get(), list = sel.segmentCustomers(s, o.segment);
+    const s = get(), list = sel.segmentCustomers(s, o.segment, o.regionId || undefined);
     // Nachrichten landen nur bei den beiden Demo-Konten im Postfach; die Empfängerzahl zählt alle.
     const demo = list.filter(r => r.customerId === 'me' || r.customerId === 'c-huber');
     const notes = demo.map(r => makeNote({ customerId: r.customerId, contactName: r.name, channel: o.channel, kind: 'promo', title: o.title, body: o.body,
       action: { view: 'sortiment', weekday: null } }));
-    const camp = { id: newId('k'), title: o.title, body: o.body, channel: o.channel, segment: o.segment, sentAt: nowIso(), recipients: list.length };
+    const camp = { id: newId('k'), title: o.title, body: o.body, channel: o.channel, segment: o.segment, regionId: o.regionId || null, sentAt: nowIso(), recipients: list.length };
     setState({ campaigns: [camp].concat(s.campaigns), notifications: s.notifications.concat(notes) });
     return { recipients: list.length };
   };

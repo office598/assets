@@ -233,6 +233,8 @@ A.setClock('echt');
 check('Kampagnen: Ideen vorhanden', sel.campaignIdeas(store.getState(), 'nord').length >= 3 && sel.campaignIdeas(store.getState(), 'nord').every(i => i.recipients >= 0));
 const sc = A.sendCampaign({ title: 'Test', body: 'Test', channel: 'push', segment: 'all' });
 check('sendCampaign', sc.recipients > 200 && store.getState().campaigns[0].title === 'Test');
+const scr = A.sendCampaign({ title: 'Test', body: 'Test', channel: 'push', segment: 'all', regionId: 'nord' });
+check('sendCampaign mit regionId zählt nur das Gebiet', scr.recipients === sel.segmentCustomers(store.getState(), 'all', 'nord').length && scr.recipients > 0 && scr.recipients < sc.recipients);
 const sv = A.saveOffer({ title: 'Test', buy: { kind: 'cat', ref: 'suess', qty: 3 }, get: { productId: 'nussschnecke', qty: 1, pct: 50 } });
 check('saveOffer/toggle/delete', store.getState().offers.length === 5 && (A.toggleOffer(sv, false), !store.getState().offers.find(o => o.id === sv).active) && (A.deleteOffer(sv), store.getState().offers.length === 4));
 

@@ -161,7 +161,7 @@
 
     const items = targetItems(d, target);
     const wdOffer = target && target.type === 'abo' && target.weekdays.length === 1 ? target.weekdays[0] : (target && target.type === 'flex' ? targetWd(d, target) : null);
-    const products = s.products.filter(p => p.active && !(p.season && !seasonOpen));
+    const products = s.products.filter(p => p.active !== false && !(p.season && !seasonOpen));
     const offerBadge = (p) => { const o = sel().offersForProduct(s, p.id, wdOffer)[0]; return o ? o.badge : undefined; };
     const hasOffers = products.some(p => sel().offersForProduct(s, p.id, null).length);
 

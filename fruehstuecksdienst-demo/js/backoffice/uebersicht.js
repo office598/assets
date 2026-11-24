@@ -198,7 +198,7 @@
       ${B.head('Übersicht', region.name + ' · ' + headline)}
       <div class="bo-kpis">
         <${Kpi} label="Haushalte" value=${k.households} sub=${k.weeklyStops + ' Abo-Stopps pro Woche'} />
-        <${Kpi} label="Umsatz pro Woche" value=${F.eur(k.weeklyRevenue)} sub="aus Abos inkl. Zustellung" />
+        <${Kpi} label="Umsatz pro Woche (netto)" value=${F.eur(k.weeklyRevenue)} sub="aus Abos inkl. Zustellung" />
         <${Kpi} label="Auslastung Montag" value=${F.pct(k.utilMonday)} tone=${k.utilMonday > 1 ? 'full' : k.utilMonday >= 0.9 ? 'warn' : 'ok'} sub=${k.utilMonday > 1 ? 'überbucht' : 'der Plätze belegt'} />
         <${Kpi} label="Auslastung Di–Fr" value=${F.pct(k.utilMidweek)} tone=${k.utilMidweek < 0.6 ? 'warn' : 'ok'} sub=${k.utilMidweek < 0.6 ? 'viel freie Kapazität' : 'der Plätze belegt'} />
         <${Kpi} label="Warteliste" value=${k.waitlist} tone=${k.waitlist ? 'info' : undefined} sub=${k.waitlist ? 'warten auf einen Platz' : 'niemand wartet'} />
