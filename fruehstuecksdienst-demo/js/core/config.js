@@ -21,12 +21,18 @@
       flexQuota: 6,
       fewThreshold: 8
     },
-    fees: { abo: 1.20, flex: 2.40, flexMinOrder: 6.00, freeDeliveryFrom: 15 },
+    // Kundenpreise inkl. USt (netto rund 1,60 / 2,50). freeDeliveryFrom: null = keine Gratis-Zustellung ab Bestellwert.
+    fees: { abo: 1.75, aboWeekend: 2.75, flex: 2.50, flexWeekend: 3.50, flexMinOrder: 6.00, freeDeliveryFrom: null },
+    economics: { driverPerPiece: 0.36 },
     promo: { weakBelowPct: 0.6, weakDayFreeWeeks: 4, referralCredit: 5 },
     reserveHours: 24,
     season: { id: 'nikolo', title: 'Nikolo-Sackerl', dateKey: '2026-12-06', productId: 'box-nikolo' },
     photos: {},                                     // Manifest id → Pfad, z. B. { hero: 'img/hero.jpg' }. Leer = Illustrationen.
     labels: {
+      allergens: {
+        A: 'Glutenhaltiges Getreide', B: 'Krebstiere', C: 'Eier', D: 'Fisch', E: 'Erdnüsse', F: 'Soja', G: 'Milch und Laktose',
+        H: 'Schalenfrüchte', L: 'Sellerie', M: 'Senf', N: 'Sesam', O: 'Sulfite', P: 'Lupinen', R: 'Weichtiere'
+      },
       effective: {
         free: 'frei', few: 'wenige Plätze', full: 'ausgebucht', closed: 'gesperrt',
         reserved: 'für Sie reserviert', booked: 'gebucht', planned: 'in Planung'

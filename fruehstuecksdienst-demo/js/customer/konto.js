@@ -187,7 +187,7 @@
     const Sh = shared();
     const [note, setNote] = useState(cust.note || '');
     const plan = sel().weeklyPlan(s, cust.id);
-    const perWeek = Math.round(plan.reduce((a, p) => a + p.total + C.fees.abo, 0) * 100) / 100;
+    const perWeek = Math.round(plan.reduce((a, p) => a + p.total + sel().feeFor(s, { mode: 'abo', wd: p.wd, regionId: cust.regionId, customerId: cust.id, total: p.total }), 0) * 100) / 100;
     const now = T.now();
     const invoices = [1, 2, 3].map(i => {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);

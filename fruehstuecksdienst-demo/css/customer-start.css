@@ -253,3 +253,19 @@ button.k-flag:hover { filter: brightness(.97); }
 @media (min-width: 720px) { .k-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } }
 @media (min-width: 1000px) { .k-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 900px) { .k-sort, .k-start { --k-stick: calc(env(safe-area-inset-top, 0px) + var(--demobar-h) + 64px); } }
+
+/* Suche, Detail, Gebühren-Zeile */
+.k-search { margin-bottom: var(--s-3); }
+.k-search .ui-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+.k-feeline { margin: 0 0 var(--s-3); font-size: 13px; color: var(--muted); }
+.k-bumpwrap { position: relative; }
+.k-detailbtn { position: absolute; z-index: 1; top: 0; left: 0; right: 0; aspect-ratio: 1 / 1; border: 0; background: transparent; border-radius: var(--r-tile) var(--r-tile) 0 0; cursor: zoom-in; }
+.k-detail { display: flex; flex-direction: column; gap: var(--s-4); }
+.k-detail-photo { max-width: 360px; width: 100%; margin: 0 auto; }
+.k-detail-price { font-size: 22px; }
+.k-detail-price strong { font-family: var(--font-display); }
+.k-allergens h4 { font-size: 16px; margin-bottom: 6px; }
+.k-al-codes { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 6px; }
+.k-al-code { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--kraft-soft); color: var(--kraft-ink); font-family: var(--font-mono); font-weight: 500; }
+.k-al-legend { list-style: none; margin: 0; padding: 0; font-size: 14px; color: var(--ink-2); display: flex; flex-direction: column; gap: 2px; }
+.k-al-legend strong { font-family: var(--font-mono); display: inline-block; min-width: 18px; }

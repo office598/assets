@@ -70,21 +70,21 @@
     const p = (id, cat, name, plural, price, unit, desc, o) => Object.assign(
       { id, cat, name, plural, desc, price, unit, tags: [], active: true, partner: cat === 'extras' ? H : B }, o || {});
     return [
-      p('kaisersemmel', 'gebaeck', 'Kaisersemmel', 'Kaisersemmeln', 0.55, 'Stück', 'Knusprig gebacken, außen kross, innen weich.'),
-      p('handsemmel', 'gebaeck', 'Bio-Handsemmel', 'Bio-Handsemmeln', 0.85, 'Stück', 'Von Hand geformt, aus Bio-Weizen und mit langer Teigruhe.', { tags: ['bio'] }),
-      p('kornweckerl', 'gebaeck', 'Kornweckerl', 'Kornweckerl', 0.95, 'Stück', 'Mit Roggen, Sonnenblumen- und Leinsamen.'),
-      p('salzstangerl', 'gebaeck', 'Salzstangerl', 'Salzstangerl', 0.90, 'Stück', 'Mit grobem Salz und Kümmel bestreut.'),
-      p('mohnflesserl', 'gebaeck', 'Mohnflesserl', 'Mohnflesserl', 0.95, 'Stück', 'Reichlich Mohn, ein Klassiker zum Frühstücksei.'),
-      p('laugenbreze', 'gebaeck', 'Laugenbreze', 'Laugenbrezen', 1.20, 'Stück', 'Dunkel gebacken, mit Salzkristallen.'),
-      p('dinkelweckerl', 'gebaeck', 'Dinkel-Vollkornweckerl', 'Dinkel-Vollkornweckerl', 1.10, 'Stück', 'Saftig, mit ganzem Dinkelkorn.', { tags: ['bio'] }),
-      p('buttercroissant', 'suess', 'Buttercroissant', 'Buttercroissants', 1.60, 'Stück', 'Viel Butter, mürbe Blätterschichten.'),
-      p('topfengolatsche', 'suess', 'Topfengolatsche', 'Topfengolatschen', 1.90, 'Stück', 'Blätterteig mit cremiger Topfenfülle.'),
-      p('nussschnecke', 'suess', 'Nussschnecke', 'Nussschnecken', 2.10, 'Stück', 'Germteig mit Haselnussfülle und Zuckerglasur.'),
-      p('marillenkrapfen', 'suess', 'Marillenkrapfen', 'Marillenkrapfen', 1.70, 'Stück', 'Fluffig, mit Marillenmarmelade gefüllt.'),
-      p('briochestriezel', 'suess', 'Butter-Briochestriezel', 'Butter-Briochestriezel', 4.90, 'Stück', 'Zopf aus Briocheteig für den Wochenendtisch.', { weekendOnly: true }),
-      p('bauernbrot', 'brot', 'Bauernbrot', 'Bauernbrote', 3.40, '500 g', 'Roggen-Weizen-Sauerteig, kräftige Kruste.'),
-      p('dinkelbrot', 'brot', 'Dinkelvollkornbrot', 'Dinkelvollkornbrote', 3.90, '500 g', 'Saftiges Vollkornbrot, ohne Zusätze gebacken.', { tags: ['bio'] }),
-      p('nussbrot', 'brot', 'Nussbrot', 'Nussbrote', 4.20, '400 g', 'Mit Walnüssen und Haselnüssen.'),
+      p('kaisersemmel', 'gebaeck', 'Kaisersemmel', 'Kaisersemmeln', 0.65, 'Stück', 'Knusprig gebacken, außen kross, innen weich.'),
+      p('handsemmel', 'gebaeck', 'Bio-Handsemmel', 'Bio-Handsemmeln', 1.30, 'Stück', 'Von Hand geformt, aus Bio-Weizen und mit langer Teigruhe.', { tags: ['bio'] }),
+      p('kornweckerl', 'gebaeck', 'Kornweckerl', 'Kornweckerl', 1.50, 'Stück', 'Mit Roggen, Sonnenblumen- und Leinsamen.'),
+      p('salzstangerl', 'gebaeck', 'Salzstangerl', 'Salzstangerl', 1.40, 'Stück', 'Mit grobem Salz und Kümmel bestreut.'),
+      p('mohnflesserl', 'gebaeck', 'Mohnflesserl', 'Mohnflesserl', 1.45, 'Stück', 'Reichlich Mohn, ein Klassiker zum Frühstücksei.'),
+      p('laugenbreze', 'gebaeck', 'Laugenbreze', 'Laugenbrezen', 1.50, 'Stück', 'Dunkel gebacken, mit Salzkristallen.'),
+      p('dinkelweckerl', 'gebaeck', 'Dinkel-Vollkornweckerl', 'Dinkel-Vollkornweckerl', 1.60, 'Stück', 'Saftig, mit ganzem Dinkelkorn.', { tags: ['bio'] }),
+      p('buttercroissant', 'suess', 'Buttercroissant', 'Buttercroissants', 2.20, 'Stück', 'Viel Butter, mürbe Blätterschichten.'),
+      p('topfengolatsche', 'suess', 'Topfengolatsche', 'Topfengolatschen', 2.60, 'Stück', 'Blätterteig mit cremiger Topfenfülle.'),
+      p('nussschnecke', 'suess', 'Nussschnecke', 'Nussschnecken', 2.80, 'Stück', 'Germteig mit Haselnussfülle und Zuckerglasur.'),
+      p('marillenkrapfen', 'suess', 'Marillenkrapfen', 'Marillenkrapfen', 2.40, 'Stück', 'Fluffig, mit Marillenmarmelade gefüllt.'),
+      p('briochestriezel', 'suess', 'Butter-Briochestriezel', 'Butter-Briochestriezel', 6.90, 'Stück', 'Zopf aus Briocheteig für den Wochenendtisch.', { weekendOnly: true }),
+      p('bauernbrot', 'brot', 'Bauernbrot', 'Bauernbrote', 3.20, '500 g', 'Roggen-Weizen-Sauerteig, kräftige Kruste.'),
+      p('dinkelbrot', 'brot', 'Dinkelvollkornbrot', 'Dinkelvollkornbrote', 4.00, '500 g', 'Saftiges Vollkornbrot, ohne Zusätze gebacken.', { tags: ['bio'] }),
+      p('nussbrot', 'brot', 'Nussbrot', 'Nussbrote', 4.60, '400 g', 'Mit Walnüssen und Haselnüssen.'),
       p('teebutter', 'extras', 'Teebutter', 'Teebutter', 2.90, '250 g', 'Süßrahmbutter vom Bauernhof.', { chilled: true }),
       p('marillenmarmelade', 'extras', 'Marillenmarmelade', 'Marillenmarmeladen', 4.50, '220 g', 'Aus Wachauer Marillen, im Kupferkessel eingekocht.'),
       p('bluetenhonig', 'extras', 'Blütenhonig', 'Blütenhonige', 5.90, '250 g', 'Cremig gerührt, vom Imker aus der Nachbarschaft.', { tags: ['regional'] }),
@@ -96,16 +96,18 @@
       p('naturjoghurt', 'extras', 'Naturjoghurt', 'Naturjoghurts', 1.40, '250 g', 'Mild und cremig, aus Vollmilch.', { chilled: true }),
       p('liptauer', 'extras', 'Liptauer', 'Liptauer', 2.60, '150 g', 'Pikanter Aufstrich mit Paprika und Zwiebel.', { chilled: true }),
       p('roestkaffee', 'extras', 'Röstkaffee', 'Röstkaffee', 7.90, '250 g', 'Ganze Bohnen, in kleiner Trommel geröstet.'),
-      p('box-sonntag', 'boxen', 'Sonntagsfrühstück für 2', 'Sonntagsfrühstück für 2', 14.90, 'Sackerl', 'Semmeln, Croissants, Butter, Marmelade, Eier und Saft.'),
-      p('box-familie', 'boxen', 'Familienfrühstück für 4', 'Familienfrühstück für 4', 24.90, 'Sackerl', 'Reichlich Gebäck, Aufstriche, Milch und Eier für vier.'),
-      p('box-buero', 'boxen', 'Büro-Frühstück für 10', 'Büro-Frühstück für 10', 59.00, 'Sackerl', 'Gebäck-Auswahl, Aufschnitt, Käse und Aufstriche für zehn.'),
-      p('box-nikolo', 'boxen', 'Nikolo-Sackerl', 'Nikolo-Sackerl', 12.90, 'Sackerl', 'Lebkuchen, Nüsse, Mandarinen und ein Nikolo aus Germteig.', { season: C.season.id })
+      p('box-sonntag', 'boxen', 'Sonntagsfrühstück für 2', 'Sonntagsfrühstück für 2', 16.90, 'Sackerl', 'Semmeln, Croissants, Butter, Marmelade, Eier und Saft.'),
+      p('box-familie', 'boxen', 'Familienfrühstück für 4', 'Familienfrühstück für 4', 27.90, 'Sackerl', 'Reichlich Gebäck, Aufstriche, Milch und Eier für vier.'),
+      p('box-buero', 'boxen', 'Büro-Frühstück für 10', 'Büro-Frühstück für 10', 69.00, 'Sackerl', 'Gebäck-Auswahl, Aufschnitt, Käse und Aufstriche für zehn.'),
+      p('box-nikolo', 'boxen', 'Nikolo-Sackerl', 'Nikolo-Sackerl', 13.90, 'Sackerl', 'Lebkuchen, Nüsse, Mandarinen und ein Nikolo aus Germteig.', { season: C.season.id })
     ].map(withCost).map(withFlags);
   }
 
   const BESTSELLER = ['kaisersemmel', 'kornweckerl', 'buttercroissant', 'bauernbrot', 'teebutter', 'box-sonntag'];
   const NEW_IDS = ['dinkelweckerl', 'liptauer', 'box-nikolo'];
+  const ALLERGENS = {'kaisersemmel': 'A', 'handsemmel': 'A', 'kornweckerl': 'A N', 'salzstangerl': 'A', 'mohnflesserl': 'A', 'laugenbreze': 'A', 'dinkelweckerl': 'A', 'buttercroissant': 'A C G', 'topfengolatsche': 'A C G', 'nussschnecke': 'A C G H', 'marillenkrapfen': 'A C G', 'briochestriezel': 'A C G', 'bauernbrot': 'A', 'dinkelbrot': 'A', 'nussbrot': 'A H', 'teebutter': 'G', 'marillenmarmelade': '', 'bluetenhonig': '', 'beinschinken': '', 'bergkaese': 'G', 'freilandeier': 'C', 'frischmilch': 'G', 'orangensaft': '', 'naturjoghurt': 'G', 'liptauer': 'G M', 'roestkaffee': '', 'box-sonntag': 'A C G', 'box-familie': 'A C G H', 'box-buero': 'A C G H', 'box-nikolo': 'A C G H'};
   function withFlags(pr) {
+    pr.allergens = (ALLERGENS[pr.id] || '').split(' ').filter(Boolean);
     pr.bestseller = BESTSELLER.includes(pr.id);
     pr.isNew = NEW_IDS.includes(pr.id);
     return pr;
@@ -118,14 +120,16 @@
   }
 
   function worldOffers() {
+    const o = (id, title, active, buy, get, weekdays, note) => ({ id, title, active, buy, get, weekdays, note });
     return [
-      { id: 'semmel-5-1', title: '5 Kaisersemmeln + 1 gratis', active: true,
-        buy: { kind: 'product', ref: 'kaisersemmel', qty: 5 }, get: { productId: 'kaisersemmel', qty: 1, pct: 100 }, weekdays: null, note: '' },
-      { id: 'croissant-2-1', title: '2 Buttercroissants + 1 gratis', active: true,
-        buy: { kind: 'product', ref: 'buttercroissant', qty: 2 }, get: { productId: 'buttercroissant', qty: 1, pct: 100 }, weekdays: [1, 2, 3, 4],
-        note: 'Füllt die schwachen Tage.' },
-      { id: 'kornweckerl-geschenk', title: 'Ab 5 Kaisersemmeln: 1 Kornweckerl gratis', active: false,
-        buy: { kind: 'product', ref: 'kaisersemmel', qty: 5 }, get: { productId: 'kornweckerl', qty: 1, pct: 100 }, weekdays: null, note: 'Vorlage' }
+      o('brot-dazu', 'Ab 4 Semmeln & Weckerl: Bauernbrot −10 %', true,
+        { kind: 'cat', ref: 'gebaeck', qty: 4 }, { productId: 'bauernbrot', qty: 1, pct: 10 }, null, 'Bringt zusätzliches Brot ins Sackerl.'),
+      o('butter-marmelade', 'Zur Teebutter: Marillenmarmelade −10 %', true,
+        { kind: 'product', ref: 'teebutter', qty: 1 }, { productId: 'marillenmarmelade', qty: 1, pct: 10 }, null, 'Aufstrich-Kombination.'),
+      o('semmel-5-1', '5 Kaisersemmeln + 1 gratis', false,
+        { kind: 'product', ref: 'kaisersemmel', qty: 5 }, { productId: 'kaisersemmel', qty: 1, pct: 100 }, null, 'Vorlage: Die Kalkulation zeigt den Verlust.'),
+      o('croissant-2-1', '2 Buttercroissants + 1 gratis', false,
+        { kind: 'product', ref: 'buttercroissant', qty: 2 }, { productId: 'buttercroissant', qty: 1, pct: 100 }, [1, 2, 3, 4], 'Vorlage, nur an den schwachen Tagen Di–Fr.')
     ];
   }
 

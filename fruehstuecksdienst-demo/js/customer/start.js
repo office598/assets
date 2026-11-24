@@ -482,7 +482,7 @@
       { id: 'cut', title: 'Bis wann muss ich bestellen?', body: 'Bis ' + cutoffText() + ' am Vortag. Für Samstag, Sonntag und Montag gilt der Freitag davor. Im Lieferplan sehen Sie immer, wie lange Sie noch ändern können.' },
       { id: 'urlaub', title: 'Was passiert im Urlaub?', body: 'Sie können einzelne Lieferungen aussetzen oder eine Urlaubspause von–bis eintragen, jeweils bis zum Bestellschluss. Pausierte Lieferungen kosten nichts.' },
       { id: 'montag', title: 'Was, wenn der Montag ausgebucht ist?', body: 'Dann setzen wir Sie auf die Warteliste. Sobald ein Platz frei wird, bekommen Sie eine Nachricht und der Platz ist ' + C.reserveHours + ' Stunden für Sie reserviert. Bis dahin können Sie die anderen Tage schon nutzen.' },
-      { id: 'einmal', title: 'Kann ich auch nur einmal bestellen?', body: 'Ja. Einmallieferungen gibt es ab ' + eur(C.fees.flexMinOrder) + ' Bestellwert, solange am Wunschtag ein Platz frei ist. Die Zustellung kostet ' + eur(C.fees.flex) + '.' },
+      { id: 'einmal', title: 'Kann ich auch nur einmal bestellen?', body: 'Ja. Einmallieferungen gibt es ab ' + eur(C.fees.flexMinOrder) + ' Bestellwert, solange am Wunschtag ein Platz frei ist. Die Zustellung kostet ' + feePair(F().flex, F().flexWe) + ' je Lieferung. Beim Abo zahlen Sie ' + feePair(F().abo, F().aboWe) + '.' },
       { id: 'zahlung', title: 'Wie bezahle ich?', body: 'Per SEPA-Lastschrift monatlich oder mit Karte. In dieser Demo wird nichts abgebucht.' },
       { id: 'ablage', title: 'Wohin kommt das Sackerl?', body: 'An die Türschnalle, vor die Wohnungstür oder in die Zeitungsbox. Sie können auch einen eigenen Hinweis für den Fahrer hinterlegen, zum Beispiel für den Hintereingang.' }
     ];

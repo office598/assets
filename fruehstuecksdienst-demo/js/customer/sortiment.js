@@ -3,7 +3,7 @@
 (function (root) {
   const App = root.App = root.App || {};
   const { html, useState, useEffect, useRef } = App.lib;
-  const { Btn, Icon, Sheet, Field, Segmented, WeekStrip, Tabs, ProductCard, Progress, BagBar, Countdown, Empty, cx } = App.ui;
+  const { Btn, Icon, Pill, Photo, Stepper, Sheet, Field, Segmented, WeekStrip, Tabs, ProductCard, Progress, BagBar, Countdown, Empty, cx } = App.ui;
   const T = App.time, C = App.config;
   App.views = App.views || {};
   App.views.customer = App.views.customer || {};
@@ -14,6 +14,46 @@
   const goView = (v) => { App.actions.setUi({ customerView: v }); if (root.scrollTo) root.scrollTo(0, 0); };
   const dayShort = (k) => T.fmt.day(k).replace(/^\S+\s/, '');
   const sum = (o) => Object.keys(o || {}).reduce((a, k) => a + (o[k] > 0 ? o[k] : 0), 0);
+
+  const feeLine = () => {
+    const f = C.fees, aw = f.aboWeekend != null ? f.aboWeekend : f.abo, fw = f.flexWeekend != null ? f.flexWeekend : f.flex;
+    const pair = (a, b) => (a === b ? eur(a) : eur(a) + ' werktags, ' + eur(b) + ' am Wochenende');
+    return 'Zustellung je Lieferung: Abo ' + pair(f.abo, aw) + ' · einmalig ' + pair(f.flex, fw) + ' (ab ' + eur(f.flexMinOrder) + ' Bestellwert).';
+  };
+  function tagsOf(p) {
+    const out = [];
+    if (p.bestseller) out.push('Bestseller');
+    if (p.isNew) out.push('Neu');
+    (p.tags || []).forEach(x => { const m = { bio: 'Bio', vegan: 'vegan', vegetarisch: 'vegetarisch', regional: 'regional' }[x] || x; if (out.indexOf(m) < 0) out.push(m); });
+    if (p.weekendOnly) out.push('nur am Wochenende');
+    if (p.chilled) out.push('gekühlt');
+    if (p.partner === 'Hofladen') out.push('vom Hofladen');
+    if (p.season) out.push('Saison');
+    return out;
+  }
+
+  /* ---------- Produkt-Detail ---------- */
+  function DetailSheet({ s, product: p, qty, onQty, onClose }) {
+    if (!p) return null;
+    const legend = (C.labels && C.labels.allergens) || {};
+    const al = p.allergens;
+    const badge = (sel().offersForProduct(s, p.id, null)[0] || {}).badge;
+    return html`<${Sheet} open=${true} onClose=${onClose} title=${p.name}
+      footer=${[html`<${Stepper} key="s" value=${qty} onChange=${onQty} label=${p.name} />`, html`<${Btn} key="b" variant="sun" onClick=${onClose}>Fertig<//>`]}>
+      <div class="k-detail">
+        <div class="k-detail-photo"><${Photo} id=${p.id} alt=${p.name} ratio="1/1" /></div>
+        <div class="ui-stack" style="--gap:12px">
+          <div class="k-detail-price"><strong class="ui-num">${eur(p.price)}</strong>${p.unit ? html`<span class="ui-muted"> · ${p.unit}</span>` : null}</div>
+          ${p.desc ? html`<p>${p.desc}</p>` : null}
+          <div class="ui-row" style="--gap:6px">${badge ? html`<${Pill} tone="sun">${badge}<//>` : null}${tagsOf(p).map(x => html`<${Pill} key=${x} tone="kraft">${x}<//>`)}</div>
+          ${Array.isArray(al) ? html`<div class="k-allergens"><h4>Allergene</h4>
+            ${al.length ? html`<p class="k-al-codes">${al.map(c => html`<span class="k-al-code" key=${c}>${c}</span>`)}</p>
+              <ul class="k-al-legend">${al.map(c => html`<li key=${c}><strong>${c}</strong> ${legend[c] || ''}</li>`)}</ul>`
+              : html`<p class="ui-muted">Keine kennzeichnungspflichtigen Allergene.</p>`}</div>` : null}
+        </div>
+      </div>
+    <//>`;
+  }
 
   /* Aktives Ziel: explizit gesetzt oder aus dem Entwurf abgeleitet. */
   function effTarget(d) {
@@ -76,7 +116,7 @@
     } else {
       const dates = T.nextDates(14);
       body = html`<div class="ui-stack">
-        <p class="ui-muted">Einmallieferung ab ${eur(C.fees.flexMinOrder)} Bestellwert, Zustellung ${eur(C.fees.flex)}.</p>
+        <p class="ui-muted">${feeLine()}</p>
         <div class="k-tgt-dates" role="group" aria-label="Liefertag wählen">
           ${dates.map(k => {
             const fi = sel().flexInfo(s, region.id, k, cid);
@@ -113,6 +153,8 @@
     const [pending, setPending] = useState(null);
     const [bump, setBump] = useState(null);
     const [bagBump, setBagBump] = useState(0);
+    const [query, setQuery] = useState('');
+    const [detail, setDetail] = useState(null);
     const gridRef = useRef(null);
     const timer = useRef(null);
     useEffect(() => { App.nav.sortimentCat = null; return () => clearTimeout(timer.current); }, []);
@@ -164,10 +206,16 @@
     };
 
     const cardFor = (p) => html`<div key=${p.id} class=${cx('k-bumpwrap', bump === p.id && 'is-bumped')}>
+      <button type="button" class="k-detailbtn" aria-label=${'Details zu ' + p.name} onClick=${() => setDetail(p.id)}></button>
       <${ProductCard} product=${p} qty=${items[p.id] || 0} badge=${offerBadge(p)} onQty=${(n) => setQty(p, n)} /></div>`;
 
+    const q = query.trim().toLowerCase();
     let content;
-    if (activeTab === 'alle') {
+    if (q) {
+      const list = products.filter(p => p.name.toLowerCase().includes(q));
+      content = list.length ? html`<section class="k-sort-sec"><div class="k-grid">${list.map(cardFor)}</div></section>`
+        : html`<div class="k-empty-grid"><${Empty} icon="search" title=${'Nichts gefunden für „' + query.trim() + '“'} text="Probieren Sie einen kürzeren Suchbegriff, zum Beispiel „Semmel“ oder „Brot“." /></div>`;
+    } else if (activeTab === 'alle') {
       content = Object.keys(C.labels.cat).map(c => {
         const list = products.filter(p => p.cat === c);
         if (!list.length) return null;
@@ -199,6 +247,7 @@
         <p class="ui-lead">Frisch gebacken, echt lecker. Legen Sie alles, was Sie mögen, in Ihr Sackerl.</p>
       </header>
 
+      <div class="k-search"><${Field} id="k-search" label="Sortiment durchsuchen" type="search" placeholder="Zum Beispiel Kaisersemmel, Butter, Brot" autocomplete="off" value=${query} onInput=${(e) => setQuery(e.target.value)} /></div>
       <div class=${cx('k-target', !target && 'is-empty')}>
         <${Icon} name="bag" size=${22} />
         <div class="k-target-text">
@@ -207,12 +256,14 @@
         </div>
         <${Btn} variant=${target ? 'ghost' : 'sun'} size="sm" onClick=${() => setSheet(true)}>${target ? 'ändern' : 'Tag wählen'}<//>
       </div>
+      <p class="k-feeline">${feeLine()}</p>
       ${showFree ? html`<div class="k-freeprog"><${Progress} value=${total} max=${free}
         label=${total >= free ? 'Zustellung gratis ab ' + eur(free) + ' – erreicht' : 'Noch ' + eur(Math.round((free - total) * 100) / 100) + ' bis zur Gratis-Zustellung'} /></div>` : null}
 
       <div class="k-cattabs"><${Tabs} tabs=${tabs} value=${activeTab} onChange=${changeTab} label="Kategorien" /></div>
       <div ref=${gridRef} class="k-grid-anchor">${content}</div>
 
+      <${DetailSheet} s=${s} product=${detail ? sel().product(s, detail) : null} qty=${detail ? (items[detail] || 0) : 0} onQty=${(n) => { const p = sel().product(s, detail); if (!target) { setDetail(null); setPending({ pid: p.id, n }); setSheet(true); } else setQty(p, n); }} onClose=${() => setDetail(null)} />
       <${TargetSheet} key=${sheet ? 'open' : 'closed'} s=${s} open=${sheet} current=${target} onClose=${() => { setSheet(false); setPending(null); }} onConfirm=${confirmTarget} />
       ${target && count ? html`<div class=${cx('k-bagwrap', bagBump > 0 && 'is-bumped')}>
         <${BagBar} count=${count} total=${total} cta="Zum Lieferplan" onClick=${() => goView('lieferplan')}

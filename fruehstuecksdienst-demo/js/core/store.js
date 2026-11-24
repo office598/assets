@@ -203,10 +203,13 @@
         const n = Math.floor(bought / o.buy.qty), entitled = n * o.get.qty;
         free = Math.min(have, entitled);
         const bp = o.buy.kind === 'product' ? sel.product(s, o.buy.ref) : null;
-        if (entitled > have) { missing = entitled - have; text = missing + ' ' + (missing === 1 ? gp.name : gp.plural) + ' gratis dazulegen'; }
+        if (entitled > have) {
+          missing = entitled - have;
+          text = o.get.pct >= 100 ? missing + ' ' + (missing === 1 ? gp.name : gp.plural) + ' gratis dazulegen' : gp.name + ' dazu: −' + o.get.pct + ' %';
+        }
         else if (bought > 0) {
           missing = o.buy.qty - (bought % o.buy.qty);
-          text = 'Noch ' + missing + ' ' + (bp ? (missing === 1 ? bp.name : bp.plural) : 'Artikel') + ' bis ' + o.get.qty + ' ' + gp.name + ' ' + (o.get.pct >= 100 ? 'gratis' : 'mit ' + o.get.pct + ' % Rabatt');
+          text = 'Noch ' + missing + ' ' + (bp ? (missing === 1 ? bp.name : bp.plural) : (C.labels.cat[o.buy.ref] || 'Artikel')) + ' bis ' + (o.get.pct >= 100 ? o.get.qty + ' ' + gp.name + ' gratis' : gp.name + ' −' + o.get.pct + ' %');
         }
       }
       if (free > 0) discounts.push({ offerId: o.id, title: o.title, productId: gp.id, freeQty: free, amount: round2(free * gp.price * o.get.pct / 100) });
@@ -224,7 +227,7 @@
       .map(o => {
         let badge;
         if (sameProduct(o)) badge = o.buy.qty + ' + ' + o.get.qty + (o.get.pct >= 100 ? ' gratis' : ' mit ' + o.get.pct + ' % Rabatt');
-        else if (o.get.productId === productId) badge = 'Gratis ab ' + o.buy.qty + ' ' + ((sel.product(s, o.buy.ref) || {}).plural || 'Artikeln');
+        else if (o.get.productId === productId) badge = (o.get.pct >= 100 ? 'Gratis' : '−' + o.get.pct + ' %') + ' ab ' + o.buy.qty + ' ' + ((sel.product(s, o.buy.ref) || {}).plural || C.labels.cat[o.buy.ref] || 'Artikeln');
         else badge = 'Ab ' + o.buy.qty + ': ' + (sel.product(s, o.get.productId) || {}).name + (o.get.pct >= 100 ? ' gratis' : ' −' + o.get.pct + ' %');
         return Object.assign({}, o, { badge });
       });
@@ -234,16 +237,21 @@
     const avg = (list, f) => list.length ? list.reduce((a, p) => a + p[f], 0) / list.length : 0;
     const buyList = o.buy.kind === 'cat' ? s.products.filter(p => p.cat === o.buy.ref && p.active) : [sel.product(s, o.buy.ref)].filter(Boolean);
     const gp = sel.product(s, o.get.productId) || { price: 0, cost: 0 };
-    const bPrice = avg(buyList, 'price'), bCost = avg(buyList, 'cost');
-    const normalRevenue = o.buy.qty * bPrice, normalCost = o.buy.qty * bCost;
+    const d = C.economics.driverPerPiece;
+    const normalRevenue = o.buy.qty * avg(buyList, 'price'), normalCost = o.buy.qty * (avg(buyList, 'cost') + d);
+    const giftUnitMargin = gp.price * (1 - o.get.pct / 100) - gp.cost - d;
     const offerRevenue = normalRevenue + o.get.qty * gp.price * (1 - o.get.pct / 100);
-    const offerCost = normalCost + o.get.qty * gp.cost;
+    const offerCost = normalCost + o.get.qty * (gp.cost + d);
     const normalMargin = normalRevenue - normalCost, offerMargin = offerRevenue - offerCost;
+    const delta = offerMargin - normalMargin;
+    const r = x => Math.round(x * 100) / 100;
     return {
-      normalRevenue: round2(normalRevenue), normalCost: round2(normalCost), normalMargin: round2(normalMargin),
-      offerRevenue: round2(offerRevenue), offerCost: round2(offerCost), offerMargin: round2(offerMargin),
+      normalRevenue: r(normalRevenue), normalCost: r(normalCost), normalMargin: r(normalMargin),
+      offerRevenue: r(offerRevenue), offerCost: r(offerCost), offerMargin: r(offerMargin),
+      deltaPerBundle: r(delta), giftUnitMargin: r(giftUnitMargin), discountPerUnit: r(gp.price * o.get.pct / 100), driverPerPiece: d,
+      verdict: giftUnitMargin < -0.004 ? 'loss' : giftUnitMargin > 0.004 ? 'gain' : 'neutral',
       marginDropPct: normalMargin ? Math.round((normalMargin - offerMargin) / normalMargin * 1000) / 10 : 0,
-      breakEvenUpliftPct: offerMargin > 0 ? Math.round((normalMargin / offerMargin - 1) * 1000) / 10 : null
+      breakEvenUpliftPct: normalMargin > 0 && offerMargin > 0 && delta < -0.004 ? Math.round((normalMargin / offerMargin - 1) * 1000) / 10 : null
     };
   };
 
@@ -257,11 +265,12 @@
   sel.feeFor = (s, o) => {
     const from = C.fees.freeDeliveryFrom;
     if (from && o.total != null && o.total >= from - 1e-9) return 0;
-    if (o.mode === 'flex') return C.fees.flex;
+    const we = o.wd != null && o.wd >= 5;
+    if (o.mode === 'flex') return we ? C.fees.flexWeekend : C.fees.flex;
     const c = o.customerId ? sel.customer(s, o.customerId) : null;
     const isNew = !c || !c.registered || c.since >= T.addDays(T.today(), -C.promo.weakDayFreeWeeks * 7);
     if (isNew && o.wd != null && sel.weakDays(s, o.regionId).includes(o.wd)) return 0;
-    return C.fees.abo;
+    return we ? C.fees.aboWeekend : C.fees.abo;
   };
 
   // ----- Stopps und Touren
@@ -337,6 +346,27 @@
     if (caches.tours.size > 200) caches.tours.clear();
     caches.tours.set(ck, { stops, dRef, value });
     return value;
+  };
+
+  sel.pieces = items => Object.keys(items || {}).reduce((a, id) => a + (items[id] > 0 ? items[id] : 0), 0);
+  const goodsCostOf = (s, items) => orderedItems(s, items).reduce((a, p) => a + (p.cost || 0) * items[p.id], 0);
+
+  sel.tourEconomics = (s, regionId, dateKey, driversOverride) => {
+    const plan = sel.tourPlan(s, regionId, dateKey, driversOverride), wd = T.weekday(dateKey), pd = C.economics.driverPerPiece;
+    let pieces = 0, rev = 0, fees = 0, goods = 0;
+    const perDriver = plan.tours.map(t => {
+      let pc = 0;
+      t.stops.forEach(st => {
+        const p = sel.pieces(st.items), total = sel.priceBag(s, st.items, { wd }).total;
+        pc += p; rev += total; goods += goodsCostOf(s, st.items);
+        fees += sel.feeFor(s, { mode: st.kinds.includes('abo') ? 'abo' : 'flex', wd, regionId, customerId: st.customerId, total });
+      });
+      pieces += pc;
+      return { driver: t.driver, stops: t.stops.length, pieces: pc, pay: round2(pc * pd) };
+    });
+    const driverPay = round2(pieces * pd);
+    return { stops: plan.stops, pieces, productRevenue: round2(rev), fees: round2(fees), goodsCost: round2(goods), driverPay,
+      margin: round2(rev + fees - goods - driverPay), perDriver };
   };
 
   sel.forecastEnd = (s, regionId, wd, drivers) => {
@@ -489,11 +519,19 @@
     const util = sel.utilization(s, regionId);
     const cust = s.customers.filter(c => c.regionId === regionId && c.registered);
     const ids = new Set(cust.map(c => c.id));
-    let revenue = 0;
-    s.subs.forEach(x => { if (ids.has(x.customerId)) revenue += sel.priceBag(s, x.items, { wd: x.weekday }).total + C.fees.abo; });
+    let rev = 0, fees = 0, goods = 0, pcs = 0;
+    s.subs.forEach(x => {
+      if (!ids.has(x.customerId)) return;
+      const total = sel.priceBag(s, x.items, { wd: x.weekday }).total;
+      rev += total; goods += goodsCostOf(s, x.items); pcs += sel.pieces(x.items);
+      fees += sel.feeFor(s, { mode: 'abo', wd: x.weekday, regionId, customerId: x.customerId, total });
+    });
+    const pay = pcs * C.economics.driverPerPiece;
     const next7 = T.nextDates(7);
     return {
-      households: cust.length, weeklyStops: util.reduce((a, u) => a + u.abo, 0), weeklyRevenue: round2(revenue),
+      households: cust.length, weeklyStops: util.reduce((a, u) => a + u.abo, 0), weeklyRevenue: round2(rev + fees),
+      weeklyProductRevenue: round2(rev), weeklyFees: round2(fees), weeklyGoodsCost: round2(goods), weeklyDriverPay: round2(pay),
+      weeklyMargin: round2(rev + fees - goods - pay),
       utilMonday: util[0].pct, utilMidweek: (util[1].pct + util[2].pct + util[3].pct + util[4].pct) / 4,
       waitlist: s.waitlist.filter(w => w.regionId === regionId && w.status === 'waiting').length,
       flexNext7: s.flexOrders.filter(f => f.status === 'confirmed' && next7.includes(f.dateKey) && ids.has(f.customerId)).length

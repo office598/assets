@@ -22,6 +22,8 @@
   }, 60);
   const scrollTop = () => { if (root.scrollTo) root.scrollTo(0, 0); };
   const state = () => App.store.getState();
+  const feeStd = (mode, wd) => { const f = C.fees, we = wd != null && wd >= 5; return mode === 'flex' ? (we && f.flexWeekend != null ? f.flexWeekend : f.flex) : (we && f.aboWeekend != null ? f.aboWeekend : f.abo); };
+  const feeRange = mode => { const a = feeStd(mode, 0), b = feeStd(mode, 5); return a === b ? eur(a) : eur(a) + ' werktags, ' + eur(b) + ' am Wochenende'; };
 
   /* ---------- Hilfen ---------- */
   function problemText(p) {
@@ -194,7 +196,7 @@
     const sugg = count && sel().suggestions ? sel().suggestions(s, items, 3) : [];
     const from = C.fees.freeDeliveryFrom;
     const d = del || { total: bag.total, fee: 0, discounts: bag.discounts, hints: bag.hints, freeDeliveryMissing: 0 };
-    const stdFee = flex ? C.fees.flex : C.fees.abo;
+    const stdFee = feeStd(flex ? 'flex' : 'abo', wd != null ? wd : (flex ? null : target.wd));
     const feeFree = d.fee === 0 && count > 0;
     const byThreshold = from && d.total >= from - 1e-9;
     const minMissing = flex ? Math.max(0, Math.round((C.fees.flexMinOrder - d.total) * 100) / 100) : 0;
@@ -209,6 +211,8 @@
             ${status === 'reserved' ? html` <${Pill} tone="info">für Sie reserviert<//>` : null}</div></div>
         ${onRemove ? html`<${Btn} variant="quiet" size="sm" icon="x" aria-label=${WDL[target.wd] + ' entfernen'} onClick=${onRemove}>Entfernen<//>` : null}
       </header>
+
+      <div class="k-feeline"><${Icon} name="truck" size=${16} /><span>Zustellung ${eur(stdFee)} je Lieferung${flex ? ' · Mindestbestellwert ' + eur(C.fees.flexMinOrder) : ''}${from ? ' · gratis ab ' + eur(from) : ''}</span></div>
 
       ${count ? html`<ul class="k-lines">${bag.lines.map(l => html`<li class="k-line" key=${l.product.id}>
         <div class="k-line-ph"><${Photo} id=${l.product.id} alt=${l.product.name} ratio="1/1" /></div>
@@ -334,7 +338,7 @@
     const reserved = reservedFor(s, cid, rid);
     const wds = Object.keys(d.abo).map(Number).sort((a, b) => a - b);
     const nItems = abo ? wds.reduce((a, w) => a + sumQty(d.abo[w]), 0) : sumQty(d.flex);
-    const saveWeek = abo ? Math.round(sum.deliveries.reduce((a, x) => a + (C.fees.flex - x.fee), 0) * 100) / 100 : 0;
+    const saveWeek = abo ? Math.round(sum.deliveries.reduce((a, x) => a + (feeStd('flex', x.wd) - x.fee), 0) * 100) / 100 : 0;
 
     const pick = day => {
       const wd = day.wd;
@@ -380,8 +384,8 @@
           <${Segmented} label="Lieferart" full value=${d.mode} onChange=${m => act().setDraft({ mode: m })}
             options=${[{ value: 'abo', label: html`Regelmäßig <span class="k-reco">Empfohlen</span>` }, { value: 'flex', label: 'Einmalig' }]} />
           <p class="k-mode-t">${abo
-            ? html`Fester Platz auf der Tour, Zustellung nur <strong>${eur(C.fees.abo)}</strong> statt ${eur(C.fees.flex)}. Sie sparen ${eur(C.fees.flex - C.fees.abo)} je Lieferung. Pausieren oder aussetzen jederzeit.`
-            : html`Einmal liefern, solange noch Platz ist: Zustellung ${eur(C.fees.flex)}, Mindestbestellwert ${eur(C.fees.flexMinOrder)}.`}</p>
+            ? html`Fester Platz auf der Tour, Zustellung nur <strong>${feeRange('abo')}</strong> statt ${feeRange('flex')}. Pausieren oder aussetzen jederzeit.`
+            : html`Einmal liefern, solange noch Platz ist: Zustellung ${feeRange('flex')}, Mindestbestellwert ${eur(C.fees.flexMinOrder)}.`}</p>
         </div>
 
         ${reserved.map(w => {
@@ -410,7 +414,7 @@
             onAdd=${() => setPicker({ wd })} copySrc=${copySrcFor(wd)} onRemove=${() => act().draftToggleDay(wd)} />`)}`
           : html`${unfitFlex ? html`<div class="k-bag-empty k-bag-first"><${Icon} name="calendar" size=${28} /><p><strong>Wählen Sie einen Liefertag.</strong><br />Danach packen Sie Ihr Sackerl.</p></div>`
             : html`<${BagCard} s=${s} target=${{ flex: true }} tried=${tried} del=${sum.deliveries[0]} onAdd=${() => setPicker({ flex: true })} />`}
-            <div class="k-note k-note-info"><${Icon} name="leaf" size=${20} /><div>Bei regelmäßiger Lieferung zahlen Sie ${eur(C.fees.abo)} statt ${eur(C.fees.flex)} Zustellung.
+            <div class="k-note k-note-info"><${Icon} name="leaf" size=${20} /><div>Bei regelmäßiger Lieferung zahlen Sie ${feeRange('abo')} statt ${feeRange('flex')} Zustellung.
               <button type="button" class="k-link" onClick=${() => act().setDraft({ mode: 'abo' })}>Regelmäßig ansehen</button></div></div>`}
       </div>
 

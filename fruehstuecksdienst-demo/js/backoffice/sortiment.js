@@ -34,7 +34,8 @@
 
   function Row({ p }) {
     const cats = App.config.labels.cat;
-    const margin = p.price - (p.cost || 0), mp = p.price ? margin / p.price : 0;
+    const rate = (App.config.economics || {}).driverPerPiece || 0;
+    const margin = p.price - (p.cost || 0) - rate, mp = p.price ? margin / p.price : 0;
     const tone = margin <= 0 ? 'full' : mp < 0.3 ? 'warn' : 'ok';
     const up = patch => App.actions.updateProduct(p.id, patch);
     return html`<tr class=${p.active === false ? 'bo-off' : ''}>
@@ -45,6 +46,7 @@
       <td><${TextInput} id=${'pp-' + p.id} label=${'Partner ' + p.name} value=${p.partner} onCommit=${v => up({ partner: v })} /></td>
       <td><${MoneyInput} id=${'pe-' + p.id} label=${'Verkaufspreis ' + p.name + ' in Euro'} value=${p.price} onCommit=${v => up({ price: v })} /></td>
       <td><${MoneyInput} id=${'pk-' + p.id} label=${'Einkaufspreis ' + p.name + ' in Euro'} value=${p.cost || 0} onCommit=${v => up({ cost: v })} /></td>
+      <td class="num ui-mono">${F.eur(rate)}</td>
       <td class="num"><${Pill} tone=${tone} mono>${F.eur(margin)} · ${Math.round(mp * 100)} %<//></td>
       <td><${Toggle} id=${'pa-' + p.id} label=${p.active === false ? 'inaktiv' : 'aktiv'} checked=${p.active !== false} onChange=${v => up({ active: v })} /></td>
     </tr>`;
@@ -58,7 +60,7 @@
     const term = q.trim().toLowerCase();
     const list = s.products.filter(p => (!cat || p.cat === cat) && (!term || p.name.toLowerCase().includes(term)));
     const act = s.products.filter(p => p.active !== false);
-    const avg = act.length ? act.reduce((a, p) => a + (p.price ? (p.price - (p.cost || 0)) / p.price : 0), 0) / act.length : 0;
+    const avg = act.length ? act.reduce((a, p) => a + (p.price ? (p.price - (p.cost || 0) - ((App.config.economics || {}).driverPerPiece || 0)) / p.price : 0), 0) / act.length : 0;
     return html`<div class="bo-page">
       ${App.boA.head('Sortiment', act.length + ' von ' + s.products.length + ' Artikeln aktiv · durchschnittliche Marge ' + F.pct(avg))}
       <div class="ui-card bo-filters bo-filters-2">
@@ -67,8 +69,8 @@
           <${Chip} selected=${cat === ''} onClick=${() => setCat('')}>Alle<//>
           ${Object.keys(cats).map(k => html`<${Chip} key=${k} selected=${cat === k} onClick=${() => setCat(k)}>${cats[k]}<//>`)}</div></div>
       </div>
-      <p class="ui-muted bo-hint">Preise gelten sofort in der Kunden-App. Marge = Verkaufspreis − Einkaufspreis, in Prozent vom Verkaufspreis. Inaktive Artikel sind für Kunden nicht bestellbar.</p>
-      <div class="ui-tablewrap"><table class="ui-table bo-prod-table"><thead><tr><th>Artikel</th><th>Kategorie</th><th>Partner</th><th>Verkauf</th><th>Einkauf</th><th class="num">Marge</th><th>Status</th></tr></thead>
+      <p class="ui-muted bo-hint">Preise gelten sofort in der Kunden-App. Marge je Stück = Verkaufspreis − Einkaufspreis − Fahrervergütung (Subunternehmer, je ausgeliefertem Stück), in Prozent vom Verkaufspreis. Die Zustellgebühr kommt je Lieferung dazu und ist hier nicht enthalten. Inaktive Artikel sind für Kunden nicht bestellbar.</p>
+      <div class="ui-tablewrap"><table class="ui-table bo-prod-table"><thead><tr><th>Artikel</th><th>Kategorie</th><th>Partner</th><th>Verkauf</th><th>Einkauf</th><th class="num">Fahrer</th><th class="num">Marge</th><th>Status</th></tr></thead>
         <tbody>${list.map(p => html`<${Row} key=${p.id} p=${p} />`)}</tbody></table></div>
       ${!list.length ? html`<p class="ui-muted">Kein Artikel gefunden.</p>` : null}
     </div>`;

@@ -83,19 +83,30 @@
 
   function CalcBox({ s, o }) {
     const c = App.sel.offerCalc(s, o);
-    const loss = c.offerMargin <= 0;
+    const gp = App.sel.product(s, o.get.productId) || { name: 'Artikel', cost: 0, price: 0 };
+    const rate = c.driverPerPiece != null ? c.driverPerPiece : (App.config.economics || {}).driverPerPiece || 0;
+    const verdict = c.verdict || (c.offerMargin <= 0 ? 'loss' : 'gain');
+    const gm = c.giftUnitMargin != null ? c.giftUnitMargin : null;
     const up = c.breakEvenUpliftPct;
-    const hard = !loss && up > 60;
-    const tone = loss ? 'full' : hard ? 'warn' : up > 25 ? 'warn' : 'ok';
+    const loss = verdict === 'loss';
+    const free = o.get.pct >= 100;
+    const tone = loss ? 'full' : verdict === 'neutral' || (up != null && up > 25) ? 'warn' : 'ok';
+    const unit = free ? gp.name : gp.name + ' mit ' + o.get.pct + ' % Rabatt';
+    let line;
+    if (loss && free) line = 'Jede Gratis-' + gp.name + ' kostet ' + F.eur(gp.cost + rate) + ': ' + F.eur(gp.cost) + ' Einkauf + ' + F.eur(rate) + ' Fahrer.';
+    else if (loss) line = 'Jede ' + unit + ' kostet ' + F.eur(-gm) + ' drauf: Preis ' + F.eur(gp.price) + ' − Nachlass ' + F.eur(c.discountPerUnit != null ? c.discountPerUnit : gp.price * o.get.pct / 100) + ' − Einkauf ' + F.eur(gp.cost) + ' − Fahrer ' + F.eur(rate) + '.';
+    else line = 'Jede ' + unit + ' bringt noch ' + F.eur(gm != null ? gm : 0) + ' Ertrag: Preis ' + F.eur(gp.price) + ' − Nachlass ' + F.eur(c.discountPerUnit != null ? c.discountPerUnit : gp.price * o.get.pct / 100) + ' − Einkauf ' + F.eur(gp.cost) + ' − Fahrer ' + F.eur(rate) + '.';
+    const delta = c.deltaPerBundle;
     return html`<div class=${'bo-calc bo-calc-' + tone} aria-live="polite">
-      <div class="bo-calc-head"><${Icon} name=${loss ? 'alert' : tone === 'ok' ? 'check' : 'info'} size=${20} /><strong>${loss ? 'Achtung: Diese Aktion macht Verlust' : tone === 'ok' ? 'Rechnet sich schnell' : 'Rechnet sich nur mit deutlich mehr Absatz'}</strong></div>
-      <p>Deckungsbeitrag je Bündel <strong>${F.eur(c.offerMargin)}</strong> statt ${F.eur(c.normalMargin)}${loss ? '' : ' · lohnt sich, wenn dadurch ' + F.pct(up / 100) + ' mehr Bündel verkauft werden'}.</p>
-      ${loss ? html`<p class="bo-calc-loss">Pro Bündel bleiben ${F.eur(c.offerMargin)} übrig. Jeder zusätzliche Verkauf vergrößert den Verlust. Verringern Sie die Gratis-Menge oder den Rabatt.</p>` : null}
+      <div class="bo-calc-head"><${Icon} name=${loss ? 'alert' : tone === 'ok' ? 'check' : 'info'} size=${20} /><strong>${loss ? 'Achtung: Diese Aktion macht Verlust' : tone === 'ok' ? 'Lohnt sich' : 'Lohnt sich nur mit deutlich mehr Absatz'}</strong></div>
+      <p class=${loss ? 'bo-calc-loss' : ''}>${line}</p>
+      <p>Deckungsbeitrag je Bündel <strong>${F.eur(c.offerMargin)}</strong> statt ${F.eur(c.normalMargin)}${delta != null && delta < 0 ? ' (' + F.eur(delta).replace('-', '−') + ')' : ''}${!loss && up != null ? ' · lohnt sich, wenn dadurch ' + F.pct(up / 100) + ' mehr Bündel verkauft werden' : ''}${!loss && up == null && delta != null && delta >= 0 ? ' · lohnt sich sofort, auch ohne zusätzlichen Absatz' : ''}.</p>
+      ${loss ? html`<p class="bo-calc-loss">Jeder zusätzliche Verkauf vergrößert den Verlust. Verringern Sie die Zugabe oder erhöhen Sie den Kaufwert.</p>` : null}
       <table class="bo-calc-t"><thead><tr><th></th><th class="num">ohne Aktion</th><th class="num">mit Aktion</th></tr></thead><tbody>
         <tr><th scope="row">Umsatz</th><td class="num">${F.eur(c.normalRevenue)}</td><td class="num">${F.eur(c.offerRevenue)}</td></tr>
-        <tr><th scope="row">Einkauf</th><td class="num">${F.eur(c.normalCost)}</td><td class="num">${F.eur(c.offerCost)}</td></tr>
+        <tr><th scope="row">Einkauf und Fahrer</th><td class="num">${F.eur(c.normalCost)}</td><td class="num">${F.eur(c.offerCost)}</td></tr>
         <tr><th scope="row">Deckungsbeitrag</th><td class="num">${F.eur(c.normalMargin)}</td><td class="num"><strong>${F.eur(c.offerMargin)}</strong></td></tr></tbody></table>
-      <p class="ui-muted bo-calc-note">Ein Bündel: ${o.buy.qty} × ${o.buy.kind === 'cat' ? 'Artikel der Kategorie' : 'gekaufte Artikel'} + ${getText(s, o)}. Annahme: Der Kunde hätte die gekauften Stücke ohnehin bestellt.${c.marginDropPct > 0 ? ' Der Deckungsbeitrag sinkt um ' + F.pct(c.marginDropPct / 100) + '.' : ''}</p>
+      <p class="ui-muted bo-calc-note">Ein Bündel: ${o.buy.qty} × ${o.buy.kind === 'cat' ? 'Artikel der Kategorie' : 'gekaufte Artikel'} + ${getText(s, o)}. Fahrervergütung ${F.eur(rate)} je Stück ist eingerechnet. Annahme: Der Kunde hätte die gekauften Stücke ohnehin bestellt.</p>
     </div>`;
   }
 
@@ -162,11 +173,11 @@
         <${Btn} size="sm" variant="sun" icon="plus" onClick=${() => setEdit(blank())}>Neue Aktion<//></div>
       <ul class="bo-offers">${s.offers.map(o => {
         const c = App.sel.offerCalc(s, o);
-        const loss = c.offerMargin <= 0;
+        const loss = (c.verdict || (c.offerMargin <= 0 ? 'loss' : 'gain')) === 'loss';
         return html`<li key=${o.id} class=${'bo-offer' + (o.active ? '' : ' is-off')}>
           <div class="bo-offer-main"><strong>${o.title}</strong>
             <div class="ui-muted">Kaufe ${buyText(s, o)} → erhalte ${getText(s, o)} · ${dayText(o.weekdays)}${o.note ? ' · ' + o.note : ''}</div>
-            <div class="ui-row bo-offer-pills">${loss ? html`<${Pill} tone="full" icon="alert">macht Verlust<//>` : html`<${Pill} tone=${c.breakEvenUpliftPct > 60 ? 'warn' : 'ok'}>lohnt ab +${F.pct(c.breakEvenUpliftPct / 100)} Absatz<//>`}
+            <div class="ui-row bo-offer-pills">${loss ? html`<${Pill} tone="full" icon="alert">macht Verlust<//>` : (c.breakEvenUpliftPct == null ? html`<${Pill} tone="ok">lohnt sich<//>` : html`<${Pill} tone=${c.breakEvenUpliftPct > 60 ? 'warn' : 'ok'}>lohnt ab +${F.pct(c.breakEvenUpliftPct / 100)} Absatz<//>`)}
               <${Pill} tone=${o.active ? 'ok' : 'neutral'}>${o.active ? 'aktiv' : 'aus'}<//></div></div>
           <div class="bo-offer-act"><${Toggle} id=${'of-on-' + o.id} label=${o.active ? 'Ein' : 'Aus'} checked=${o.active} onChange=${v => App.actions.toggleOffer(o.id, v)} />
             <${Btn} size="sm" variant="ghost" icon="edit" onClick=${() => setEdit(JSON.parse(JSON.stringify(o)))} aria-label=${o.title + ' bearbeiten'}>Bearbeiten<//>
