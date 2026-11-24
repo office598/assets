@@ -35,7 +35,7 @@
     return html`<div class="bo-pay"><h4>Vergütung je Fahrer (${T.fmt.day(dateKey)}, netto)</h4>
       <div class="ui-tablewrap"><table class="ui-table"><thead><tr><th>Fahrer</th><th class="num">Stopps</th><th class="num">Stück</th><th class="num">Vergütung</th></tr></thead>
         <tbody>${e.perDriver.map((d, i) => html`<tr key=${i}><td>${d.driver.name}</td><td class="num">${d.stops}</td><td class="num">${d.pieces}</td><td class="num"><strong>${eur(d.pay)}</strong>${d.minApplied ? html`<div class="ui-muted bo-pay-min">Mindestvergütung ${eur(eco.driverMinPerTour)} statt ${eur(d.pieceBased)} nach Stück</div>` : null}</td></tr>`)}</tbody></table></div>
-      <p class="ui-muted">Die Fahrer sind Subunternehmer und bekommen ${eur(rate)} je Stück, mindestens ${eur(eco.driverMinPerTour)} je Tour. ${anyMin ? 'Ein weiterer Fahrer kostet das Unternehmen zusätzlich, solange die Mindestvergütung greift: Vergütung insgesamt ${eur(e.perDriver.reduce((a, d) => a + d.pay, 0))}.' : 'Alle Fahrer liegen über der Mindestvergütung, ein weiterer Fahrer kostet deshalb nichts zusätzlich.'}</p></div>`;
+      <p class="ui-muted">Die Fahrer sind Subunternehmer und bekommen ${eur(rate)} je Stück, mindestens ${eur(eco.driverMinPerTour)} je Tour. ${anyMin ? 'Ein weiterer Fahrer kostet das Unternehmen zusätzlich, solange die Mindestvergütung greift: Vergütung insgesamt ' + eur(e.perDriver.reduce((a, d) => a + d.pay, 0)) + '.' : 'Alle Fahrer liegen über der Mindestvergütung, ein weiterer Fahrer kostet deshalb nichts zusätzlich.'}</p></div>`;
   }
 
   function EditSheet({ s, region, wd, onClose }) {

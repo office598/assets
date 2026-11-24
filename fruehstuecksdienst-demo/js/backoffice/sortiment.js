@@ -25,6 +25,54 @@
         onInput=${e => setTxt(e.target.value)} onBlur=${commit} onKeyDown=${e => { if (e.key === 'Enter') e.target.blur(); }} /><span class="bo-money-eur" aria-hidden="true">€</span></div>`;
   }
 
+  /* Einkauf netto: leer = aus den Annahmen berechnet (Platzhalter) */
+  function CostInput({ id, label, value, calc, onCommit }) {
+    const show = v => (v == null ? '' : num2(v));
+    const [txt, setTxt] = useState(show(value));
+    const [bad, setBad] = useState(false);
+    useEffect(() => { setTxt(show(value)); setBad(false); }, [value]);
+    const commit = () => {
+      if (txt.trim() === '') { setBad(false); if (value != null) onCommit(null); return; }
+      const n = parseNum(txt);
+      if (n == null || n < 0) { setBad(true); return; }
+      setBad(false);
+      const r = Math.round(n * 100) / 100;
+      if (r !== value) onCommit(r);
+    };
+    return html`<div class=${'bo-money' + (value != null ? ' is-set' : '')}><label class="ui-sr" for=${id}>${label}</label>
+      <input id=${id} class="ui-input ui-num" inputmode="decimal" value=${txt} placeholder=${num2(calc)} aria-invalid=${bad ? 'true' : undefined}
+        onInput=${e => setTxt(e.target.value)} onBlur=${commit} onKeyDown=${e => { if (e.key === 'Enter') e.target.blur(); }} /><span class="bo-money-eur" aria-hidden="true">€</span></div>`;
+  }
+
+  /* Kalkulations-Annahmen */
+  const FIELDS = [
+    ['driverPerPiece', 'Vergütung je Stück', '€', 0.01, 0, 5, 2], ['driverMinPerTour', 'Mindestvergütung je Tour', '€', 1, 0, 500, 2],
+    ['kmCost', 'Fahrzeugkosten je km', '€', 0.01, 0, 5, 2], ['vatRate', 'USt', '%', 1, 0, 30, 0],
+    ['shopMarkup', 'Aufschlag auf den Ladenpreis', '%', 1, 0, 100, 0], ['purchaseDiscount', 'Einkaufsrabatt', '%', 1, 0, 90, 0], ['extrasCostShare', 'Kostenanteil Extras', '%', 1, 10, 100, 0]
+  ];
+  const toUi = (k, v) => (FIELDS.find(f => f[0] === k)[2] === '%' ? Math.round(v * 100) : v);
+  const fromUi = (k, v) => (FIELDS.find(f => f[0] === k)[2] === '%' ? v / 100 : v);
+  function Assumptions({ s }) {
+    const eco = s.economics || App.config.economics;
+    const [open, setOpen] = useState(false);
+    const init = () => { const o = {}; FIELDS.forEach(f => { o[f[0]] = String(toUi(f[0], eco[f[0]])); }); return o; };
+    const [d, setD] = useState(init);
+    useEffect(() => setD(init()), [JSON.stringify(eco)]);
+    const bad = k => { const f = FIELDS.find(x => x[0] === k), n = parseNum(d[k]); return n == null || n < f[4] || n > f[5]; };
+    const invalid = FIELDS.some(f => bad(f[0]));
+    const save = () => {
+      const patch = {}; FIELDS.forEach(f => { patch[f[0]] = Math.round(fromUi(f[0], parseNum(d[f[0]])) * 10000) / 10000; });
+      App.actions.setEconomics(patch); App.ui.toast('Kalkulations-Annahmen gespeichert', 'ok');
+    };
+    const reset = () => { App.actions.setEconomics(Object.assign({}, App.config.economics)); App.ui.toast('Auf Standard zurückgesetzt', 'ok'); };
+    return html`<section class="ui-card bo-assume"><button type="button" class="bo-assume-head" aria-expanded=${open ? 'true' : 'false'} aria-controls="so-assume-body" onClick=${() => setOpen(!open)}>
+        <span class="ui-grow"><strong>Kalkulations-Annahmen</strong><span class="ui-muted"> · ${B().estimateNote()}</span></span><${App.ui.Icon} name=${open ? 'chevron-up' : 'chevron-down'} size=${20} /></button>
+      ${open ? html`<div id="so-assume-body" class="bo-assume-body"><div class="bo-assume-grid">${FIELDS.map(f => html`<${Field} key=${f[0]} id=${'ec-' + f[0]} label=${f[1]} type="number" inputmode="decimal" step=${f[3]} min=${f[4]} max=${f[5]} suffix=${f[2]}
+            value=${d[f[0]]} error=${bad(f[0]) ? 'Zwischen ' + f[4] + ' und ' + f[5] : undefined} onInput=${e => setD(Object.assign({}, d, { [f[0]]: e.target.value }))} />`)}</div>
+        <p class="ui-muted bo-hint">Der Einkauf je Artikel wird aus diesen Werten berechnet, solange in der Tabelle kein eigener Einkaufspreis steht.</p>
+        <div class="ui-row"><${Btn} variant="sun" icon="check" disabled=${invalid} onClick=${save}>Speichern<//><${Btn} variant="ghost" icon="refresh" onClick=${reset}>Zurück auf Standard<//></div></div>` : null}</section>`;
+  }
+
   function TextInput({ id, label, value, onCommit }) {
     const [txt, setTxt] = useState(value || '');
     useEffect(() => setTxt(value || ''), [value]);
@@ -35,7 +83,7 @@
 
   function Row({ s, p }) {
     const cats = App.config.labels.cat;
-    const eco = App.config.economics || {}, rate = eco.driverPerPiece || 0, net = p.price / (1 + (eco.vatRate || 0));
+    const eco = B().eco(), rate = eco.driverPerPiece || 0, net = p.price / (1 + (eco.vatRate || 0));
     const margin = App.sel.unitMargin(s, p), mp = net ? margin / net : 0;
     const tone = margin < 0 ? 'full' : mp < 0.3 ? 'warn' : 'ok';
     const up = patch => App.actions.updateProduct(p.id, patch);
@@ -46,7 +94,7 @@
           ${Object.keys(cats).map(k => html`<option key=${k} value=${k} selected=${k === p.cat}>${cats[k]}</option>`)}</select></td>
       <td><${TextInput} id=${'pp-' + p.id} label=${'Partner ' + p.name} value=${p.partner} onCommit=${v => up({ partner: v })} /></td>
       <td><${MoneyInput} id=${'pe-' + p.id} label=${'Verkaufspreis ' + p.name + ' in Euro'} value=${p.price} onCommit=${v => up({ price: v })} /></td>
-      <td><${MoneyInput} id=${'pk-' + p.id} label=${'Einkaufspreis ' + p.name + ' in Euro'} value=${p.cost || 0} onCommit=${v => up({ cost: v })} /></td>
+      <td><${CostInput} id=${'pk-' + p.id} label=${'Einkauf netto ' + p.name + ' in Euro'} value=${p.costOverride} calc=${App.sel.costOf(s, Object.assign({}, p, { costOverride: null }))} onCommit=${v => up({ costOverride: v })} /></td>
       <td class="num ui-mono">${F.eur(rate)}</td>
       <td class="num"><${Pill} tone=${tone} mono>${B().minus(F.eur(margin))} · ${B().minus(Math.round(mp * 100) + ' %')}<//></td>
       <td><${Toggle} id=${'pf-' + p.id} label=${(p.focus ? 'im Fokus: ' : 'nicht im Fokus: ') + p.name} checked=${!!p.focus} onChange=${v => up({ focus: v })} /></td>
@@ -66,9 +114,10 @@
       .sort((a, b) => dir * (App.sel.unitMargin(s, a) - App.sel.unitMargin(s, b)));
     const nFocus = s.products.filter(p => p.focus).length;
     const act = s.products.filter(p => p.active !== false);
-    const avg = act.length ? act.reduce((a, p) => a + (p.price ? (p.price / (1 + ((App.config.economics || {}).vatRate || 0)) - (p.cost || 0) - ((App.config.economics || {}).driverPerPiece || 0)) / (p.price / (1 + ((App.config.economics || {}).vatRate || 0))) : 0), 0) / act.length : 0;
+    const avg = act.length ? act.reduce((a, p) => a + (p.price ? App.sel.unitMargin(s, p) / (p.price / (1 + (B().eco().vatRate || 0))) : 0), 0) / act.length : 0;
     return html`<div class="bo-page">
       ${App.boA.head('Sortiment', act.length + ' von ' + s.products.length + ' Artikeln aktiv · durchschnittliche Marge ' + B().minus(F.pct(avg)))}
+      <${Assumptions} s=${s} />
       <div class="ui-card bo-focus"><div class="ui-grow"><strong>${nFocus} Artikel im Fokus</strong>
         <p class="ui-muted">Fokus-Artikel zeigt die Kunden-App zuerst und in „Dazu passt“. Ziel: teurere Stücke statt mehr Stücke, denn jedes Stück kostet Fahrervergütung.</p></div>
         <${Btn} variant="sun" icon="star" onClick=${() => setProp(App.sel.focusProposal(s, Math.max(nFocus, 5)))}>Fokus vorschlagen<//></div>
@@ -79,7 +128,7 @@
           ${Object.keys(cats).map(k => html`<${Chip} key=${k} selected=${cat === k} onClick=${() => setCat(k)}>${cats[k]}<//>`)}</div></div>
       </div>
       <p class="ui-muted bo-hint">Verkaufspreis brutto (inkl. USt), alle anderen Beträge netto. Marge je Stück = Verkaufspreis netto − Einkauf − Fahrervergütung; negative Werte sind rot und bedeuten: Dieses Stück trägt die Fahrervergütung nicht, die Zustellgebühr gleicht es aus. ${B().estimateNote()}.</p>
-      <div class="ui-tablewrap"><table class="ui-table bo-prod-table"><thead><tr><th>Artikel</th><th>Kategorie</th><th>Partner</th><th>Verkauf (brutto)</th><th>Einkauf (netto)</th><th class="num">Fahrer (netto)</th><th class="num" aria-sort=${dir > 0 ? 'ascending' : 'descending'}><button type="button" class="bo-sortbtn" onClick=${() => setDir(-dir)}>Deckungsbeitrag je Stück (netto) ${dir > 0 ? '↑' : '↓'}</button></th><th>Im Fokus</th><th>Status</th></tr></thead>
+      <div class="ui-tablewrap"><table class="ui-table bo-prod-table"><thead><tr><th>Artikel</th><th>Kategorie</th><th>Partner</th><th>Verkauf (brutto)</th><th>Einkauf netto</th><th class="num">Fahrer (netto)</th><th class="num" aria-sort=${dir > 0 ? 'ascending' : 'descending'}><button type="button" class="bo-sortbtn" onClick=${() => setDir(-dir)}>Deckungsbeitrag je Stück (netto) ${dir > 0 ? '↑' : '↓'}</button></th><th>Im Fokus</th><th>Status</th></tr></thead>
         <tbody>${list.map(p => html`<${Row} key=${p.id} s=${s} p=${p} />`)}</tbody></table></div>
       ${prop ? html`<${Sheet} open=${true} onClose=${() => setProp(null)} title="Fokus vorschlagen"
         footer=${[html`<${Btn} key="c" variant="ghost" onClick=${() => setProp(null)}>Abbrechen<//>`, html`<${Btn} key="o" variant="sun" icon="check" onClick=${() => {
