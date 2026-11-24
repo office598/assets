@@ -236,9 +236,10 @@
   sel.offerCalc = (s, o) => {
     const avg = (list, f) => list.length ? list.reduce((a, p) => a + p[f], 0) / list.length : 0;
     const buyList = o.buy.kind === 'cat' ? s.products.filter(p => p.cat === o.buy.ref && p.active) : [sel.product(s, o.buy.ref)].filter(Boolean);
-    const gp = sel.product(s, o.get.productId) || { price: 0, cost: 0 };
+    const gp0 = sel.product(s, o.get.productId) || { price: 0, cat: 'gebaeck' };
+    const gp = { price: net(gp0.price), cost: gp0.id ? sel.costOf(s, gp0) : 0 };
     const d = C.economics.driverPerPiece;
-    const normalRevenue = o.buy.qty * avg(buyList, 'price'), normalCost = o.buy.qty * (avg(buyList, 'cost') + d);
+    const normalRevenue = o.buy.qty * net(avg(buyList, 'price')), normalCost = o.buy.qty * (buyList.reduce((a, p) => a + sel.costOf(s, p), 0) / (buyList.length || 1) + d);
     const giftUnitMargin = gp.price * (1 - o.get.pct / 100) - gp.cost - d;
     const offerRevenue = normalRevenue + o.get.qty * gp.price * (1 - o.get.pct / 100);
     const offerCost = normalCost + o.get.qty * (gp.cost + d);
@@ -348,8 +349,10 @@
     return value;
   };
 
+  sel.costOf = (s, p) => App.data.unitCost(p);
+  const net = v => v / (1 + C.economics.vatRate);
   sel.pieces = items => Object.keys(items || {}).reduce((a, id) => a + (items[id] > 0 ? items[id] : 0), 0);
-  const goodsCostOf = (s, items) => orderedItems(s, items).reduce((a, p) => a + (p.cost || 0) * items[p.id], 0);
+  const goodsCostOf = (s, items) => orderedItems(s, items).reduce((a, p) => a + sel.costOf(s, p) * items[p.id], 0);
 
   sel.tourEconomics = (s, regionId, dateKey, driversOverride) => {
     const plan = sel.tourPlan(s, regionId, dateKey, driversOverride), wd = T.weekday(dateKey), pd = C.economics.driverPerPiece;
@@ -365,6 +368,7 @@
       return { driver: t.driver, stops: t.stops.length, pieces: pc, pay: round2(pc * pd) };
     });
     const driverPay = round2(pieces * pd);
+    rev = net(rev); fees = net(fees);
     return { stops: plan.stops, pieces, productRevenue: round2(rev), fees: round2(fees), goodsCost: round2(goods), driverPay,
       margin: round2(rev + fees - goods - driverPay), perDriver };
   };
@@ -527,6 +531,7 @@
       fees += sel.feeFor(s, { mode: 'abo', wd: x.weekday, regionId, customerId: x.customerId, total });
     });
     const pay = pcs * C.economics.driverPerPiece;
+    rev = net(rev); fees = net(fees);
     const next7 = T.nextDates(7);
     return {
       households: cust.length, weeklyStops: util.reduce((a, u) => a + u.abo, 0), weeklyRevenue: round2(rev + fees),

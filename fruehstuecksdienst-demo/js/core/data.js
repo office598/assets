@@ -113,19 +113,24 @@
     return pr;
   }
 
+  // Einkaufspreis netto aus config.economics (eine Stelle für alle Schätzwerte).
+  function unitCost(pr) {
+    const e = C.economics, net = pr.price / (1 + e.vatRate);
+    const v = pr.cat === 'extras' ? net * e.extrasCostShare : net / (1 + e.shopMarkup) * (1 - e.purchaseDiscount);
+    return Math.round(v * 10000) / 10000;
+  }
   function withCost(pr) {
-    const f = pr.cat === 'extras' ? 0.70 : pr.cat === 'boxen' ? 0.65 : pr.cat === 'brot' ? 0.60 : pr.cat === 'suess' ? 0.58 : 0.57;
-    pr.cost = Math.round(pr.price * f * 100) / 100;
+    pr.cost = unitCost(pr);
     return pr;
   }
 
   function worldOffers() {
     const o = (id, title, active, buy, get, weekdays, note) => ({ id, title, active, buy, get, weekdays, note });
     return [
-      o('brot-dazu', 'Ab 4 Semmeln & Weckerl: Bauernbrot −10 %', true,
-        { kind: 'cat', ref: 'gebaeck', qty: 4 }, { productId: 'bauernbrot', qty: 1, pct: 10 }, null, 'Bringt zusätzliches Brot ins Sackerl.'),
       o('butter-marmelade', 'Zur Teebutter: Marillenmarmelade −10 %', true,
         { kind: 'product', ref: 'teebutter', qty: 1 }, { productId: 'marillenmarmelade', qty: 1, pct: 10 }, null, 'Aufstrich-Kombination.'),
+      o('striezel-wochenende', 'Am Wochenende ab 4 Semmeln & Weckerl: Briochestriezel −10 %', true,
+        { kind: 'cat', ref: 'gebaeck', qty: 4 }, { productId: 'briochestriezel', qty: 1, pct: 10 }, [5, 6], 'Macht das Wochenend-Sackerl größer.'),
       o('semmel-5-1', '5 Kaisersemmeln + 1 gratis', false,
         { kind: 'product', ref: 'kaisersemmel', qty: 5 }, { productId: 'kaisersemmel', qty: 1, pct: 100 }, null, 'Vorlage: Die Kalkulation zeigt den Verlust.'),
       o('croissant-2-1', '2 Buttercroissants + 1 gratis', false,
@@ -184,13 +189,16 @@
     const gb = ['kaisersemmel', 'kaisersemmel', 'handsemmel', 'kornweckerl', 'salzstangerl', 'mohnflesserl', 'laugenbreze', 'dinkelweckerl'];
     const su = ['buttercroissant', 'buttercroissant', 'topfengolatsche', 'nussschnecke', 'marillenkrapfen'];
     const ex = ['teebutter', 'marillenmarmelade', 'frischmilch', 'freilandeier', 'naturjoghurt', 'bluetenhonig'];
-    items[pick(rng, gb)] = randInt(rng, 2, 6);
-    if (rng() < 0.55) items[pick(rng, gb)] = (items[pick(rng, gb)] || 0) + randInt(rng, 1, 4);
-    if (rng() < 0.6) items[pick(rng, su)] = randInt(rng, 1, 3);
-    if (rng() < 0.2) items[pick(rng, ['bauernbrot', 'dinkelbrot', 'nussbrot'])] = 1;
-    if (rng() < 0.2) items[pick(rng, ex)] = randInt(rng, 1, 2);
-    if (wd >= 5 && rng() < 0.12) items.briochestriezel = 1;
-    if (wd === 6 && rng() < 0.08) items['box-sonntag'] = 1;
+    const sizes = wd >= 5 ? [4, 5, 5, 6, 6, 7] : [3, 4, 4, 5, 5, 6];
+    let rem = pick(rng, sizes);
+    const add = (id, q) => { items[id] = (items[id] || 0) + q; rem -= q; };
+    if (wd >= 5 && rng() < 0.08 && rem >= 2) add('briochestriezel', 1);
+    if (wd === 6 && rng() < 0.05) add('box-sonntag', 1);
+    if (rem >= 3 && rng() < 0.15) add(pick(rng, ['bauernbrot', 'dinkelbrot', 'nussbrot']), 1);
+    if (rem >= 3 && rng() < 0.12) add(pick(rng, ex), 1);
+    if (rem >= 3 && rng() < 0.5) add(pick(rng, su), Math.min(rem - 1, randInt(rng, 1, 2)));
+    if (rem >= 3 && rng() < 0.35) add(pick(rng, gb), Math.floor(rem / 2));
+    if (rem > 0) add(pick(rng, gb), rem);
     return items;
   }
 
@@ -418,5 +426,5 @@
     };
   }
 
-  App.data = { seed, draftDefaults, mulberry32 };
+  App.data = { seed, draftDefaults, mulberry32, unitCost };
 })(typeof window !== 'undefined' ? window : globalThis);

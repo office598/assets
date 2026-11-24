@@ -102,11 +102,11 @@
       <p class=${loss ? 'bo-calc-loss' : ''}>${line}</p>
       <p>Deckungsbeitrag je Bündel <strong>${F.eur(c.offerMargin)}</strong> statt ${F.eur(c.normalMargin)}${delta != null && delta < 0 ? ' (' + F.eur(delta).replace('-', '−') + ')' : ''}${!loss && up != null ? ' · lohnt sich, wenn dadurch ' + F.pct(up / 100) + ' mehr Bündel verkauft werden' : ''}${!loss && up == null && delta != null && delta >= 0 ? ' · lohnt sich sofort, auch ohne zusätzlichen Absatz' : ''}.</p>
       ${loss ? html`<p class="bo-calc-loss">Jeder zusätzliche Verkauf vergrößert den Verlust. Verringern Sie die Zugabe oder erhöhen Sie den Kaufwert.</p>` : null}
-      <table class="bo-calc-t"><thead><tr><th></th><th class="num">ohne Aktion</th><th class="num">mit Aktion</th></tr></thead><tbody>
+      <table class="bo-calc-t"><thead><tr><th>netto je Bündel</th><th class="num">ohne Aktion</th><th class="num">mit Aktion</th></tr></thead><tbody>
         <tr><th scope="row">Umsatz</th><td class="num">${F.eur(c.normalRevenue)}</td><td class="num">${F.eur(c.offerRevenue)}</td></tr>
         <tr><th scope="row">Einkauf und Fahrer</th><td class="num">${F.eur(c.normalCost)}</td><td class="num">${F.eur(c.offerCost)}</td></tr>
         <tr><th scope="row">Deckungsbeitrag</th><td class="num">${F.eur(c.normalMargin)}</td><td class="num"><strong>${F.eur(c.offerMargin)}</strong></td></tr></tbody></table>
-      <p class="ui-muted bo-calc-note">Ein Bündel: ${o.buy.qty} × ${o.buy.kind === 'cat' ? 'Artikel der Kategorie' : 'gekaufte Artikel'} + ${getText(s, o)}. Fahrervergütung ${F.eur(rate)} je Stück ist eingerechnet. Annahme: Der Kunde hätte die gekauften Stücke ohnehin bestellt.</p>
+      <p class="ui-muted bo-calc-note">Ein Bündel: ${o.buy.qty} × ${o.buy.kind === 'cat' ? 'Artikel der Kategorie' : 'gekaufte Artikel'} + ${getText(s, o)}. Fahrervergütung ${F.eur(rate)} je Stück ist eingerechnet. Annahme: Der Kunde hätte die gekauften Stücke ohnehin bestellt. ${B().estimateNote()}.</p>
     </div>`;
   }
 

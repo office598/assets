@@ -10,6 +10,11 @@
   B.regionOf = s => s.regions.find(r => r.id === s.ui.boRegion) || s.regions[0];
   B.go = (view, patch) => App.actions.setUi(Object.assign({ backofficeView: view }, patch || {}));
   B.head = (title, sub, right) => html`<div class="bo-hd"><div class="ui-grow"><h1>${title}</h1>${sub ? html`<p class="ui-muted">${sub}</p>` : null}</div>${right || null}</div>`;
+  B.minus = s => String(s).replace('-', '−');
+  B.estimateNote = () => {
+    const e = App.config.economics || {}, d = e.purchaseDiscount != null ? e.purchaseDiscount : 0.10;
+    return 'Schätzwerte: Einkauf = Ladenpreis −' + Math.round(d * 100) + ' %, Fahrer ' + F.eur(e.driverPerPiece || 0) + ' je Stück, alle Beträge netto';
+  };
   B.plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
   B.driversText = n => n + (n === 1 ? ' Fahrer' : ' Fahrern');
 
@@ -168,15 +173,15 @@
   function Margin({ k }) {
     if (k.weeklyMargin == null) return null;
     const rows = [
-      ['Warenumsatz', k.weeklyProductRevenue, 1], ['Zustellgebühren', k.weeklyFees, 1],
-      ['Wareneinsatz', -k.weeklyGoodsCost, -1], ['Fahrervergütung (' + F.eur(App.config.economics.driverPerPiece) + ' je Stück)', -k.weeklyDriverPay, -1]
+      ['Warenumsatz (netto)', k.weeklyProductRevenue, 1], ['Zustellgebühren (netto)', k.weeklyFees, 1],
+      ['Wareneinsatz (netto)', -k.weeklyGoodsCost, -1], ['Fahrervergütung (' + F.eur(App.config.economics.driverPerPiece) + ' je Stück, netto)', -k.weeklyDriverPay, -1]
     ];
-    return html`<section class="ui-card bo-sec bo-margin" aria-labelledby="bo-h-m"><div class="bo-margin-top"><div><h2 id="bo-h-m">Deckungsbeitrag pro Woche</h2>
+    return html`<section class="ui-card bo-sec bo-margin" aria-labelledby="bo-h-m"><div class="bo-margin-top"><div><h2 id="bo-h-m">Deckungsbeitrag pro Woche (netto)</h2>
         <p class="ui-muted bo-sec-sub">aus den Abos dieses Gebiets, nach Ware und Fahrern</p></div>
         <div class=${'bo-margin-sum ' + (k.weeklyMargin < 0 ? 'bo-neg' : 'bo-pos')}>${F.eur(k.weeklyMargin)}</div></div>
       <dl class="bo-margin-rows">${rows.map(r => html`<div key=${r[0]} class="bo-margin-row"><dt>${r[1] < 0 ? '− ' : '+ '}${r[0]}</dt><dd class="ui-mono">${F.eur(Math.abs(r[1]))}</dd></div>`)}
         <div class="bo-margin-row bo-margin-total"><dt>= Deckungsbeitrag</dt><dd class="ui-mono">${F.eur(k.weeklyMargin)}</dd></div></dl>
-      <p class="ui-muted bo-sec-sub">Die Zustellgebühr ist die wichtigste Ertragsquelle; die Gebäckpreise liegen nur knapp über dem Ladenpreis.</p></section>`;
+      <p class="ui-muted bo-sec-sub">Die Zustellgebühr ist die wichtigste Ertragsquelle; die Gebäckpreise liegen nur knapp über dem Ladenpreis. ${B.estimateNote()}.</p></section>`;
   }
 
   /* ---------- Seite ---------- */
