@@ -24,7 +24,7 @@
     // Kundenpreise inkl. USt (netto rund 1,60 / 2,50). freeDeliveryFrom: null = keine Gratis-Zustellung ab Bestellwert.
     fees: { abo: 1.75, aboWeekend: 2.75, flex: 2.50, flexWeekend: 3.50, flexMinOrder: 6.00, freeDeliveryFrom: null },
     // Schätzwerte des Auftraggebers: alle Wirtschaftlichkeits-Beträge netto; Einkauf = Ladenpreis minus purchaseDiscount.
-    economics: { driverPerPiece: 0.36, kmCost: 0.50, vatRate: 0.10, shopMarkup: 0.10, purchaseDiscount: 0.10, extrasCostShare: 0.70 },
+    economics: { driverPerPiece: 0.36, kmCost: 0.50, driverMinPerTour: 50, vatRate: 0.10, shopMarkup: 0.10, purchaseDiscount: 0.10, extrasCostShare: 0.70 },
     promo: { weakBelowPct: 0.6, weakDayFreeWeeks: 4, referralCredit: 5 },
     reserveHours: 24,
     season: { id: 'nikolo', title: 'Nikolo-Sackerl', dateKey: '2026-12-06', productId: 'box-nikolo' },

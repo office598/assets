@@ -189,8 +189,9 @@
           <li>Die Zustellgebühr (€ 1,75 werktags, € 2,75 am Wochenende) ist damit die eigentliche Ertragsquelle.</li>
         </ul>
         <p>Daraus folgt: Es zählen mehr Lieferungen und mehr Haushalte pro Tour, nicht mehr Stück pro Sackerl. Aktionen wie „5 Semmeln + 1 gratis“ rechnen sich mit diesen Werten nicht. Sinnvoll sind Nachlässe auf teurere Artikel und auf Extras vom Hofladen. Das Backoffice rechnet jede Aktion durch.</p>
-        <p>Für die Fahrer zählt die Stückzahl: Jedes Stück bringt 36 Cent, egal ob Semmel oder Brot. Für das Unternehmen zählt der Wert je Stück. Gemeinsam ist beiden das Interesse an mehr Stopps pro Tour.</p>
-        <p>Ein zweiter Fahrer kostet das Unternehmen nichts extra, weil je Stück bezahlt wird. Für den Fahrer lohnt er sich aber erst mit genug Stück. Die Warteliste zeigt, wann es so weit ist.</p>
+        <p>Für die Fahrer zählt die Stückzahl: Jedes Stück bringt 36 Cent, egal ob Semmel oder Brot, mindestens aber € 50 je Tour. Für das Unternehmen zählt der Wert je Stück. An schwachen Tagen greift die Mindestvergütung, dann zahlt das Unternehmen drauf. Gemeinsam ist beiden das Interesse an größeren und dichteren Touren.</p>
+        <p>Ein zweiter Fahrer kostet zusätzlich, solange nicht beide über der Mindestvergütung liegen. Die Warteliste zeigt, wann genug Nachfrage dafür da ist.</p>
+        <p>Alle Kalkulationswerte sind Annahmen und im Backoffice einstellbar: Einkaufspreise je Artikel, Vergütung, Mindestvergütung und Fahrzeugkosten.</p>
       </section>
 
       <section class="kz-sec" aria-labelledby="s7">

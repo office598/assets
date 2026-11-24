@@ -121,13 +121,14 @@
   }
 
   // Einkaufspreis netto aus config.economics (eine Stelle für alle Schätzwerte).
-  function unitCost(pr) {
-    const e = C.economics, net = pr.price / (1 + e.vatRate);
+  function unitCost(pr, econ) {
+    const e = econ || C.economics, net = pr.price / (1 + e.vatRate);
     const v = pr.cat === 'extras' ? net * e.extrasCostShare : net / (1 + e.shopMarkup) * (1 - e.purchaseDiscount);
     return Math.round(v * 10000) / 10000;
   }
   function withCost(pr) {
     pr.cost = unitCost(pr);
+    pr.costOverride = null;
     return pr;
   }
 

@@ -29,7 +29,7 @@
   function buildState() {
     return Object.assign({
       tick: 0, clockPreset: 'echt', clockOffset: 0, seq: 1000, seedDay: T.today(),
-      ui: defaultUi(), session: { customerId: 'me' }, draft: App.data.draftDefaults()
+      economics: Object.assign({}, C.economics), ui: defaultUi(), session: { customerId: 'me' }, draft: App.data.draftDefaults()
     }, App.data.seed());
   }
 
@@ -40,7 +40,7 @@
       if (!raw) return null;
       const saved = JSON.parse(raw);
       const st = saved && saved.state;
-      if (!st || !Array.isArray(st.regions) || !st.draft || !st.ui || !st.capacity || !st.weeklySpecial || !st.offers) return null;
+      if (!st || !Array.isArray(st.regions) || !st.draft || !st.ui || !st.capacity || !st.weeklySpecial || !st.offers || !st.economics) return null;
       T.setOffset(st.clockOffset || 0);
       if (saved.seedDay !== T.today()) { T.setOffset(0); return null; }
       return st;
@@ -242,9 +242,9 @@
     const avg = (list, f) => list.length ? list.reduce((a, p) => a + p[f], 0) / list.length : 0;
     const buyList = o.buy.kind === 'cat' ? s.products.filter(p => p.cat === o.buy.ref && p.active) : [sel.product(s, o.buy.ref)].filter(Boolean);
     const gp0 = sel.product(s, o.get.productId) || { price: 0, cat: 'gebaeck' };
-    const gp = { price: net(gp0.price), cost: gp0.id ? sel.costOf(s, gp0) : 0 };
-    const d = C.economics.driverPerPiece;
-    const normalRevenue = o.buy.qty * net(avg(buyList, 'price')), normalCost = o.buy.qty * (buyList.reduce((a, p) => a + sel.costOf(s, p), 0) / (buyList.length || 1) + d);
+    const gp = { price: net(s, gp0.price), cost: gp0.id ? sel.costOf(s, gp0) : 0 };
+    const d = E(s).driverPerPiece;
+    const normalRevenue = o.buy.qty * net(s, avg(buyList, 'price')), normalCost = o.buy.qty * (buyList.reduce((a, p) => a + sel.costOf(s, p), 0) / (buyList.length || 1) + d);
     const giftUnitMargin = gp.price * (1 - o.get.pct / 100) - gp.cost - d;
     const offerRevenue = normalRevenue + o.get.qty * gp.price * (1 - o.get.pct / 100);
     const offerCost = normalCost + o.get.qty * (gp.cost + d);
@@ -354,14 +354,17 @@
     return value;
   };
 
-  sel.costOf = (s, p) => App.data.unitCost(p);
-  const net = v => v / (1 + C.economics.vatRate);
+  const E = s => s.economics || C.economics;
+  sel.costOf = (s, p) => (p.costOverride != null ? p.costOverride : App.data.unitCost(p, E(s)));
+  const net = (s, v) => v / (1 + E(s).vatRate);
+  // Vergütung je Fahrer und Tour: mindestens driverMinPerTour (nur, wenn überhaupt Stück geliefert werden).
+  const driverPayFor = (s, pieces) => (pieces > 0 ? Math.max(pieces * E(s).driverPerPiece, E(s).driverMinPerTour || 0) : 0);
   sel.pieces = items => Object.keys(items || {}).reduce((a, id) => a + (items[id] > 0 ? items[id] : 0), 0);
   const goodsCostOf = (s, items) => orderedItems(s, items).reduce((a, p) => a + sel.costOf(s, p) * items[p.id], 0);
 
   sel.tourEconomics = (s, regionId, dateKey, driversOverride) => {
-    const plan = sel.tourPlan(s, regionId, dateKey, driversOverride), wd = T.weekday(dateKey), pd = C.economics.driverPerPiece;
-    let pieces = 0, rev = 0, fees = 0, goods = 0;
+    const plan = sel.tourPlan(s, regionId, dateKey, driversOverride), wd = T.weekday(dateKey);
+    let pieces = 0, rev = 0, fees = 0, goods = 0, paySum = 0;
     const perDriver = plan.tours.map(t => {
       let pc = 0;
       t.stops.forEach(st => {
@@ -370,12 +373,13 @@
         fees += sel.feeFor(s, { mode: st.kinds.includes('abo') ? 'abo' : 'flex', wd, regionId, customerId: st.customerId, total });
       });
       pieces += pc;
-      const pay = pc * pd, kmc = t.km * C.economics.kmCost, hours = Math.max(0, (t.endMin - t.startMin) / 60);
-      return { driver: t.driver, stops: t.stops.length, pieces: pc, pay: round2(pay), km: t.km, kmCost: round2(kmc), afterKm: round2(pay - kmc),
+      paySum += driverPayFor(s, pc);
+      const pieceBased = pc * E(s).driverPerPiece, pay = driverPayFor(s, pc), kmc = t.km * E(s).kmCost, hours = Math.max(0, (t.endMin - t.startMin) / 60);
+      return { driver: t.driver, stops: t.stops.length, pieces: pc, pay: round2(pay), pieceBased: round2(pieceBased), minApplied: pc > 0 && pay > pieceBased + 1e-9, km: t.km, kmCost: round2(kmc), afterKm: round2(pay - kmc),
         hours: Math.round(hours * 100) / 100, perHour: hours > 0 ? round2((pay - kmc) / hours) : 0, stopsPerKm: t.km > 0 ? Math.round(t.stops.length / t.km * 100) / 100 : 0 };
     });
-    const driverPay = round2(pieces * pd);
-    rev = net(rev); fees = net(fees);
+    const driverPay = round2(paySum);
+    rev = net(s, rev); fees = net(s, fees);
     return { stops: plan.stops, pieces, productRevenue: round2(rev), fees: round2(fees), goodsCost: round2(goods), driverPay,
       margin: round2(rev + fees - goods - driverPay), perDriver };
   };
@@ -393,7 +397,7 @@
     let pcs = 0;
     s.subs.forEach(x => { const c = sel.customer(s, x.customerId); if (c && c.regionId === regionId && c.registered) pcs += sel.pieces(x.items); });
     const n = k.weeklyStops || 1, pieces = pcs / n;
-    return { business: round2(k.weeklyMargin / n), driver: round2(pieces * C.economics.driverPerPiece), pieces: Math.round(pieces * 100) / 100 };
+    return { business: round2(k.weeklyMargin / n), driver: round2(pieces * E(s).driverPerPiece), pieces: Math.round(pieces * 100) / 100 };
   };
 
   sel.forecastEnd = (s, regionId, wd, drivers) => {
@@ -547,14 +551,16 @@
     const cust = s.customers.filter(c => c.regionId === regionId && c.registered);
     const ids = new Set(cust.map(c => c.id));
     let rev = 0, fees = 0, goods = 0, pcs = 0;
+    const pcsWd = [0, 0, 0, 0, 0, 0, 0];
     s.subs.forEach(x => {
       if (!ids.has(x.customerId)) return;
       const total = sel.priceBag(s, x.items, { wd: x.weekday }).total;
-      rev += total; goods += goodsCostOf(s, x.items); pcs += sel.pieces(x.items);
+      rev += total; goods += goodsCostOf(s, x.items); pcs += sel.pieces(x.items); pcsWd[x.weekday] += sel.pieces(x.items);
       fees += sel.feeFor(s, { mode: 'abo', wd: x.weekday, regionId, customerId: x.customerId, total });
     });
-    const pay = pcs * C.economics.driverPerPiece;
-    rev = net(rev); fees = net(fees);
+    let pay = 0;
+    pcsWd.forEach((p, wd) => { const n = Math.max(1, sel.cap(s, regionId, wd).drivers); pay += n * driverPayFor(s, p / n); });
+    rev = net(s, rev); fees = net(s, fees);
     const next7 = T.nextDates(7);
     return {
       households: cust.length, weeklyStops: util.reduce((a, u) => a + u.abo, 0), weeklyRevenue: round2(rev + fees),
@@ -630,8 +636,8 @@
   }).filter(Boolean);
 
   // Deckungsbeitrag je Stück: Nettopreis minus Einkauf minus Fahrervergütung.
-  sel.unitMargin = (s, p) => round2(net(p.price) - sel.costOf(s, p) - C.economics.driverPerPiece);
-  const um = (s, p) => net(p.price) - sel.costOf(s, p) - C.economics.driverPerPiece;
+  sel.unitMargin = (s, p) => round2(net(s, p.price) - sel.costOf(s, p) - E(s).driverPerPiece);
+  const um = (s, p) => net(s, p.price) - sel.costOf(s, p) - E(s).driverPerPiece;
 
   sel.focusProposal = (s, n) => s.products.filter(p => p.active !== false).slice()
     .sort((a, b) => um(s, b) - um(s, a) || s.products.indexOf(a) - s.products.indexOf(b)).slice(0, n || 5);
@@ -775,6 +781,7 @@
     if (target && target.flex) setDraftPatch({ flex: bag });
     else setDraftPatch({ abo: Object.assign({}, d.abo, { [target.wd]: bag }) });
   };
+  A.setEconomics = patch => setState({ economics: Object.assign({}, get().economics, patch) });
   A.setWeeklySpecial = patch => setState({ weeklySpecial: Object.assign({}, get().weeklySpecial, patch) });
   A.draftSetFlexDate = dateKey => setDraftPatch({ flexDate: dateKey });
 

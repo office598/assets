@@ -160,17 +160,35 @@ check('regionStats.households > 0', rs.households > 0 && rs.deliveriesPerWeek ==
 
 // --- Wirtschaftlichkeit
 check('pieces', sel.pieces({ kaisersemmel: 4, bauernbrot: 1 }) === 5 && sel.pieces({}) === 0);
-const te = sel.tourEconomics(s0, 'nord', '2026-11-30', 2);
+const te = sel.tourEconomics(s0, 'nord', '2026-11-30', 1);
+const te2 = sel.tourEconomics(s0, 'nord', '2026-11-30', 2);
 const mixAvgStop = s0.subs.filter(x => sel.customer(s0, x.customerId).regionId === 'nord').reduce((a, x) => a + sel.pieces(x.items), 0) / 209;
 check('tourEconomics: Fahrer = Stück x 0,36', te.pieces > 100 && Math.abs(te.driverPay - te.pieces * 0.36) < 0.01 && te.stops === sel.stopsOn(s0, 'nord', '2026-11-30').length &&
-  te.perDriver.length === 2 && te.perDriver[0].pieces + te.perDriver[1].pieces === te.pieces && Math.abs(te.perDriver[0].pay - te.perDriver[0].pieces * 0.36) < 0.01 &&
+  te.perDriver.length === 1 && te.perDriver[0].minApplied === false && Math.abs(te.perDriver[0].pay - te.perDriver[0].pieceBased) < 0.01 &&
   Math.abs(te.margin - (te.productRevenue + te.fees - te.goodsCost - te.driverPay)) < 0.011, te);
 const teSat = sel.tourEconomics(s0, 'nord', '2026-11-28');
+A.setEconomics({ driverMinPerTour: 0 });
+const sEco = store.getState();
+check('setEconomics: Mindestvergütung 0 = reine Stückvergütung', sEco.economics.driverMinPerTour === 0 && sel.tourEconomics(sEco, 'nord', T.nextDateForWeekday(1)).perDriver[0].minApplied === false &&
+  Math.abs(sel.tourEconomics(sEco, 'nord', T.nextDateForWeekday(1)).driverPay - sel.tourEconomics(sEco, 'nord', T.nextDateForWeekday(1)).pieces * 0.36) < 0.01 && sel.kpis(sEco, 'nord').weeklyMargin > sel.kpis(s0, 'nord').weeklyMargin);
+A.setEconomics({ driverPerPiece: 0.5 });
+check('setEconomics: Satz je Stück wirkt in Selektoren', sel.unitMargin(store.getState(), sel.product(store.getState(), 'bauernbrot')) < sel.unitMargin(sEco, sel.product(sEco, 'bauernbrot')));
+const umBefore = sel.unitMargin(store.getState(), sel.product(store.getState(), 'kaisersemmel'));
+const gmBefore = sel.offerCalc(store.getState(), store.getState().offers.find(o => o.id === 'semmel-5-1')).giftUnitMargin;
+A.updateProduct('kaisersemmel', { costOverride: 0.2 });
+const sCo = store.getState();
+check('costOverride: costOf, unitMargin, offerCalc', sel.costOf(sCo, sel.product(sCo, 'kaisersemmel')) === 0.2 && sel.unitMargin(sCo, sel.product(sCo, 'kaisersemmel')) > umBefore + 0.25 &&
+  sel.offerCalc(sCo, sCo.offers.find(o => o.id === 'semmel-5-1')).giftUnitMargin > gmBefore + 0.25, { umBefore, gmBefore });
+A.resetDemo();
+check('resetDemo setzt Kalkulation zurück', store.getState().economics.driverMinPerTour === 50 && store.getState().economics.driverPerPiece === 0.36 && sel.product(store.getState(), 'kaisersemmel').costOverride === null);
+check('Mo mit 2 Fahrern: je mindestens 50', te2.perDriver.length === 2 && te2.perDriver.every(d => d.pay >= 50 && d.pay >= d.pieceBased - 0.01) && te2.perDriver[0].pieces + te2.perDriver[1].pieces === te2.pieces, te2.perDriver);
+const teTue = sel.tourEconomics(s0, 'nord', T.nextDateForWeekday(1));
+check('Di: Fahrer 50 mit Mindestvergütung', teTue.perDriver[0].pay === 50 && teTue.perDriver[0].minApplied && teTue.perDriver[0].pieceBased < 50 && teTue.driverPay === 50, teTue.perDriver);
 check('tourEconomics: Wochenendgebühr netto 2,50', Math.abs(teSat.fees / teSat.stops - 2.75 / 1.1) < 0.25, teSat.fees / teSat.stops);
 check('perDriver: afterKm = Vergütung - km x kmCost', te.perDriver.every(d => d.km > 0 && Math.abs(d.afterKm - (d.pay - d.km * C.economics.kmCost)) < 0.011 && d.hours > 0 &&
   Math.abs(d.perHour - d.afterKm / d.hours) < 0.06 && d.stopsPerKm > 0), te.perDriver);
 const we = sel.weekdayEconomics(s0, 'nord');
-check('weekdayEconomics: 7 Tage, Di je Stunde klar unter Mo', we.length === 7 && we.every((e, i) => e.wd === i && e.stops > 0) && we[1].perHour < we[0].perHour * 0.8 && we[1].businessMargin < we[0].businessMargin, we.map(e => [e.wd, e.stops, e.perHour]));
+check('weekdayEconomics: 7 Tage, Di je Stunde klar unter Mo', we.length === 7 && we.every((e, i) => e.wd === i && e.stops > 0) && we[1].driverPay === 50 && we[1].businessMargin < we[0].businessMargin * 0.5, we.map(e => [e.wd, e.stops, e.perHour]));
 const ms = sel.marginalStop(s0, 'nord');
 check('marginalStop: Fahrer = Stück je Stopp x 0,36', Math.abs(ms.driver - ms.pieces * 0.36) < 0.01 && Math.abs(ms.pieces - mixAvgStop) < 0.02 && ms.business > 0, ms);
 console.log('     weekdayEconomics nord (Tag Stopps km Marge Fahrer nachKm €/Std): ' + we.map(e => [T.WD[e.wd], e.stops, e.km, e.businessMargin, e.driverPay, e.afterKm, e.perHour].join(' ')).join(' | '));
